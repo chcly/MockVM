@@ -65,6 +65,32 @@ uint8_t BlockReader::next(void)
 }
 
 
+void BlockReader::read(void *blk, size_t nr)
+{
+    char *cp =(char*) blk;
+
+    for (size_t i = 0; i < nr && i < m_fileLen; ++i)
+        cp[i] = (char)next();
+}
+
+void BlockReader::offset(size_t nr)
+{
+    if (m_fp)
+    {
+        fseek((FILE *)m_fp, nr, SEEK_CUR);
+        m_loc += nr;
+    }
+}
+
+void BlockReader::moveto(size_t loc)
+{
+    if (m_fp && loc < m_fileLen)
+    {
+        fseek((FILE *)m_fp, loc, SEEK_SET);
+        m_loc = loc;
+    }
+}
+
 void BlockReader::read()
 {
     size_t br = fread(m_block, 1, BLOCKSIZE, (FILE *)m_fp);

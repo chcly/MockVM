@@ -46,7 +46,10 @@ public:
 
     void    open(const char *fname);
     uint8_t next(void);
-
+    void    read(void *blk, size_t nr);
+    void    offset(size_t nr);
+    void    moveto(size_t loc);
+        
     inline bool eof(void)
     {
         return m_loc > m_fileLen;

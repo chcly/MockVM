@@ -64,7 +64,7 @@ void BinaryWriter::writeHeader()
 
 
     Header h = {};
-    h.code = TYPE_ID4('T', 'V', 'M', '@');
+    h.code = TYPE_ID4('T', 'V', 'M', '\0');
     h.dat  = 0;
     h.str  = 0;
     h.txt  = sizeof(Header);
@@ -74,7 +74,7 @@ void BinaryWriter::writeHeader()
 void BinaryWriter::writeSections()
 {
     Section sec = {};
-    sec.code = TYPE_ID2('@', 'C');
+    sec.code = TYPE_ID2('C', 'S');
     sec.size = 0;
     sec.start  = sizeof(Header) + sizeof(Section);
     fwrite(&sec, 1, sizeof(Section), (FILE*)m_fp);
@@ -82,11 +82,14 @@ void BinaryWriter::writeSections()
     for (Instruction ins : m_ins)
     {
         fwrite(&ins.op, 1, 1, (FILE*)m_fp);
-        fwrite(&ins.argc, 1, 2, (FILE*)m_fp);
-        fwrite(&ins.flags, 1, 4, (FILE*)m_fp);
+        fwrite(&ins.argc, 1, 1, (FILE*)m_fp);
+        fwrite(&ins.flags, 1, 1, (FILE*)m_fp);
+        char jnk = 0;
+        fwrite(&jnk, 1, 1, (FILE*)m_fp);
+
         if (ins.argc > 0)
             fwrite(&ins.arg1, 1, 8, (FILE*)m_fp);
         if (ins.argc > 1)
-            fwrite(&ins.arg1, 1, 8, (FILE*)m_fp);
+            fwrite(&ins.arg2, 1, 8, (FILE*)m_fp);
     }
 }

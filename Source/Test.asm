@@ -13,4 +13,5 @@ main:
     mov   x7, 7
     mov   x8, 8
     mov   x9, 9
+    mov   x0, x5
     ret

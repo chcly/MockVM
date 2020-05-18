@@ -24,9 +24,7 @@
 
 #include <stdint.h>
 #include <vector>
-#include <functional>
 #include "Instruction.h"
-
 
 class BinaryWriter
 {
@@ -37,11 +35,10 @@ public:
 private:
     void * m_fp;
     Instructions m_ins;
-
+    
 public:
     BinaryWriter();
     ~BinaryWriter();
-
 
     void mergeInstructions(const Instructions& insl);
     void open(const char* fname);

@@ -101,7 +101,8 @@ private:
     int32_t ActionIdxSC(uint8_t ch);
     int32_t ActionIdxDC(uint8_t ch);
 
-    void RuleMOV();
+    void RuleMOV(void);
+    void RuleRET(void);
 };
 
 #endif  //_Parser_h_

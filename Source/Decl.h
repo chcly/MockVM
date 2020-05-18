@@ -81,7 +81,7 @@ enum Opcode
     OP_CALL = 0x10,
 };
 
-enum Register
+enum RegisterCode
 {
     REG_X0 = 0x00,
     REG_X1 = 0x01,

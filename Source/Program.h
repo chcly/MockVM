@@ -1,6 +1,6 @@
 /*
 -------------------------------------------------------------------------------
-    Copyright (c) 20120 Charles Carley.
+    Copyright (c) 2020 Charles Carley.
 
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -19,58 +19,44 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#ifndef _Instruction_h_
-#define _Instruction_h_
+#ifndef _Program_h_
+#define _Program_h_
 
 #include <stdint.h>
+#include <functional>
+#include <vector>
+#include "Instruction.h"
+#include "BlockReader.h"
 
-#define TYPE_ID4(a, b, c, d) ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
-#define TYPE_ID2(a, b)      ((b) << 8 | (a))
 
-
-enum SectionCodes
+typedef union Register
 {
-    SEC_DAT = 0xFF,
-    SEC_TXT,
-    SEC_STR,
+    uint8_t  a[8];
+    uint16_t w[4];
+    uint32_t l[2];
+    uint64_t x;
+} Register;
+
+
+
+class Program
+{
+public:
+    typedef std::vector<Instruction> Instructions;
+    typedef Register Registers[10];
+
+private:
+    Instructions m_ins;
+    BlockReader* m_reader;
+    Header       m_header;
+    Registers    m_regi;
+
+public:
+    Program();
+    ~Program();
+
+    void load(const char *fname);
+    int launch(void);
 };
 
-
-enum InstructionFlags
-{
-    IF_DREG = (1 << 0),
-    IF_DLIT = (1 << 1),
-    IF_SREG = (1 << 2),
-    IF_SLIT = (1 << 3),
-};
-
-
-struct Header
-{
-    uint32_t code;
-    uint32_t flags;
-    uint64_t dat;
-    uint64_t str;
-    uint64_t txt;
-};
-
-struct Section
-{
-    uint32_t code;
-    uint32_t flags;
-    uint64_t size;
-    uint16_t start;
-};
-
-struct Instruction
-{
-    uint8_t  op;
-    uint8_t  flags;
-    uint8_t  argc;
-    uint64_t arg1;
-    uint64_t arg2;
-    uint64_t arg3;
-    uint64_t label;
-};
-
-#endif  // _Instruction_h_
+#endif  //_Program_h_

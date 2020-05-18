@@ -1,21 +1,27 @@
 
 
-
-set(SRC 
-    Compiler.cpp
-    BlockReader.cpp
-    BinaryWriter.cpp
-    Parser.cpp
-
+add_executable(tcom 
     BlockReader.h
     BinaryWriter.h
     Parser.h
     Instruction.h
     Decl.h
-
-    Test.asm
+    BlockReader.cpp
+    BinaryWriter.cpp
+    Parser.cpp
+    Compiler.cpp
 )
 
+add_executable(tvm 
+    BlockReader.h
+    BinaryReader.h
+    Program.h
+    Instruction.h
+    Decl.h
 
-add_executable(tvm ${SRC})
+    BlockReader.cpp
+    BinaryReader.cpp
+    Program.cpp
+    VM.cpp
+)
 

@@ -87,6 +87,9 @@ void Parser::parse(const char* fname)
                 case OP_MOV:
                     RuleMOV();
                     break;
+                case OP_RET:
+                    RuleRET();
+                    break;
                 default:
                     break;
                 }
@@ -183,6 +186,16 @@ void Parser::RuleMOV()
 
     ins.argc = 2;
     ins.label = m_label;
+    m_instructions.push_back(ins);
+}
+
+
+void Parser::RuleRET(void)
+{
+    Instruction ins = {};
+    ins.op          = OP_RET;
+    ins.argc        = 0;
+    ins.label       = m_label;
     m_instructions.push_back(ins);
 }
 
