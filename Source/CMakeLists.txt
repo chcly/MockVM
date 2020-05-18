@@ -4,8 +4,11 @@
 set(SRC 
     Compiler.cpp
     BlockReader.cpp
-    BlockReader.h
+    BinaryWriter.cpp
     Parser.cpp
+
+    BlockReader.h
+    BinaryWriter.h
     Parser.h
     Instruction.h
     Decl.h

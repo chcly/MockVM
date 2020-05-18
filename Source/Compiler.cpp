@@ -25,6 +25,7 @@
 #include <sstream>
 #include <vector>
 #include "BlockReader.h"
+#include "BinaryWriter.h"
 #include "Parser.h"
 #include "Decl.h"
 
@@ -51,21 +52,21 @@ int main(int argc, char **argv)
     }
 
 
-    // BinaryWriter w;
+    BinaryWriter w;
 
     for (string file : files)
     {
         Parser p;
         p.parse(file.c_str());
-
-        // w.mergeInstructions(p.getInstructions());
+        w.mergeInstructions(p.getInstructions());
+ 
         // w.mergeData(p.getDeclaredData());
         // w.mergeConstants(p.getDeclaredGlobals());
     }
 
-    // w.writeHeader();
-    // w.writeSections();
-    // w.save();
+    w.open("test.bin");
+    w.writeHeader();
+    w.writeSections();
     return 0;
 }
 

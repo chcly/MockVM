@@ -25,7 +25,10 @@
 #include <stdint.h>
 #include <string>
 #include <stack>
+#include <unordered_map>
 
+
+#include "Instruction.h"
 #include "BlockReader.h"
 #include "Decl.h"
 
@@ -46,7 +49,9 @@ public:
     
     
 
-    typedef std::stack<Token> TokenStack;
+    typedef std::stack<Token>                       TokenStack;
+    typedef std::unordered_map<std::string, size_t> LabelMap;
+    typedef std::vector<Instruction>                Instructions;
 
     const static Parser::Action Actions[];
     const static size_t         ActionCount;
@@ -56,18 +61,21 @@ public:
 
 
 private:
-    BlockReader m_reader;
-    int32_t     m_state;
-    std::string m_curString;
-    int64_t     m_ival;
-    uint8_t     m_op;
-    uint8_t     m_register;
-    TokenStack  m_tokens;
+    BlockReader  m_reader;
+    int32_t      m_state, m_section, m_label;
+    std::string  m_curString;
+    int64_t      m_ival;
+    uint8_t      m_op;
+    uint8_t      m_register;
+    TokenStack   m_tokens;
+    LabelMap     m_labels;
+    Instructions m_instructions;
 
     int32_t scan(void);
     int32_t getType(uint8_t ct);
     void    clearState(void);
 
+    int32_t getSection(const std::string& val);
 
 public:
     Parser();
@@ -75,8 +83,13 @@ public:
 
     void parse(const char* fname);
 
+    inline const Instructions& getInstructions()
+    {
+        return m_instructions;
+    }
 
 private:
+
     int32_t ActionIdx00(uint8_t ch);
     int32_t ActionIdx01(uint8_t ch);
     int32_t ActionIdx02(uint8_t ch);
@@ -87,6 +100,8 @@ private:
     int32_t ActionIdx07(uint8_t ch);
     int32_t ActionIdxSC(uint8_t ch);
     int32_t ActionIdxDC(uint8_t ch);
+
+    void RuleMOV();
 };
 
 #endif  //_Parser_h_

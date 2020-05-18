@@ -22,10 +22,11 @@
 #include "Parser.h"
 #include <iostream>
 #include "Decl.h"
+#include "Instruction.h"
 
 using namespace std;
 
-#define KEEP_GOING -1
+#define CONTINUE -1
 
 Parser::Parser() :
     m_state(0),
@@ -55,27 +56,40 @@ void Parser::parse(const char* fname)
     {
         m_state = ST_INITIAL;
         int32_t sr;
+        m_section = -1;
+        m_label   = -1;
 
         while (!m_reader.eof())
         {
             sr = scan();
             if (sr == TOK_SECTION)
             {
-                Token t = m_tokens.top();
-                cout << t.value << '\n';
+                m_section = getSection(m_tokens.top().value);
+                if (m_section == -1)
+                    cout << "Unknown section: " << m_tokens.top().value;
                 m_tokens.pop();
             }
             else if (sr == TOK_LABEL)
             {
-                Token t = m_tokens.top();
-                cout << t.value << '\n';
+                const Token& t = m_tokens.top();
+
+                // use position in buffer for its mapping.
+                m_labels[t.value] = m_instructions.size();
+
                 m_tokens.pop();
             }
             else if (sr == TOK_MNEMONIC)
             {
-                Token t = m_tokens.top();
-                cout << (int)t.op << '\n';
+                const Token &t = m_tokens.top();
                 m_tokens.pop();
+                switch (t.op)
+                {
+                case OP_MOV:
+                    RuleMOV();
+                    break;
+                default:
+                    break;
+                }
             }
             else if (sr == TOK_REGISTER)
             {
@@ -121,11 +135,72 @@ int32_t Parser::scan(void)
     return -1;
 }
 
+
+void Parser::RuleMOV()
+{
+    // The mnemonic has been parsed at this point,
+    // so figure out the rules.
+    
+    int32_t tok;
+    tok = scan();
+    if (tok != TOK_REGISTER)
+    {
+        cout << "Expected first argument to mov to be a register\n";
+        return;
+    }
+
+    const Token& reg = m_tokens.top();
+    m_tokens.pop();
+
+    Instruction ins = {};
+
+    ins.op   = OP_MOV;
+    ins.arg1 = reg.reg;
+    ins.flags |= IF_DREG;
+
+
+    tok = scan();
+
+    const Token& res = m_tokens.top();
+    m_tokens.pop();
+
+    if (tok == TOK_REGISTER)
+    {
+        ins.arg2 = res.reg;
+        ins.flags |= IF_SREG;
+    }
+    else if (tok == TOK_DIGIT)
+    {
+        ins.arg2 = res.ival;
+        ins.flags |= IF_SLIT;
+    }
+    else
+    {
+        cout << "Unknown second argument to mov.\n";
+        return;
+    }
+
+
+    ins.argc = 2;
+    ins.label = m_label;
+    m_instructions.push_back(ins);
+}
+
+
+int32_t Parser::getSection(const std::string& val)
+{
+    if (val == "data")
+        return SEC_DAT;
+    else if (val == "text")
+        return SEC_TXT;
+    return -1;
+}
+
 int32_t Parser::ActionIdx00(uint8_t ch)
 {
     // Append to the current buffer
     m_curString.push_back(ch);
-    return KEEP_GOING;
+    return CONTINUE;
 }
 
 int32_t Parser::ActionIdx01(uint8_t ch)
@@ -156,7 +231,7 @@ int32_t Parser::ActionIdx01(uint8_t ch)
         }
         return TOK_IDENTIFIER;
     }
-    return KEEP_GOING;
+    return CONTINUE;
 }
 
 int32_t Parser::ActionIdx02(uint8_t ch)
@@ -164,7 +239,7 @@ int32_t Parser::ActionIdx02(uint8_t ch)
     m_state = ST_READ_ID;
     clearState();
     m_curString.push_back(ch);
-    return KEEP_GOING;
+    return CONTINUE;
 }
 
 int32_t Parser::ActionIdx03(uint8_t ch)
@@ -183,7 +258,7 @@ int32_t Parser::ActionIdx05(uint8_t ch)
 {
     m_state = ST_INITIAL;
     clearState();
-    return KEEP_GOING;
+    return CONTINUE;
 }
 
 int32_t Parser::ActionIdx06(uint8_t ch)
@@ -191,7 +266,7 @@ int32_t Parser::ActionIdx06(uint8_t ch)
     m_state = ST_DIGIT;
     clearState();
     m_curString.push_back(ch);
-    return KEEP_GOING;
+    return CONTINUE;
 }
 
 int32_t Parser::ActionIdx07(uint8_t ch)
@@ -205,7 +280,7 @@ int32_t Parser::ActionIdxSC(uint8_t ch)
 {
     m_state = ST_SECTION;
     clearState();
-    return KEEP_GOING;
+    return CONTINUE;
 }
 
 int32_t Parser::ActionIdxDC(uint8_t ch)
