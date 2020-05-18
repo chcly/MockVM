@@ -7,9 +7,9 @@ set(SRC
     BlockReader.h
     Parser.cpp
     Parser.h
+    Instruction.h
     Decl.h
 
-    StateTable.inl
     Test.asm
 )
 

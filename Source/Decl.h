@@ -96,9 +96,6 @@ enum Register
 };
 
 
-
-typedef int StateTable[ST_MAX][CT_MAX];
-
 enum Actions
 {
     AC_IG = -3,  // ignore
@@ -117,31 +114,13 @@ enum Actions
 };
 
 
-const StateTable States = {
-//[a-z] [A-Z]  [0-9]   ' '    '\n'    ','    '.'    ':'    '''    '"'    '('    ')'    '['    ']'    '#'   \0
-{AC_02, AC_02, AC_06, AC_01, AC_05, AC_0E, AC_SC, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_01},  // ST_INITIAL
-{AC_00, AC_00, AC_00, AC_04, AC_01, AC_01, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_READ_ID
-{AC_0E, AC_0E, AC_00, AC_07, AC_07, AC_0E, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_DIGIT
-{AC_0E, AC_0E, AC_0E, AC_0E, AC_0L, AC_0E, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_EXIT
-{AC_0E, AC_0E, AC_0E, AC_0E, AC_0L, AC_0E, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_ERROR
-{AC_0E, AC_0E, AC_0E, AC_05, AC_05, AC_05, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_CONTINUE
-{AC_00, AC_0E, AC_0E, AC_DS, AC_DS, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_SECTION
-};
 
-typedef char Mnemonic[6];
-
+typedef char Keyword[6];
 struct KeywordMap
 {
-    Mnemonic      word;
+    Keyword       word;
     unsigned char op;
 };
-
-const KeywordMap MnemonicTable[] = {
-    {"mov\0", OP_MOV},
-    {"ret\0", OP_RET},
-};
-
-const size_t MnemonicTableSize = sizeof(MnemonicTable) / sizeof(Mnemonic);
 
 
 #endif // _Decl_h_

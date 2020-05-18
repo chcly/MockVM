@@ -1,6 +1,6 @@
 /*
 -------------------------------------------------------------------------------
-    Copyright (c) 20120 Charles Carley.
+    Copyright (c) 2020 Charles Carley.
 
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -31,34 +31,6 @@
 
 using namespace std;
 
-struct Instruction
-{
-    uint8_t  op, namelen;
-    uint32_t dst;
-    uint32_t src;
-    uint32_t location;
-    string   value;
-
-    Instruction() :
-        op(0), 
-        namelen(0), 
-        dst(0),
-        src(0),
-        location(0),
-        value()
-    {
-    }
-};
-
-
-struct Header
-{
-    char   magic[3];
-    size_t data;
-    size_t string;
-    size_t text;
-};
-
 void usage(void);
 
 int main(int argc, char **argv)
@@ -85,7 +57,6 @@ int main(int argc, char **argv)
     }
     return 0;
 }
-
 
 
 void usage(void)

@@ -43,12 +43,17 @@ class Parser
 public:
     typedef int32_t StateTable[ST_MAX][CT_MAX];
     typedef int32_t (Parser::*Action)(uint8_t ch);
+    
+    
 
     typedef std::stack<Token> TokenStack;
 
     const static Parser::Action Actions[];
     const static size_t         ActionCount;
     const static StateTable     States;
+    const static KeywordMap     KeywordTable[];
+    const static size_t         KeywordTableSize;
+
 
 private:
     BlockReader m_reader;

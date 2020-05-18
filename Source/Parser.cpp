@@ -145,12 +145,12 @@ int32_t Parser::ActionIdx01(uint8_t ch)
             }
         }
         size_t i = 0;
-        for (i = 0; i < MnemonicTableSize; ++i)
+        for (i = 0; i < KeywordTableSize; ++i)
         {
-            if (strncmp(MnemonicTable[i].word, m_curString.c_str(), 6) == 0)
+            if (strncmp(KeywordTable[i].word, m_curString.c_str(), 6) == 0)
             {
                 m_curString.clear();
-                m_op = MnemonicTable[i].op;
+                m_op = KeywordTable[i].op;
                 return TOK_MNEMONIC;
             }
         }
@@ -300,3 +300,12 @@ int32_t Parser::getType(uint8_t ct)
     }
     return rc;
 }
+
+
+const KeywordMap Parser::KeywordTable[] = {
+    {"mov\0", OP_MOV},
+    {"ret\0", OP_RET},
+};
+
+const size_t Parser::KeywordTableSize = 
+    sizeof(Parser::KeywordTable) / sizeof(KeywordMap);
