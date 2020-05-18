@@ -2,10 +2,9 @@
 
 
 set(SRC 
-    Scanner.h
-    Scanner.cpp
     Compiler.cpp
-    VM.cpp
+    StateTable.inl
+    Test.asm
 )
 
 
