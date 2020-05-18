@@ -50,11 +50,22 @@ int main(int argc, char **argv)
             files.push_back(argv[i]);
     }
 
+
+    // BinaryWriter w;
+
     for (string file : files)
     {
         Parser p;
         p.parse(file.c_str());
+
+        // w.mergeInstructions(p.getInstructions());
+        // w.mergeData(p.getDeclaredData());
+        // w.mergeConstants(p.getDeclaredGlobals());
     }
+
+    // w.writeHeader();
+    // w.writeSections();
+    // w.save();
     return 0;
 }
 

@@ -3,7 +3,7 @@
 
 .text
 main:
-    mov   x0, 17654876
+    mov   x0, 0
     mov   x1, 1
     mov   x2, 2
     mov   x3, 3
@@ -14,4 +14,3 @@ main:
     mov   x8, 8
     mov   x9, 9
     ret
-
