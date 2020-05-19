@@ -30,7 +30,7 @@
 
 #include "Instruction.h"
 #include "BlockReader.h"
-#include "Decl.h"
+#include "Declarations.h"
 
 struct Token
 {

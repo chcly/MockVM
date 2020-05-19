@@ -27,7 +27,7 @@
 #include "BlockReader.h"
 #include "BinaryWriter.h"
 #include "Parser.h"
-#include "Decl.h"
+#include "Declarations.h"
 
 
 using namespace std;

@@ -21,7 +21,6 @@
 */
 #include "Parser.h"
 #include <iostream>
-#include "Decl.h"
 #include "Instruction.h"
 
 using namespace std;

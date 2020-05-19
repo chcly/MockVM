@@ -138,4 +138,20 @@ struct KeywordMap
 };
 
 
+
+
+#define _RELITAVE_TIME_CHECK_BEGIN                                    \
+    {                                                                 \
+        chrono::high_resolution_clock::time_point begintick, endtick; \
+        begintick = chrono::high_resolution_clock().now();
+
+#define _RELITAVE_TIME_CHECK_END                                      \
+    endtick = chrono::high_resolution_clock().now();                  \
+    cout << __FUNCTION__ << " exec("                                  \
+         << fixed << setprecision(6)                                  \
+         << ((chrono::duration<double>(endtick - begintick).count())) \
+         << "s)"                                                      \
+         << endl;                                                     \
+    }
+
 #endif // _Decl_h_

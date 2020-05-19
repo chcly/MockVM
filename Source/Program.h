@@ -26,7 +26,7 @@
 #include <vector>
 #include <stack>
 #include "Instruction.h"
-#include "Decl.h"
+#include "Declarations.h"
 #include "BlockReader.h"
 
 

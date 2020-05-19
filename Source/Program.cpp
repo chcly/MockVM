@@ -28,7 +28,7 @@
 #include "Instruction.h"
 #include "Program.h"
 #include "BlockReader.h"
-#include "Decl.h"
+#include "Declarations.h"
 
 using namespace std;
 
@@ -101,10 +101,9 @@ int Program::launch(void)
     if (!m_reader)
         return -1;
 
-    int32_t tinst = m_ins.size();
+    size_t tinst = m_ins.size();
 
     ExecInstruction *basePtr = m_ins.data();
-
     m_stack.push(0);
     m_curinst = 0;
     while (m_curinst < tinst)

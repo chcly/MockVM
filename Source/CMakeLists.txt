@@ -5,7 +5,7 @@ add_executable(tcom
     BinaryWriter.h
     Parser.h
     Instruction.h
-    Decl.h
+    Declarations.h
     BlockReader.cpp
     BinaryWriter.cpp
     Parser.cpp
@@ -14,25 +14,22 @@ add_executable(tcom
 
 add_executable(tvm 
     BlockReader.h
-    BinaryReader.h
     Program.h
     Instruction.h
-    Decl.h
+    Declarations.h
 
     BlockReader.cpp
-    BinaryReader.cpp
     Program.cpp
     VM.cpp
 )
 
 
-add_executable(timechk
-   TimeCheck.cpp
-)
+#add_executable(timechk
+#   TimeCheck.cpp
+#)
 
 
 set(INSTALL_PATH CACHE STRING "")
-
 if (NOT INSTALL_PATH STREQUAL "")
     message(STATUS "INSTALL ==> ${INSTALL_PATH}")
     add_custom_command(TARGET tcom 
