@@ -44,25 +44,30 @@ enum InstructionFlags
     IF_SREG = (1 << 2),
     IF_SLIT = (1 << 3),
     IF_ADDR = (1 << 4),
+    IF_MAX  = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR
 };
+
+
 
 
 struct TVMHeader
 {
-    uint32_t code;
-    uint32_t flags;
-    uint64_t dat;
-    uint64_t str;
-    uint64_t txt;
+    uint16_t code;   // 2
+    uint8_t  flags;  // 1
+    uint8_t  txt;    // 1
+    uint32_t dat;    // 4
+    uint64_t str;    // 8 -- 16
 };
 
 struct TVMSection
 {
-    uint32_t code;
-    uint32_t flags;
-    uint64_t size;
-    uint16_t start;
+    uint16_t code;  // 2
+    uint16_t flags; // 2
+    uint32_t pad;   // 4 
+    uint32_t size;  // 4
+    uint32_t start; // 4 -- 16
 };
+
 
 struct Instruction
 {
@@ -75,5 +80,21 @@ struct Instruction
     uint64_t    label;
     std::string labelName;
 };
+
+
+
+struct ExecInstruction
+{
+    uint8_t     op;
+    uint8_t     flags;
+    uint8_t     argc;
+    uint64_t    arg1;
+    uint64_t    arg2;
+    uint64_t    arg3;
+};
+
+
+
+
 
 #endif  // _Instruction_h_

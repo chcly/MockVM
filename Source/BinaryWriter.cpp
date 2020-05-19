@@ -62,7 +62,7 @@ void BinaryWriter::write(void* v, size_t size)
 {
     if (m_fp)
     {
-        fwrite(v, 1, size, (FILE*)m_fp);
+        fwrite(v, size, 1, (FILE*)m_fp);
         m_loc = ftell((FILE*)m_fp);
     }
 }
@@ -110,10 +110,11 @@ size_t BinaryWriter::computeInstructionSize(const Instruction& ins)
     return size;
 }
 
-void BinaryWriter::mapInstructions(void)
+size_t BinaryWriter::mapInstructions(void)
 {
     uint64_t label = -1;
-    uint64_t size = 0;
+    uint64_t size  = 0;
+    int64_t  insp   = 0;
 
     m_addrMap.clear();
     for (Instruction ins : m_ins)
@@ -121,10 +122,12 @@ void BinaryWriter::mapInstructions(void)
         if (ins.label != label)
         {
             label = ins.label;
-            m_addrMap[label] = size;
+            m_addrMap[label] = insp;
         }
         size += computeInstructionSize(ins);
+        ++insp;
     }
+    return size;
 }
 
 void BinaryWriter::writeHeader()
@@ -132,13 +135,13 @@ void BinaryWriter::writeHeader()
     if (!m_fp)
         return;
 
-
     TVMHeader header = {};
-    header.code   = TYPE_ID4('T', 'V', 'M', '\0');
-    header.txt = sizeof(TVMHeader);  // offsets to data
-    header.dat = 0;
-    header.str = 0;
 
+    header.code      = TYPE_ID2('T', 'V');
+    header.flags     = 0;
+    header.txt       = sizeof(TVMHeader);  // offsets to data
+    header.dat       = 0;
+    header.str       = 0;
     write(&header, sizeof(TVMHeader));
 }
 
@@ -148,12 +151,10 @@ void BinaryWriter::writeSections()
         return;
 
     TVMSection sec = {};
-    sec.code = TYPE_ID2('C', 'S');
-    sec.size = 0;
-    sec.start  = sizeof(TVMHeader) + sizeof(TVMSection);
 
-    mapInstructions();
-
+    sec.code  = TYPE_ID2('C', 'S');
+    sec.size  = mapInstructions();
+    sec.start = m_loc + sizeof(TVMSection);
     write(&sec, sizeof(TVMHeader));
     for (Instruction ins : m_ins)
     {
@@ -170,7 +171,7 @@ void BinaryWriter::writeSections()
 
                 if (fidx != m_addrMap.end())
                 {
-                    ins.arg1 = sec.start + fidx->second;
+                    ins.arg1 = fidx->second;
                     ins.flags |= IF_ADDR;
                 }
                 else
@@ -179,9 +180,6 @@ void BinaryWriter::writeSections()
             else
                 cout << "Unable to find index for " << ins.labelName << '\n';
         }
-
-
-        // aligned by 4 bytes
         write8(ins.op);
         write8(ins.argc);
         write8(ins.flags);
@@ -191,5 +189,7 @@ void BinaryWriter::writeSections()
             write64(ins.arg1);
         if (ins.argc > 1)
             write64(ins.arg2);
+        if (ins.argc > 2)
+            write64(ins.arg3);
     }
 }

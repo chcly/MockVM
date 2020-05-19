@@ -1,11 +1,16 @@
 main:
     mov     x0, 0
-    mov     x1, 100
 top:
-    cmp     x0, x1
+    cmp     x0, 10
     jeq     done
-    prg     x0
     inc     x0
+    mov     x1, 5
+    cmp     x0, x1
+    jgt     px
+    prgi
+    jmp     top
+px:
+    prg     x0
     jmp     top
 done:
     ret

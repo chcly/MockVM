@@ -25,6 +25,12 @@ add_executable(tvm
     VM.cpp
 )
 
+
+add_executable(timechk
+   TimeCheck.cpp
+)
+
+
 set(INSTALL_PATH CACHE STRING "")
 
 if (NOT INSTALL_PATH STREQUAL "")

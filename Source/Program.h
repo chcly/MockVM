@@ -30,18 +30,6 @@
 #include "BlockReader.h"
 
 
-
-#define DeclareOperation(op)\
-    int32_t handle##op##(uint8_t op, uint8_t argc, uint8_t flags);
-
-#define DefineOperation(op) \
-    int32_t Program::handle##op##(uint8_t op, uint8_t argc, uint8_t flags)
-
-
-#define OperationTable(op) &Program::handle##op
-
-
-
 typedef union Register
 {
     uint8_t  a[8];
@@ -50,14 +38,21 @@ typedef union Register
     uint64_t x;
 } Register;
 
+enum ProgramFlags
+{
+    PF_E = 1 << 0,
+    PF_G = 1 << 1,
+    PF_L = 1 << 2,
+};
+
 
 class Program
 {
 public:
-    typedef std::vector<Instruction> Instructions;
-    typedef Register                 Registers[10];
+    typedef std::vector<ExecInstruction> Instructions;
+    typedef Register                     Registers[10];
 
-    typedef int32_t (Program::*Operation)(uint8_t op, uint8_t argc, uint8_t flags);
+    typedef void (Program::*Operation)(ExecInstruction& inst);
     typedef Operation OpCodes[OP_MAX];
 
 private:
@@ -66,6 +61,8 @@ private:
     TVMHeader    m_header;
     Registers    m_regi;
     uint32_t     m_flags;
+    int32_t      m_return;
+    uint64_t     m_curinst;
 
     std::stack<int32_t> m_stack;
 
@@ -75,21 +72,20 @@ private:
 
     void dumpRegi(void);
 
-
-
-    DeclareOperation(OP_RET);
-    DeclareOperation(OP_MOV);
-    DeclareOperation(OP_INC);
-    DeclareOperation(OP_DEC);
-    DeclareOperation(OP_CMP);
-    DeclareOperation(OP_JMP);
-    DeclareOperation(OP_JEQ);
-    DeclareOperation(OP_JNE);
-    DeclareOperation(OP_JLE);
-    DeclareOperation(OP_JGE);
-    DeclareOperation(OP_JGT);
-    DeclareOperation(OP_JLT);
-    DeclareOperation(OP_PRG);
+    void handle_OP_RET(ExecInstruction& inst);
+    void handle_OP_MOV(ExecInstruction& inst);
+    void handle_OP_INC(ExecInstruction& inst);
+    void handle_OP_DEC(ExecInstruction& inst);
+    void handle_OP_CMP(ExecInstruction& inst);
+    void handle_OP_JMP(ExecInstruction& inst);
+    void handle_OP_JEQ(ExecInstruction& inst);
+    void handle_OP_JNE(ExecInstruction& inst);
+    void handle_OP_JLE(ExecInstruction& inst);
+    void handle_OP_JGE(ExecInstruction& inst);
+    void handle_OP_JLT(ExecInstruction& inst);
+    void handle_OP_JGT(ExecInstruction& inst);
+    void handle_OP_PRG(ExecInstruction& inst);
+    void handle_OP_PRGI(ExecInstruction& inst);
 
 public:
     Program();

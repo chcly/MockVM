@@ -24,9 +24,24 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <chrono>
 #include "BinaryReader.h"
 #include "Program.h"
 
+
+#define _RELITAVE_TIME_CHECK_BEGIN                                    \
+    {                                                                 \
+        chrono::high_resolution_clock::time_point begintick, endtick; \
+        begintick = chrono::high_resolution_clock().now();
+
+#define _RELITAVE_TIME_CHECK_END                                      \
+    endtick = chrono::high_resolution_clock().now();                  \
+    cout << __FUNCTION__ << " exec("                                  \
+         << fixed << setprecision(6)                                  \
+         << ((chrono::duration<double>(endtick - begintick).count())) \
+         << "s)"                                                      \
+         << endl;                                                     \
+    }
 
 using namespace std;
 
@@ -53,7 +68,12 @@ int main(int argc, char **argv)
     Program prog;
     if (!files.empty())
         prog.load(files.back().c_str());
-    return prog.launch();
+    
+    int rc;
+    _RELITAVE_TIME_CHECK_BEGIN
+    rc = prog.launch();
+    _RELITAVE_TIME_CHECK_END;
+    return rc;
 }
 
 

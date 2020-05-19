@@ -78,11 +78,9 @@ void BlockReader::read(void *blk, size_t nr)
 {
     if (m_fp)
     {
-        size_t   i  = 0;
+        size_t i = 0;
         while (i < nr && i < m_fileLen)
-        {
             ((uint8_t *)blk)[i++] = next();
-        }
     }   
 }
     
@@ -112,9 +110,7 @@ void BlockReader::read()
     {
         size_t br = fread(m_block, 1, BLOCKSIZE, (FILE *)m_fp);
         if (br >= 0 && br <= BLOCKSIZE)
-        {
             m_block[br] = 0;
-        }
     }
 }
 

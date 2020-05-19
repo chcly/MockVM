@@ -590,7 +590,7 @@ const KeywordMap Parser::KeywordTable[] = {
     {"jgt\0", OP_JGT, 1, AT_ADDR, AT_NULL, AT_NULL},
     {"jle\0", OP_JLE, 1, AT_ADDR, AT_NULL, AT_NULL},
     {"jge\0", OP_JGE, 1, AT_ADDR, AT_NULL, AT_NULL},
-    {"trace\0", OP_TRACE, 0, AT_NULL, AT_NULL, AT_NULL},
+    {"prgi\0", OP_PRGI, 0, AT_NULL, AT_NULL, AT_NULL},
     {"prg\0", OP_PRG, 1, AT_REGLIT, AT_NULL, AT_NULL},
 };
 

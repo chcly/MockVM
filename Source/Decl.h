@@ -79,21 +79,23 @@ enum ParserState
 
 enum Opcode
 {
-    OP_RET = 1,
-    OP_MOV,    // mov r(n), src
-    OP_CALL,   // call address
-    OP_INC,    // inc, r(n)
-    OP_DEC,    // dec, r(n)
-    OP_CMP,    // cmp, r(n), src
-    OP_JMP,    // jump 
-    OP_JEQ,    // jump ==
-    OP_JNE,    // jump !
-    OP_JLT,    // jump <
-    OP_JGT,    // jump >
-    OP_JLE,    // jump <=
-    OP_JGE,    // jump >=
-    OP_PRG,    // trace register
-    OP_TRACE,  // trace <- debugging
+    OP_BEG,
+    OP_RET,
+    OP_MOV,   // mov r(n), src
+    OP_CALL,  // call address
+    OP_INC,   // inc, r(n)
+    OP_DEC,   // dec, r(n)
+    OP_CMP,   // cmp, r(n), src
+    OP_JMP,   // jump
+    OP_JEQ,   // jump ==
+    OP_JNE,   // jump !
+    OP_JLT,   // jump <
+    OP_JGT,   // jump >
+    OP_JLE,   // jump <=
+    OP_JGE,   // jump >=
+              // ---- debugging ----
+    OP_PRG,   // print register
+    OP_PRGI,  // print all registers
     OP_MAX
 };
 

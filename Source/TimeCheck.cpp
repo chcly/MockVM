@@ -19,48 +19,35 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#ifndef _BinaryWriter_h_
-#define _BinaryWriter_h_
+#include <chrono>
+#include <iostream>
+#include <iomanip>
 
-#include <stdint.h>
-#include <vector>
-#include <unordered_map>
-#include "Instruction.h"
+#define _RELITAVE_TIME_CHECK_BEGIN                                    \
+    {                                                                 \
+        chrono::high_resolution_clock::time_point begintick, endtick; \
+        begintick = chrono::high_resolution_clock().now();
 
-class BinaryWriter
+#define _RELITAVE_TIME_CHECK_END                                      \
+    endtick = chrono::high_resolution_clock().now();                  \
+    cout << __FUNCTION__ << " exec("                                  \
+         << fixed << setprecision(6)                                  \
+         << ((chrono::duration<double>(endtick - begintick).count())) \
+         << "s)"                                                      \
+         << endl;                                                     \
+    }
+
+using namespace std;
+
+
+
+int main(int argc, char **argv)
 {
-public:
-    typedef std::vector<Instruction>                Instructions;
-    typedef std::unordered_map<int64_t, int64_t>    IndexToPosition;
-    typedef std::unordered_map<std::string, size_t> LabelMap; 
+    _RELITAVE_TIME_CHECK_BEGIN
+        int i = 0;
+    while (i < 1000000)
+            i++;
+    _RELITAVE_TIME_CHECK_END
+    return 0;
+}
 
-private:
-    void*            m_fp;
-    long             m_loc;
-    Instructions     m_ins;
-    IndexToPosition  m_addrMap;
-    LabelMap         m_labels;
-
-    void write(void* v, size_t size);
-    void write8(uint8_t v);
-    void write16(uint16_t v);
-    void write32(uint32_t v);
-    void write64(uint64_t v);
-
-    size_t computeInstructionSize(const Instruction& ins);
-    size_t mapInstructions(void);
-
-public:
-
-    BinaryWriter();
-    ~BinaryWriter();
-
-    void mergeInstructions(const Instructions& insl);
-    void mergeLabels(const LabelMap& map);
-
-    void open(const char* fname);
-    void writeHeader();
-    void writeSections();
-};
-
-#endif  //_BinaryWriter_h_

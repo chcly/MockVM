@@ -32,10 +32,16 @@
 
 using namespace std;
 
+uint8_t restrict8(const uint8_t &inp, const uint8_t &mi, const uint8_t& ma)
+{
+    return inp > ma ? ma : inp < mi ? mi : inp;
+}
+
 
 Program::Program() :
     m_reader(0),
-    m_flags(0)
+    m_flags(0),
+    m_return(0)
 {
     memset(m_regi, 0, sizeof(Registers));
 }
@@ -51,9 +57,42 @@ void Program::load(const char *fname)
         delete m_reader;
 
     m_reader = new BlockReader(fname);
-
     if (!m_reader->eof())
         m_reader->read(&m_header, sizeof(TVMHeader));
+
+    m_reader->moveTo(m_header.txt);
+    TVMSection code;
+    m_reader->read(&code, sizeof(TVMSection));
+
+
+    uint8_t ops[4];
+    size_t  i = 0;
+    while (i < code.size)
+    {
+        if (m_reader->eof())
+            break;
+        m_reader->read(ops, 4);
+        i += 4;
+        if (ops[0]>=0 && ops[0] < OP_MAX)
+        {
+            ExecInstruction exec = {};
+
+            exec.op    = restrict8(ops[0], OP_RET, OP_MAX - 1);
+            exec.argc  = restrict8(ops[1], 0, 3);
+            exec.flags = restrict8(ops[2], 0, IF_MAX);
+
+            if (exec.argc > 0)
+                m_reader->read(&exec.arg1, 8);
+            if (exec.argc > 1)
+                m_reader->read(&exec.arg2, 8);
+            if (exec.argc > 2)
+                m_reader->read(&exec.arg3, 8);
+
+            i += (8 * (size_t)exec.argc);
+
+            m_ins.push_back(exec);
+        }
+    }
 }
 
 
@@ -62,177 +101,168 @@ int Program::launch(void)
     if (!m_reader)
         return -1;
 
+    int32_t tinst = m_ins.size();
 
-    m_reader->moveTo(m_header.txt + sizeof(TVMSection));
-    
-    int32_t rc = 0;
-    uint8_t ops[4];
+    ExecInstruction *basePtr = m_ins.data();
 
-    m_stack.push(rc);
-
-    while (!m_stack.empty())
+    m_stack.push(0);
+    m_curinst = 0;
+    while (m_curinst < tinst)
     {
-        if (m_reader->eof())
-            break;
-
-
-        m_reader->read(ops, 4);
-        if (ops[0] >=0 && ops[0] < OP_MAX)
-        {
-            if (OPCodeTable[ops[0]] != nullptr)
-                rc = (this->*OPCodeTable[ops[0]])(ops[0], ops[1], ops[2]);
-        }
+        ExecInstruction &inst = basePtr[m_curinst++];
+        if (OPCodeTable[inst.op] != nullptr)
+            (this->*OPCodeTable[inst.op])(inst);
     }
-    return rc;
+    return m_return;
 }
 
 
-
-DefineOperation(OP_RET)
+void Program::handle_OP_RET(ExecInstruction& inst)
 {
-    if (!m_stack.empty())
-        m_stack.pop();
-    return m_regi[0].x;
+    m_stack.pop();
+    if (m_stack.empty())
+        m_curinst = m_ins.size() + 1;
+    m_return = (int32_t)m_regi[0].x;
 }
 
-
-DefineOperation(OP_MOV)
+void Program::handle_OP_MOV(ExecInstruction& inst)
 {
-    uint64_t reg, dst;
-    m_reader->read(&reg, 8);
-    m_reader->read(&dst, 8);
-
-    if (reg <= 9)
+    if (inst.arg1 <= 9)
     {
-        Register &r = m_regi[reg];
-        if (flags & IF_SREG)
+        if (inst.flags & IF_SREG)
         {
-            if (dst <= 9)
-                r.x = m_regi[dst].x;
+            if (inst.arg2 <= 9)
+                m_regi[inst.arg1].x = m_regi[inst.arg2].x;
         }
         else
-            r.x = dst;
+            m_regi[inst.arg1].x = inst.arg2;
     }
-    return 0;
 }
 
-DefineOperation(OP_INC) 
+void Program::handle_OP_INC(ExecInstruction& inst)
 {
-    uint64_t reg;
-    m_reader->read(&reg, 8);
-    if (reg <= 9)
+    if (inst.flags & IF_DREG)
     {
-        Register &r = m_regi[reg];
-        r.x += 1;
+        if (inst.arg1 <= 9)
+            m_regi[inst.arg1].x += 1; 
     }
-    return 0;
 }
 
 
-DefineOperation(OP_DEC)
+void Program::handle_OP_DEC(ExecInstruction& inst)
 {
-    uint64_t reg;
-    m_reader->read(&reg, 8);
-    if (reg <= 9)
+    if (inst.flags & IF_DREG)
     {
-        Register &r = m_regi[reg];
-        r.x -= 1;
+        if (inst.arg1 <= 9)
+            m_regi[inst.arg1].x -= 1;
     }
-    return 0;
 }
 
-DefineOperation(OP_CMP)
+void Program::handle_OP_CMP(ExecInstruction& inst)
 {
     uint64_t a, b;
-    m_reader->read(&a, 8);
-    m_reader->read(&b, 8);
+    a = inst.arg1;
+    b = inst.arg2;
 
-    if (flags & IF_DREG && a <= 9)
+    if (inst.flags & IF_DREG && a <= 9)
         a = m_regi[a].x;
-    if (flags & IF_SREG && b <= 9)
+    if (inst.flags & IF_SREG && b <= 9)
         b = m_regi[b].x;
 
-    if (a - b == 0)
-        m_flags |= 1;
-    return 0;
+    m_flags = 0;
+    if (a == b)
+        m_flags |= PF_E;
+    else if (a < b)
+        m_flags |= PF_L;
+    else if (a > b)
+        m_flags |= PF_G;
 }
 
-DefineOperation(OP_JMP)
+void Program::handle_OP_JMP(ExecInstruction& inst)
 {
-    uint64_t a;
-    m_reader->read(&a, 8);
-    m_reader->moveTo(a);
-    return 0;
+    m_curinst = inst.arg1;
 }
 
-
-DefineOperation(OP_JEQ)
+void Program::handle_OP_JEQ(ExecInstruction& inst)
 {
-    if (m_flags & 1)
+    if (m_flags & PF_E)
     {
-        m_flags &= ~1;
-        uint64_t a;
-        m_reader->read(&a, 8);
-        m_reader->moveTo(a);
+        m_flags &= ~PF_E;
+        m_curinst = inst.arg1;
     }
-    return 0;
 }
 
-
-DefineOperation(OP_JNE)
+void Program::handle_OP_JNE(ExecInstruction& inst)
 {
-    if (!(m_flags & 1))
+    if (!(m_flags & PF_E))
     {
-        m_flags &= ~1;
-        uint64_t a;
-        m_reader->read(&a, 8);
-        m_reader->moveTo(a);
+        m_flags &= ~PF_E;
+        m_curinst = inst.arg1;
     }
-    return 0;
 }
 
 
-DefineOperation(OP_JLT)
+void Program::handle_OP_JLE(ExecInstruction& inst)
 {
-    return 0;
+    if (m_flags & PF_E)
+    {
+        m_flags &= ~PF_E;
+        m_curinst = inst.arg1;
+    }
+    else if (m_flags & PF_L)
+    {
+        m_flags &= ~PF_L;
+        m_curinst = inst.arg1;
+    }
 }
 
 
-DefineOperation(OP_JGT)
+void Program::handle_OP_JGE(ExecInstruction& inst)
 {
-    return 0;
+    if (m_flags & PF_E)
+    {
+        m_flags &= ~PF_E;
+        m_curinst = inst.arg1;
+    }
+    else if (m_flags & PF_G)
+    {
+        m_flags &= ~PF_G;
+        m_curinst = inst.arg1;
+    }
 }
 
 
-DefineOperation(OP_JLE)
+void Program::handle_OP_JLT(ExecInstruction& inst)
 {
-    return 0;
+    if (m_flags & PF_L)
+    {
+        m_flags &= ~PF_L;
+        m_curinst = inst.arg1;
+    }
 }
 
-
-DefineOperation(OP_JGE)
+void Program::handle_OP_JGT(ExecInstruction& inst)
 {
-    return 0;
+    if (m_flags & PF_G)
+    {
+        m_flags &= ~PF_G;
+        m_curinst = inst.arg1;
+    }
 }
 
 
-DefineOperation(OP_PRG)
+void Program::handle_OP_PRG(ExecInstruction& inst)
 {
-    uint64_t a;
-    m_reader->read(&a, 8);
-    if (flags & IF_DREG && a <= 9)
-        a = m_regi[a].x;
-    cout << a << '\n';
-    return 0;
+    if (inst.flags & IF_DREG && inst.arg1 <= 9)
+        cout << m_regi[inst.arg1].x << '\n';
+    else
+        cout << inst.arg1 << '\n';
 }
 
-
-
-void Program::dumpRegi(void)
+void Program::handle_OP_PRGI(ExecInstruction& inst)
 {
     for (int i = 0; i < 10; ++i)
     {
-
         if (m_regi[i].x != 0)
         {
             cout << setw(4) << ' ' << 'x' << i << ' ';
@@ -258,19 +288,19 @@ void Program::dumpRegi(void)
 
 const Program::Operation Program::OPCodeTable[] = {
     nullptr,
-    OperationTable(OP_RET),
-    OperationTable(OP_MOV),
+    &Program::handle_OP_RET,
+    &Program::handle_OP_MOV,
     nullptr,  //OperationTable(OP_CALL),
-    OperationTable(OP_INC),
-    OperationTable(OP_DEC),
-    OperationTable(OP_CMP),
-    OperationTable(OP_JMP),
-    OperationTable(OP_JEQ),
-    OperationTable(OP_JNE),
-    OperationTable(OP_JLT),
-    OperationTable(OP_JGT),
-    OperationTable(OP_JLE),
-    OperationTable(OP_JGE),
-    OperationTable(OP_PRG),
-    nullptr,  // OP_TRACE
+    &Program::handle_OP_INC,
+    &Program::handle_OP_DEC,
+    &Program::handle_OP_CMP,
+    &Program::handle_OP_JMP,
+    &Program::handle_OP_JEQ,
+    &Program::handle_OP_JNE,
+    &Program::handle_OP_JLT,
+    &Program::handle_OP_JGT,
+    &Program::handle_OP_JLE,
+    &Program::handle_OP_JGE,
+    &Program::handle_OP_PRG,
+    &Program::handle_OP_PRGI,
 };

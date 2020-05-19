@@ -28,7 +28,7 @@
 class BlockReader
 {
 public:
-    static const size_t BLOCKSIZE = 2048;
+    static const size_t BLOCKSIZE = 1024;
     typedef uint8_t     Block[BLOCKSIZE + 1];
 
 private:
