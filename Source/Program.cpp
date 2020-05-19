@@ -62,8 +62,7 @@ int Program::launch(void)
         return -1;
 
 
-    m_reader->moveto(m_header.txt + sizeof(Section));
-
+    m_reader->moveTo(m_header.txt + sizeof(Section));
     std::stack<int> m_stack;
 
     int rc = 0;
@@ -73,6 +72,7 @@ int Program::launch(void)
     {
         if (m_reader->eof())
             break;
+
 
         uint8_t ops[4];
         m_reader->read(ops, 4);
@@ -88,7 +88,6 @@ int Program::launch(void)
             if (reg <= 9)
             {
                 Register &r = m_regi[reg];
-
                 if (ops[2] & IF_SREG)
                 {
                     if (dst <= 9)
@@ -98,11 +97,34 @@ int Program::launch(void)
                     r.x = dst;
             }
         } break;
+        case OP_INC:
+        {
+            uint64_t reg;
+            m_reader->read(&reg, 8);
+
+            if (reg <= 9)
+            {
+                Register &r = m_regi[reg];
+                r.x += 1;
+            }
+        }
+        break;
+        case OP_DEC:
+        {
+            uint64_t reg;
+            m_reader->read(&reg, 8);
+            if (reg <= 9)
+            {
+                Register &r = m_regi[reg];
+                r.x -= 1;
+            }
+        }
+        break;
         case OP_TRACE:
             dumpRegi();
             break;
         case OP_RET:
-            rc = m_regi[0].x;
+            rc = (int)m_regi[0].x;
             m_stack.pop();
             break;
         }
@@ -110,10 +132,26 @@ int Program::launch(void)
     return rc;
 }
 
-
 void Program::dumpRegi(void)
 {
-    for (int i=0; i<10; ++i)
-        cout << setfill(' ') << setw(4) << ' ' << 'x' << i << ' '
-              << "0x"<<  setw(16) << setfill('0') << hex << m_regi[i].x << '\n';
+    for (int i = 0; i < 10; ++i)
+    {
+
+        cout << setw(4) << ' ' << 'x' << i << ' ';
+        
+        cout << setw(22);
+        cout << m_regi[i].x << setw(4) << ' ';
+        cout << setfill('0');
+        cout << hex;
+        cout << setw(2) << (int)m_regi[i].a[7] << ' ';
+        cout << setw(2) << (int)m_regi[i].a[6] << ' ';
+        cout << setw(2) << (int)m_regi[i].a[5] << ' ';
+        cout << setw(2) << (int)m_regi[i].a[4] << ' ';
+        cout << setw(2) << (int)m_regi[i].a[3] << ' ';
+        cout << setw(2) << (int)m_regi[i].a[2] << ' ';
+        cout << setw(2) << (int)m_regi[i].a[1] << ' ';
+        cout << setw(2) << (int)m_regi[i].a[0] << '\n';
+        cout << dec;
+        cout << setfill(' ');
+    }
 }

@@ -19,6 +19,10 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include "BlockReader.h"
@@ -57,7 +61,6 @@ uint8_t BlockReader::next(void)
         read();
 
     uint8_t rc = 0;
-
     if (m_loc < m_fileLen)
         rc = m_block[m_loc % BLOCKSIZE];
     m_loc++;
@@ -67,29 +70,30 @@ uint8_t BlockReader::next(void)
 
 void BlockReader::read(void *blk, size_t nr)
 {
-    if (!m_fp)
-        return;
-
-    char *cp =(char*) blk;
-
-    for (size_t i = 0; i < nr && i < m_fileLen; ++i)
-        cp[i] = (char)next();
+    if (m_fp)
+    {
+        size_t   i  = 0;
+        while (i < nr && i < m_fileLen)
+            ((uint8_t *)blk)[i++] = next();
+    }   
 }
+    
+ 
 
 void BlockReader::offset(size_t nr)
 {
     if (m_fp)
     {
-        fseek((FILE *)m_fp, nr, SEEK_CUR);
+        fseek((FILE *)m_fp, (long)nr, SEEK_CUR);
         m_loc += nr;
     }
 }
 
-void BlockReader::moveto(size_t loc)
+void BlockReader::moveTo(size_t loc)
 {
     if (m_fp && loc < m_fileLen)
     {
-        fseek((FILE *)m_fp, loc, SEEK_SET);
+        fseek((FILE *)m_fp, (long)loc, SEEK_SET);
         m_loc = loc;
     }
 }

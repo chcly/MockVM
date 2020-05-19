@@ -90,6 +90,12 @@ void Parser::parse(const char* fname)
                 case OP_RET:
                     RuleRET();
                     break;
+                case OP_INC:
+                    RuleINC();
+                    break;
+                case OP_DEC:
+                    RuleDEC();
+                    break;
                 case OP_TRACE:
                     RuleTRACE();
                     break;
@@ -212,6 +218,54 @@ void Parser::RuleTRACE(void)
 }
 
 
+
+void Parser::RuleINC(void)
+{
+    Instruction ins = {};
+    ins.op          = OP_INC;
+    ins.argc        = 1;
+    ins.label       = m_label;
+    
+    int32_t tok;
+    tok = scan();
+    if (tok != TOK_REGISTER)
+    {
+        cout << "Expected first argument to be a register\n";
+        return;
+    }
+
+    const Token& reg = m_tokens.top();
+    m_tokens.pop();
+    ins.flags |= IF_DREG;
+    ins.arg1 = reg.reg;
+
+    m_instructions.push_back(ins);
+}
+
+void Parser::RuleDEC(void)
+{
+    Instruction ins = {};
+    ins.op          = OP_DEC;
+    ins.argc        = 1;
+    ins.label       = m_label;
+
+    int32_t tok;
+    tok = scan();
+    if (tok != TOK_REGISTER)
+    {
+        cout << "Expected first argument to be a register\n";
+        return;
+    }
+
+    const Token& reg = m_tokens.top();
+    m_tokens.pop();
+    ins.flags |= IF_DREG;
+    ins.arg1 = reg.reg;
+
+    m_instructions.push_back(ins);
+}
+
+
 int32_t Parser::getSection(const std::string& val)
 {
     if (val == "data")
@@ -249,6 +303,7 @@ int32_t Parser::ActionIdx01(uint8_t ch)
         {
             if (strncmp(KeywordTable[i].word, m_curString.c_str(), 6) == 0)
             {
+                m_state = ST_INITIAL;
                 m_curString.clear();
                 m_op = KeywordTable[i].op;
                 return TOK_MNEMONIC;
@@ -333,7 +388,7 @@ const size_t Parser::ActionCount = sizeof(Actions) / sizeof(Actions[0]);
 const Parser::StateTable Parser::States = {
     //[a-z] [A-Z]  [0-9]   ' '    '\n'    ','    '.'    ':'    '''    '"'    '('    ')'    '['    ']'    '#'   \0
     {AC_02, AC_02, AC_06, AC_01, AC_05, AC_0E, AC_SC, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_01},  // ST_INITIAL
-    {AC_00, AC_00, AC_00, AC_04, AC_01, AC_01, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_READ_ID
+    {AC_00, AC_00, AC_00, AC_01, AC_01, AC_01, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_01},  // ST_READ_ID
     {AC_0E, AC_0E, AC_00, AC_07, AC_07, AC_0E, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_DIGIT
     {AC_0E, AC_0E, AC_0E, AC_0E, AC_0L, AC_0E, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_EXIT
     {AC_0E, AC_0E, AC_0E, AC_0E, AC_0L, AC_0E, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_ERROR
@@ -405,6 +460,8 @@ int32_t Parser::getType(uint8_t ct)
 const KeywordMap Parser::KeywordTable[] = {
     {"mov\0", OP_MOV},
     {"ret\0", OP_RET},
+    {"inc\0", OP_INC},
+    {"dec\0", OP_DEC},
     {"trace\0", OP_TRACE},
 };
 

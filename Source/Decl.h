@@ -76,10 +76,12 @@ enum ParserState
 
 enum Opcode
 {
-    OP_RET  = 0x90,
-    OP_MOV  = 0x0F,  // mov dst, src
-    OP_CALL = 0x10,
-    OP_TRACE,
+    OP_RET  = 0xA0,
+    OP_MOV,     // mov r(n), src
+    OP_CALL,    // call address
+    OP_INC,     // inc, r(n)
+    OP_DEC,     // dec, r(n)
+    OP_TRACE,   // trace <- debugging
 };
 
 enum RegisterCode

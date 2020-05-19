@@ -103,6 +103,8 @@ private:
 
     void RuleMOV(void);
     void RuleRET(void);
+    void RuleINC(void);
+    void RuleDEC(void);
     void RuleTRACE(void);
 };
 
