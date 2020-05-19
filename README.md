@@ -1,3 +1,5 @@
 # ToyVM
 
-Is what the name sugguests. 
+Is what the name suggests.
+
+ 
