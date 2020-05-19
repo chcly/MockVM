@@ -34,7 +34,8 @@ using namespace std;
 
 
 Program::Program() :
-    m_reader(0)
+    m_reader(0),
+    m_flags(0)
 {
     memset(m_regi, 0, sizeof(Registers));
 }
@@ -191,21 +192,24 @@ void Program::dumpRegi(void)
     for (int i = 0; i < 10; ++i)
     {
 
-        cout << setw(4) << ' ' << 'x' << i << ' ';
-        
-        cout << setw(22);
-        cout << m_regi[i].x << setw(4) << ' ';
-        cout << setfill('0');
-        cout << hex;
-        cout << setw(2) << (int)m_regi[i].a[7] << ' ';
-        cout << setw(2) << (int)m_regi[i].a[6] << ' ';
-        cout << setw(2) << (int)m_regi[i].a[5] << ' ';
-        cout << setw(2) << (int)m_regi[i].a[4] << ' ';
-        cout << setw(2) << (int)m_regi[i].a[3] << ' ';
-        cout << setw(2) << (int)m_regi[i].a[2] << ' ';
-        cout << setw(2) << (int)m_regi[i].a[1] << ' ';
-        cout << setw(2) << (int)m_regi[i].a[0] << '\n';
-        cout << dec;
-        cout << setfill(' ');
+        if (m_regi[i].x != 0)
+        {
+            cout << setw(4) << ' ' << 'x' << i << ' ';
+            cout << setw(22);
+            cout << m_regi[i].x << setw(4) << ' ';
+            cout << setfill('0');
+            cout << hex;
+            cout << setw(2) << (int)m_regi[i].a[7] << ' ';
+            cout << setw(2) << (int)m_regi[i].a[6] << ' ';
+            cout << setw(2) << (int)m_regi[i].a[5] << ' ';
+            cout << setw(2) << (int)m_regi[i].a[4] << ' ';
+            cout << setw(2) << (int)m_regi[i].a[3] << ' ';
+            cout << setw(2) << (int)m_regi[i].a[2] << ' ';
+            cout << setw(2) << (int)m_regi[i].a[1] << ' ';
+            cout << setw(2) << (int)m_regi[i].a[0] << ' ';
+            cout << dec;
+            cout << setfill(' ');
+            cout << '\n';
+        }
     }
 }

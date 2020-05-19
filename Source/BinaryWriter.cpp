@@ -159,8 +159,6 @@ void BinaryWriter::writeSections()
     {
         // look for changes in the labels then save the 
         // first position 
-
-
         if (!ins.labelName.empty())
         {
             LabelMap::iterator it = m_labels.find(ins.labelName);
@@ -176,14 +174,10 @@ void BinaryWriter::writeSections()
                     ins.flags |= IF_ADDR;
                 }
                 else
-                {
                     cout << "Unable to map index for " << ins.labelName << '\n';
-                }
             }
             else
-            {
                 cout << "Unable to find index for " << ins.labelName << '\n';
-            }
         }
 
 
