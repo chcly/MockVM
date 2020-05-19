@@ -57,12 +57,18 @@ BlockReader::~BlockReader()
 
 uint8_t BlockReader::next(void)
 {
-    if (m_loc <= 0 || (m_loc % BLOCKSIZE) == 0)
+    size_t remain = (m_loc % BLOCKSIZE);
+    if (m_loc <= 0 || remain == 0)
+    {
         read();
+    }
 
     uint8_t rc = 0;
     if (m_loc < m_fileLen)
-        rc = m_block[m_loc % BLOCKSIZE];
+    {
+        rc = m_block[remain];
+    }
+
     m_loc++;
     return rc;
 }
@@ -74,7 +80,9 @@ void BlockReader::read(void *blk, size_t nr)
     {
         size_t   i  = 0;
         while (i < nr && i < m_fileLen)
+        {
             ((uint8_t *)blk)[i++] = next();
+        }
     }   
 }
     
@@ -104,7 +112,9 @@ void BlockReader::read()
     {
         size_t br = fread(m_block, 1, BLOCKSIZE, (FILE *)m_fp);
         if (br >= 0 && br <= BLOCKSIZE)
+        {
             m_block[br] = 0;
+        }
     }
 }
 
@@ -130,3 +140,4 @@ void BlockReader::open(const char *fname)
     else
         puts("Invalid file name.");
 }
+

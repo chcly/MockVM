@@ -47,10 +47,18 @@ public:
 private:
     Instructions m_ins;
     BlockReader* m_reader;
-    Header       m_header;
+    TVMHeader    m_header;
     Registers    m_regi;
+    uint32_t     m_flags;
 
     void dumpRegi(void);
+
+    void opMOV(uint8_t *oc);
+    void opINC(uint8_t *oc);
+    void opDEC(uint8_t *oc);
+    void opCMP(uint8_t *oc);
+    void opJMP(uint8_t *oc);
+    void opJEQ(uint8_t *oc);
 
 public:
     Program();

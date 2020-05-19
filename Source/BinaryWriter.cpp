@@ -32,7 +32,8 @@ using namespace std;
 
 
 BinaryWriter::BinaryWriter() :
-    m_fp(0)
+    m_fp(0),
+    m_loc(0)
 {
 }
 
@@ -50,6 +51,43 @@ void BinaryWriter::mergeInstructions(const Instructions& insl)
         m_ins.push_back(ins);
 }
 
+void BinaryWriter::mergeLabels(const LabelMap& map)
+{
+    m_labels = map;
+}
+
+
+
+void BinaryWriter::write(void* v, size_t size)
+{
+    if (m_fp)
+    {
+        fwrite(v, 1, size, (FILE*)m_fp);
+        m_loc = ftell((FILE*)m_fp);
+    }
+}
+
+void BinaryWriter::write8(uint8_t v)
+{
+    write(&v, sizeof(uint8_t));
+}
+
+void BinaryWriter::write16(uint16_t v)
+{
+    write(&v, sizeof(uint16_t));
+}
+
+void BinaryWriter::write32(uint32_t v)
+{
+    write(&v, sizeof(uint32_t));
+}
+
+void BinaryWriter::write64(uint64_t v)
+{
+    write(&v, sizeof(uint64_t));
+}
+
+
 
 void BinaryWriter::open(const char* fname)
 {
@@ -61,18 +99,47 @@ void BinaryWriter::open(const char* fname)
         cout << "Failed to open '" << fname << "' for writing.\n";
 }
 
+
+size_t BinaryWriter::computeInstructionSize(const Instruction& ins)
+{
+    size_t size = 4;// op, nr, flags, pad
+    if (ins.argc > 0)
+        size += 8;
+    if (ins.argc > 1)
+        size += 8;
+    return size;
+}
+
+void BinaryWriter::mapInstructions(void)
+{
+    uint64_t label = -1;
+    uint64_t size = 0;
+
+    m_addrMap.clear();
+    for (Instruction ins : m_ins)
+    {
+        if (ins.label != label)
+        {
+            label = ins.label;
+            m_addrMap[label] = size;
+        }
+        size += computeInstructionSize(ins);
+    }
+}
+
 void BinaryWriter::writeHeader()
 {
     if (!m_fp)
         return;
 
 
-    Header h = {};
-    h.code = TYPE_ID4('T', 'V', 'M', '\0');
-    h.dat  = 0;
-    h.str  = 0;
-    h.txt  = sizeof(Header);
-    fwrite(&h, 1, sizeof(Header), (FILE*)m_fp);
+    TVMHeader header = {};
+    header.code   = TYPE_ID4('T', 'V', 'M', '\0');
+    header.txt = sizeof(TVMHeader);  // offsets to data
+    header.dat = 0;
+    header.str = 0;
+
+    write(&header, sizeof(TVMHeader));
 }
 
 void BinaryWriter::writeSections()
@@ -80,23 +147,55 @@ void BinaryWriter::writeSections()
     if (!m_fp)
         return;
 
-    Section sec = {};
+    TVMSection sec = {};
     sec.code = TYPE_ID2('C', 'S');
     sec.size = 0;
-    sec.start  = sizeof(Header) + sizeof(Section);
-    fwrite(&sec, 1, sizeof(Section), (FILE*)m_fp);
+    sec.start  = sizeof(TVMHeader) + sizeof(TVMSection);
 
+    mapInstructions();
+
+    write(&sec, sizeof(TVMHeader));
     for (Instruction ins : m_ins)
     {
-        fwrite(&ins.op, 1, 1, (FILE*)m_fp);
-        fwrite(&ins.argc, 1, 1, (FILE*)m_fp);
-        fwrite(&ins.flags, 1, 1, (FILE*)m_fp);
-        char jnk = 0;
-        fwrite(&jnk, 1, 1, (FILE*)m_fp);
+        // look for changes in the labels then save the 
+        // first position 
+
+
+        if (!ins.labelName.empty())
+        {
+            LabelMap::iterator it = m_labels.find(ins.labelName);
+            if (it != m_labels.end())
+            {
+                // name to index
+                size_t idx = it->second;
+                IndexToPosition::iterator fidx = m_addrMap.find(idx);
+
+                if (fidx != m_addrMap.end())
+                {
+                    ins.arg1 = sec.start + fidx->second;
+                    ins.flags |= IF_ADDR;
+                }
+                else
+                {
+                    cout << "Unable to map index for " << ins.labelName << '\n';
+                }
+            }
+            else
+            {
+                cout << "Unable to find index for " << ins.labelName << '\n';
+            }
+        }
+
+
+        // aligned by 4 bytes
+        write8(ins.op);
+        write8(ins.argc);
+        write8(ins.flags);
+        write8(0);
 
         if (ins.argc > 0)
-            fwrite(&ins.arg1, 1, 8, (FILE*)m_fp);
+            write64(ins.arg1);
         if (ins.argc > 1)
-            fwrite(&ins.arg2, 1, 8, (FILE*)m_fp);
+            write64(ins.arg2);
     }
 }

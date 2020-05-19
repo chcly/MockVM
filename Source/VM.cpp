@@ -32,6 +32,8 @@ using namespace std;
 
 void usage(void);
 
+
+
 int main(int argc, char **argv)
 {
     if (argc <= 1)
@@ -41,7 +43,6 @@ int main(int argc, char **argv)
     }
 
     vector<string> files;
-
     int i;
     for (i = 1; i < argc; ++i)
     {
@@ -54,6 +55,7 @@ int main(int argc, char **argv)
         prog.load(files.back().c_str());
     return prog.launch();
 }
+
 
 
 void usage(void)

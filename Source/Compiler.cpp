@@ -82,11 +82,11 @@ int main(int argc, char **argv)
     for (string file : ctx.files)
     {
         Parser p;
-        p.parse(file.c_str());
+        if (p.parse(file.c_str()) != PS_OK)
+            return -1;
+
+        w.mergeLabels(p.getLabels());
         w.mergeInstructions(p.getInstructions());
- 
-        // w.mergeData(p.getDeclaredData());
-        // w.mergeConstants(p.getDeclaredGlobals());
     }
 
     w.open(ctx.output.c_str());

@@ -1,9 +1,11 @@
 main:
-    mov x0, 0
-    mov x1, 1
-    inc x1
+    mov     x0, 0
+    mov     x1, 100
+top:
+    cmp     x0, x1
+    jeq     done
+    inc     x0
     trace
-
-    mov x0, 0
+    jmp     top
+done:
     ret
-

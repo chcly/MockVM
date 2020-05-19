@@ -38,6 +38,7 @@ enum TokenCode
     TOK_LABEL,
     TOK_SECTION,
     TOK_EOL,
+    TOK_MAX,
 };
 
 enum CharType
@@ -57,6 +58,8 @@ enum CharType
     CT_LBRACE,
     CT_RBRACE,
     CT_HASH,
+    CT_ADD,
+    CT_SUB,
     CT_NULL,
     CT_MAX,
 };
@@ -77,11 +80,19 @@ enum ParserState
 enum Opcode
 {
     OP_RET  = 0xA0,
-    OP_MOV,     // mov r(n), src
-    OP_CALL,    // call address
-    OP_INC,     // inc, r(n)
-    OP_DEC,     // dec, r(n)
-    OP_TRACE,   // trace <- debugging
+    OP_MOV,    // mov r(n), src
+    OP_CALL,   // call address
+    OP_INC,    // inc, r(n)
+    OP_DEC,    // dec, r(n)
+    OP_CMP,    // cmp, r(n), src
+    OP_JMP,    // jump 
+    OP_JE,     // jump ==
+    OP_JNE,    // jump !
+    OP_JLT,    // jump <
+    OP_JGT,    // jump >
+    OP_JLE,    // jump <=
+    OP_JGE,    // jump >=
+    OP_TRACE,  // trace <- debugging
 };
 
 enum RegisterCode
@@ -99,30 +110,27 @@ enum RegisterCode
 };
 
 
-enum Actions
+enum ArgType
 {
-    AC_IG = -3,  // ignore
-    AC_0L = -2,  // return TOK_EOL
-    AC_0E = -1,  // error
-    AC_00,       // Add char to token
-    AC_01,       // test keywords, if keyword return token TOK_MNEMONIC, else TOK_IDENTIFIER
-    AC_02,       // Add char to token, goto STATE ST_READ_ID
-    AC_03,       // goto STATE ST_INITIAL, return TOK_LABEL
-    AC_04,       // goto STATE ST_INITIAL, return TOK_IDENTIFIER
-    AC_05,       // goto STATE ST_INITIAL continue
-    AC_06,       // goto STATE ST_DIGIT continue
-    AC_07,       // goto STATE ST_CONTINUE return TOK_DIGIT
-    AC_SC,       // goto STATE ST_SECTION
-    AC_DS,       // goto STATE ST_INITIAL return TOK_SECTION
+    AT_REG,
+    AT_LIT,
+    AT_ADDR,
+    AT_REGLIT,
+    AT_NULL,
 };
 
 
-
 typedef char Keyword[7];
+
+
 struct KeywordMap
 {
     Keyword       word;
     unsigned char op;
+    unsigned char narg;
+    unsigned char type_arg1;
+    unsigned char type_arg2;
+    unsigned char type_arg3;
 };
 
 

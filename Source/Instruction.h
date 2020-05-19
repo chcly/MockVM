@@ -23,6 +23,7 @@
 #define _Instruction_h_
 
 #include <stdint.h>
+#include <string.h>
 
 #define TYPE_ID4(a, b, c, d) ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
 #define TYPE_ID2(a, b)      ((b) << 8 | (a))
@@ -42,10 +43,11 @@ enum InstructionFlags
     IF_DLIT = (1 << 1),
     IF_SREG = (1 << 2),
     IF_SLIT = (1 << 3),
+    IF_ADDR = (1 << 4),
 };
 
 
-struct Header
+struct TVMHeader
 {
     uint32_t code;
     uint32_t flags;
@@ -54,7 +56,7 @@ struct Header
     uint64_t txt;
 };
 
-struct Section
+struct TVMSection
 {
     uint32_t code;
     uint32_t flags;
@@ -64,13 +66,14 @@ struct Section
 
 struct Instruction
 {
-    uint8_t  op;
-    uint8_t  flags;
-    uint8_t  argc;
-    uint64_t arg1;
-    uint64_t arg2;
-    uint64_t arg3;
-    uint64_t label;
+    uint8_t     op;
+    uint8_t     flags;
+    uint8_t     argc;
+    uint64_t    arg1;
+    uint64_t    arg2;
+    uint64_t    arg3;
+    uint64_t    label;
+    std::string labelName;
 };
 
 #endif  // _Instruction_h_

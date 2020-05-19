@@ -52,7 +52,7 @@ void Program::load(const char *fname)
     m_reader = new BlockReader(fname);
 
     if (!m_reader->eof())
-        m_reader->read(&m_header, sizeof(Header));
+        m_reader->read(&m_header, sizeof(TVMHeader));
 }
 
 
@@ -62,7 +62,7 @@ int Program::launch(void)
         return -1;
 
 
-    m_reader->moveTo(m_header.txt + sizeof(Section));
+    m_reader->moveTo(m_header.txt + sizeof(TVMSection));
     std::stack<int> m_stack;
 
     int rc = 0;
@@ -80,46 +80,23 @@ int Program::launch(void)
         switch (ops[0])
         {
         case OP_MOV:
-        {
-            uint64_t reg, dst;
-            m_reader->read(&reg, 8);
-            m_reader->read(&dst, 8);
-
-            if (reg <= 9)
-            {
-                Register &r = m_regi[reg];
-                if (ops[2] & IF_SREG)
-                {
-                    if (dst <= 9)
-                        r.x = m_regi[dst].x;
-                }
-                else
-                    r.x = dst;
-            }
-        } break;
+            opMOV(ops);
+            break;
         case OP_INC:
-        {
-            uint64_t reg;
-            m_reader->read(&reg, 8);
-
-            if (reg <= 9)
-            {
-                Register &r = m_regi[reg];
-                r.x += 1;
-            }
-        }
-        break;
+            opINC(ops);
+            break;
         case OP_DEC:
-        {
-            uint64_t reg;
-            m_reader->read(&reg, 8);
-            if (reg <= 9)
-            {
-                Register &r = m_regi[reg];
-                r.x -= 1;
-            }
-        }
-        break;
+            opDEC(ops);
+            break;
+        case OP_CMP:
+            opCMP(ops);
+            break;
+        case OP_JE:
+            opJEQ(ops);
+            break;
+        case OP_JMP:
+            opJMP(ops);
+            break;
         case OP_TRACE:
             dumpRegi();
             break;
@@ -131,6 +108,83 @@ int Program::launch(void)
     }
     return rc;
 }
+
+
+void Program::opMOV(uint8_t *ops)
+{
+    uint64_t reg, dst;
+    m_reader->read(&reg, 8);
+    m_reader->read(&dst, 8);
+
+    if (reg <= 9)
+    {
+        Register &r = m_regi[reg];
+        if (ops[2] & IF_SREG)
+        {
+            if (dst <= 9)
+                r.x = m_regi[dst].x;
+        }
+        else
+            r.x = dst;
+    }
+}
+
+void Program::opINC(uint8_t *oc)
+{
+    uint64_t reg;
+    m_reader->read(&reg, 8);
+    if (reg <= 9)
+    {
+        Register &r = m_regi[reg];
+        r.x += 1;
+    }
+}
+
+void Program::opDEC(uint8_t *oc)
+{
+    uint64_t reg;
+    m_reader->read(&reg, 8);
+    if (reg <= 9)
+    {
+        Register &r = m_regi[reg];
+        r.x -= 1;
+    }
+}
+
+void Program::opCMP(uint8_t *ops)
+{
+    uint64_t a, b;
+    m_reader->read(&a, 8);
+    m_reader->read(&b, 8);
+
+    if (ops[2] & IF_DREG && a <= 9)
+        a = m_regi[a].x;
+    if (ops[2] & IF_SREG && b <= 9)
+        b = m_regi[b].x;
+
+    if (a - b == 0)
+        m_flags |= 1;
+
+}
+
+void Program::opJMP(uint8_t *oc)
+{
+    uint64_t a;
+    m_reader->read(&a, 8);
+    m_reader->moveTo(a);
+}
+
+void Program::opJEQ(uint8_t *oc)
+{
+    if (m_flags & 1)
+    {
+        m_flags &= ~1;
+        uint64_t a;
+        m_reader->read(&a, 8);
+        m_reader->moveTo(a);
+    }
+}
+
 
 void Program::dumpRegi(void)
 {

@@ -37,7 +37,15 @@ struct Token
     uint8_t     op;
     uint8_t     reg;
     int64_t     ival;
+    int32_t     type;
     std::string value;
+    int32_t     index;
+};
+
+enum ParseResult
+{
+    PS_ERROR=-10,
+    PS_OK,
 };
 
 
@@ -62,7 +70,7 @@ public:
 
 private:
     BlockReader  m_reader;
-    int32_t      m_state, m_section, m_label;
+    int32_t      m_state, m_section, m_label, m_lineNo;
     std::string  m_curString;
     int64_t      m_ival;
     uint8_t      m_op;
@@ -75,17 +83,26 @@ private:
     int32_t getType(uint8_t ct);
     void    clearState(void);
 
-    int32_t getSection(const std::string& val);
+    int32_t           getSection(const std::string& val);
+    int32_t           getKeywordIndex(const uint8_t& val);
+    const KeywordMap& getKeyword(const int32_t& val);
+    Token             scanNextToken(void);
+    Token             getLastToken(void);
 
 public:
     Parser();
     ~Parser();
 
-    void parse(const char* fname);
+    int32_t parse(const char* fname);
 
     inline const Instructions& getInstructions()
     {
         return m_instructions;
+    }
+
+    inline const LabelMap& getLabels()
+    {
+        return m_labels;
     }
 
 private:
@@ -101,11 +118,9 @@ private:
     int32_t ActionIdxSC(uint8_t ch);
     int32_t ActionIdxDC(uint8_t ch);
 
-    void RuleMOV(void);
-    void RuleRET(void);
-    void RuleINC(void);
-    void RuleDEC(void);
-    void RuleTRACE(void);
+    int32_t handleOpCode(const Token& tok);
+    int32_t TokenSECTION(void);
+    int32_t TokenLABEL(void);
 };
 
 #endif  //_Parser_h_

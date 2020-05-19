@@ -24,23 +24,39 @@
 
 #include <stdint.h>
 #include <vector>
+#include <unordered_map>
 #include "Instruction.h"
 
 class BinaryWriter
 {
 public:
-    typedef std::vector<Instruction> Instructions;
-
+    typedef std::vector<Instruction>                Instructions;
+    typedef std::unordered_map<int64_t, int64_t>    IndexToPosition;
+    typedef std::unordered_map<std::string, size_t> LabelMap; 
 
 private:
-    void * m_fp;
-    Instructions m_ins;
-    
+    void*            m_fp;
+    long             m_loc;
+    Instructions     m_ins;
+    IndexToPosition  m_addrMap;
+    LabelMap         m_labels;
+
+    void write(void* v, size_t size);
+    void write8(uint8_t v);
+    void write16(uint16_t v);
+    void write32(uint32_t v);
+    void write64(uint64_t v);
+
+    size_t computeInstructionSize(const Instruction& ins);
+    void   mapInstructions(void);
+
+
 public:
     BinaryWriter();
     ~BinaryWriter();
 
     void mergeInstructions(const Instructions& insl);
+    void mergeLabels(const LabelMap& map);
     void open(const char* fname);
     void writeHeader();
     void writeSections();
