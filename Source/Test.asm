@@ -4,8 +4,8 @@ main:
 top:
     cmp     x0, x1
     jeq     done
+    prg     x0
     inc     x0
-    trace
     jmp     top
 done:
     ret

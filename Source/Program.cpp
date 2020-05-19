@@ -64,9 +64,10 @@ int Program::launch(void)
 
 
     m_reader->moveTo(m_header.txt + sizeof(TVMSection));
-    std::stack<int> m_stack;
+    
+    int32_t rc = 0;
+    uint8_t ops[4];
 
-    int rc = 0;
     m_stack.push(rc);
 
     while (!m_stack.empty())
@@ -75,43 +76,27 @@ int Program::launch(void)
             break;
 
 
-        uint8_t ops[4];
         m_reader->read(ops, 4);
-
-        switch (ops[0])
+        if (ops[0] >=0 && ops[0] < OP_MAX)
         {
-        case OP_MOV:
-            opMOV(ops);
-            break;
-        case OP_INC:
-            opINC(ops);
-            break;
-        case OP_DEC:
-            opDEC(ops);
-            break;
-        case OP_CMP:
-            opCMP(ops);
-            break;
-        case OP_JE:
-            opJEQ(ops);
-            break;
-        case OP_JMP:
-            opJMP(ops);
-            break;
-        case OP_TRACE:
-            dumpRegi();
-            break;
-        case OP_RET:
-            rc = (int)m_regi[0].x;
-            m_stack.pop();
-            break;
+            if (OPCodeTable[ops[0]] != nullptr)
+                rc = (this->*OPCodeTable[ops[0]])(ops[0], ops[1], ops[2]);
         }
     }
     return rc;
 }
 
 
-void Program::opMOV(uint8_t *ops)
+
+DefineOperation(OP_RET)
+{
+    if (!m_stack.empty())
+        m_stack.pop();
+    return m_regi[0].x;
+}
+
+
+DefineOperation(OP_MOV)
 {
     uint64_t reg, dst;
     m_reader->read(&reg, 8);
@@ -120,7 +105,7 @@ void Program::opMOV(uint8_t *ops)
     if (reg <= 9)
     {
         Register &r = m_regi[reg];
-        if (ops[2] & IF_SREG)
+        if (flags & IF_SREG)
         {
             if (dst <= 9)
                 r.x = m_regi[dst].x;
@@ -128,9 +113,10 @@ void Program::opMOV(uint8_t *ops)
         else
             r.x = dst;
     }
+    return 0;
 }
 
-void Program::opINC(uint8_t *oc)
+DefineOperation(OP_INC) 
 {
     uint64_t reg;
     m_reader->read(&reg, 8);
@@ -139,9 +125,11 @@ void Program::opINC(uint8_t *oc)
         Register &r = m_regi[reg];
         r.x += 1;
     }
+    return 0;
 }
 
-void Program::opDEC(uint8_t *oc)
+
+DefineOperation(OP_DEC)
 {
     uint64_t reg;
     m_reader->read(&reg, 8);
@@ -150,32 +138,35 @@ void Program::opDEC(uint8_t *oc)
         Register &r = m_regi[reg];
         r.x -= 1;
     }
+    return 0;
 }
 
-void Program::opCMP(uint8_t *ops)
+DefineOperation(OP_CMP)
 {
     uint64_t a, b;
     m_reader->read(&a, 8);
     m_reader->read(&b, 8);
 
-    if (ops[2] & IF_DREG && a <= 9)
+    if (flags & IF_DREG && a <= 9)
         a = m_regi[a].x;
-    if (ops[2] & IF_SREG && b <= 9)
+    if (flags & IF_SREG && b <= 9)
         b = m_regi[b].x;
 
     if (a - b == 0)
         m_flags |= 1;
-
+    return 0;
 }
 
-void Program::opJMP(uint8_t *oc)
+DefineOperation(OP_JMP)
 {
     uint64_t a;
     m_reader->read(&a, 8);
     m_reader->moveTo(a);
+    return 0;
 }
 
-void Program::opJEQ(uint8_t *oc)
+
+DefineOperation(OP_JEQ)
 {
     if (m_flags & 1)
     {
@@ -184,7 +175,57 @@ void Program::opJEQ(uint8_t *oc)
         m_reader->read(&a, 8);
         m_reader->moveTo(a);
     }
+    return 0;
 }
+
+
+DefineOperation(OP_JNE)
+{
+    if (!(m_flags & 1))
+    {
+        m_flags &= ~1;
+        uint64_t a;
+        m_reader->read(&a, 8);
+        m_reader->moveTo(a);
+    }
+    return 0;
+}
+
+
+DefineOperation(OP_JLT)
+{
+    return 0;
+}
+
+
+DefineOperation(OP_JGT)
+{
+    return 0;
+}
+
+
+DefineOperation(OP_JLE)
+{
+    return 0;
+}
+
+
+DefineOperation(OP_JGE)
+{
+    return 0;
+}
+
+
+DefineOperation(OP_PRG)
+{
+    uint64_t a;
+    m_reader->read(&a, 8);
+    if (flags & IF_DREG && a <= 9)
+        a = m_regi[a].x;
+    cout << a << '\n';
+    return 0;
+}
+
 
 
 void Program::dumpRegi(void)
@@ -213,3 +254,23 @@ void Program::dumpRegi(void)
         }
     }
 }
+
+
+const Program::Operation Program::OPCodeTable[] = {
+    nullptr,
+    OperationTable(OP_RET),
+    OperationTable(OP_MOV),
+    nullptr,  //OperationTable(OP_CALL),
+    OperationTable(OP_INC),
+    OperationTable(OP_DEC),
+    OperationTable(OP_CMP),
+    OperationTable(OP_JMP),
+    OperationTable(OP_JEQ),
+    OperationTable(OP_JNE),
+    OperationTable(OP_JLT),
+    OperationTable(OP_JGT),
+    OperationTable(OP_JLE),
+    OperationTable(OP_JGE),
+    OperationTable(OP_PRG),
+    nullptr,  // OP_TRACE
+};

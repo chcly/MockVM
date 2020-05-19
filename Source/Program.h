@@ -23,10 +23,23 @@
 #define _Program_h_
 
 #include <stdint.h>
-#include <functional>
 #include <vector>
+#include <stack>
 #include "Instruction.h"
+#include "Decl.h"
 #include "BlockReader.h"
+
+
+
+#define DeclareOperation(op)\
+    int32_t handle##op##(uint8_t op, uint8_t argc, uint8_t flags);
+
+#define DefineOperation(op) \
+    int32_t Program::handle##op##(uint8_t op, uint8_t argc, uint8_t flags)
+
+
+#define OperationTable(op) &Program::handle##op
+
 
 
 typedef union Register
@@ -42,7 +55,10 @@ class Program
 {
 public:
     typedef std::vector<Instruction> Instructions;
-    typedef Register Registers[10];
+    typedef Register                 Registers[10];
+
+    typedef int32_t (Program::*Operation)(uint8_t op, uint8_t argc, uint8_t flags);
+    typedef Operation OpCodes[OP_MAX];
 
 private:
     Instructions m_ins;
@@ -51,14 +67,29 @@ private:
     Registers    m_regi;
     uint32_t     m_flags;
 
+    std::stack<int32_t> m_stack;
+
+    const static OpCodes OPCodeTable;
+    const static size_t  OPCodeTableSize;
+
+
     void dumpRegi(void);
 
-    void opMOV(uint8_t *oc);
-    void opINC(uint8_t *oc);
-    void opDEC(uint8_t *oc);
-    void opCMP(uint8_t *oc);
-    void opJMP(uint8_t *oc);
-    void opJEQ(uint8_t *oc);
+
+
+    DeclareOperation(OP_RET);
+    DeclareOperation(OP_MOV);
+    DeclareOperation(OP_INC);
+    DeclareOperation(OP_DEC);
+    DeclareOperation(OP_CMP);
+    DeclareOperation(OP_JMP);
+    DeclareOperation(OP_JEQ);
+    DeclareOperation(OP_JNE);
+    DeclareOperation(OP_JLE);
+    DeclareOperation(OP_JGE);
+    DeclareOperation(OP_JGT);
+    DeclareOperation(OP_JLT);
+    DeclareOperation(OP_PRG);
 
 public:
     Program();
