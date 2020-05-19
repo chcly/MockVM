@@ -19,6 +19,7 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
+#include <iomanip>
 #include <iostream>
 #include <stdint.h>
 #include <functional>
@@ -28,6 +29,8 @@
 #include "Program.h"
 #include "BlockReader.h"
 #include "Decl.h"
+
+using namespace std;
 
 
 Program::Program() :
@@ -79,9 +82,6 @@ int Program::launch(void)
         case OP_MOV:
         {
             uint64_t reg, dst;
-
-
-
             m_reader->read(&reg, 8);
             m_reader->read(&dst, 8);
 
@@ -97,9 +97,10 @@ int Program::launch(void)
                 else
                     r.x = dst;
             }
-
-            // std::cout << "mov " << 'x' << reg << ' ' << dst << '\n';
-        }break;
+        } break;
+        case OP_TRACE:
+            dumpRegi();
+            break;
         case OP_RET:
             rc = m_regi[0].x;
             m_stack.pop();
@@ -107,4 +108,12 @@ int Program::launch(void)
         }
     }
     return rc;
+}
+
+
+void Program::dumpRegi(void)
+{
+    for (int i=0; i<10; ++i)
+        cout << setfill(' ') << setw(4) << ' ' << 'x' << i << ' '
+              << "0x"<<  setw(16) << setfill('0') << hex << m_regi[i].x << '\n';
 }

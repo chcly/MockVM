@@ -52,7 +52,7 @@ public:
         
     inline bool eof(void)
     {
-        return m_loc > m_fileLen;
+        return m_fp == nullptr || m_loc > m_fileLen;
     }
 
     inline size_t tell(void)

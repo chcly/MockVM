@@ -90,6 +90,9 @@ void Parser::parse(const char* fname)
                 case OP_RET:
                     RuleRET();
                     break;
+                case OP_TRACE:
+                    RuleTRACE();
+                    break;
                 default:
                     break;
                 }
@@ -194,6 +197,15 @@ void Parser::RuleRET(void)
 {
     Instruction ins = {};
     ins.op          = OP_RET;
+    ins.argc        = 0;
+    ins.label       = m_label;
+    m_instructions.push_back(ins);
+}
+
+void Parser::RuleTRACE(void)
+{
+    Instruction ins = {};
+    ins.op          = OP_TRACE;
     ins.argc        = 0;
     ins.label       = m_label;
     m_instructions.push_back(ins);
@@ -393,6 +405,7 @@ int32_t Parser::getType(uint8_t ct)
 const KeywordMap Parser::KeywordTable[] = {
     {"mov\0", OP_MOV},
     {"ret\0", OP_RET},
+    {"trace\0", OP_TRACE},
 };
 
 const size_t Parser::KeywordTableSize = 

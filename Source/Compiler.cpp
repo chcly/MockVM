@@ -32,6 +32,14 @@
 
 using namespace std;
 
+struct ProgramInfo
+{
+    string         output;
+    vector<string> files;
+};
+
+
+
 void usage(void);
 
 int main(int argc, char **argv)
@@ -42,19 +50,36 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    vector<string> files;
+    ProgramInfo ctx;
 
     int    i;
     for (i = 1; i < argc; ++i)
     {
-        if (argv[i][0] != '-')
-            files.push_back(argv[i]);
+        if (argv[i][0] == '-')
+        {
+            switch(argv[i][1])
+            {
+            case 'h':
+                usage();
+                exit(0);
+                break;
+            case 'o':
+                if (i + 1 < argc)
+                    ctx.output = (argv[++i]);
+                break;
+            default:
+                break;
+            }
+        }
+        else
+            ctx.files.push_back(argv[i]);
+
+
     }
 
 
     BinaryWriter w;
-
-    for (string file : files)
+    for (string file : ctx.files)
     {
         Parser p;
         p.parse(file.c_str());
@@ -64,7 +89,7 @@ int main(int argc, char **argv)
         // w.mergeConstants(p.getDeclaredGlobals());
     }
 
-    w.open("test.bin");
+    w.open(ctx.output.c_str());
     w.writeHeader();
     w.writeSections();
     return 0;
@@ -73,4 +98,8 @@ int main(int argc, char **argv)
 
 void usage(void)
 {
+    cout << "tcom <options> <input file>\n";
+    cout << "    options:\n\n";
+    cout << "    -h show this message.\n";
+    cout << "    -o output file.\n";
 }

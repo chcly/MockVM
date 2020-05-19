@@ -73,6 +73,9 @@ void BinaryWriter::writeHeader()
 
 void BinaryWriter::writeSections()
 {
+    if (!m_fp)
+        return;
+
     Section sec = {};
     sec.code = TYPE_ID2('C', 'S');
     sec.size = 0;

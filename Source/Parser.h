@@ -103,6 +103,7 @@ private:
 
     void RuleMOV(void);
     void RuleRET(void);
+    void RuleTRACE(void);
 };
 
 #endif  //_Parser_h_

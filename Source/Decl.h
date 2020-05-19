@@ -79,6 +79,7 @@ enum Opcode
     OP_RET  = 0x90,
     OP_MOV  = 0x0F,  // mov dst, src
     OP_CALL = 0x10,
+    OP_TRACE,
 };
 
 enum RegisterCode
@@ -115,7 +116,7 @@ enum Actions
 
 
 
-typedef char Keyword[6];
+typedef char Keyword[7];
 struct KeywordMap
 {
     Keyword       word;

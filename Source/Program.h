@@ -38,7 +38,6 @@ typedef union Register
 } Register;
 
 
-
 class Program
 {
 public:
@@ -50,6 +49,8 @@ private:
     BlockReader* m_reader;
     Header       m_header;
     Registers    m_regi;
+
+    void dumpRegi(void);
 
 public:
     Program();
