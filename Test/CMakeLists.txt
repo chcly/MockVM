@@ -7,16 +7,12 @@ macro(add_test Target)
 
     add_custom_target(${Target} ALL
         COMMAND tcom -o ${Target} ${Input}
+        COMMAND tvm ${Target}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Compiling ${ARGN}"
+        COMMENT "Testing ${ARGN}"
         SOURCES ${Input}
     )
 
-    add_custom_target(${Target}Run ALL
-        COMMAND tvm ${Target}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Running ${ARGN}"
-    )
 endmacro(add_test)
 
 
