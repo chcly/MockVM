@@ -102,7 +102,7 @@ void BinaryWriter::open(const char* fname)
 size_t BinaryWriter::computeInstructionSize(const Instruction& ins)
 {
     size_t size = 4;  // op, nr, flags, pad
-    size += 8 * ins.argc; 
+    size += 8 * (size_t)ins.argc; 
     return size;
 }
 
@@ -113,16 +113,21 @@ size_t BinaryWriter::mapInstructions(void)
     int64_t  insp  = 0;
 
     m_addrMap.clear();
+
     for (Instruction ins : m_ins)
     {
+        // look for changes in the label index then
+        // save the index of the first change.
         if (ins.label != label)
         {
             label            = ins.label;
             m_addrMap[label] = insp;
         }
+
         size += computeInstructionSize(ins);
         ++insp;
     }
+
     return size;
 }
 
@@ -134,15 +139,14 @@ int64_t BinaryWriter::findLabel(const std::string& name)
         LabelMap::iterator it = m_labels.find(name);
         if (it != m_labels.end())
         {
-            size_t                    idx  = it->second;
-            IndexToPosition::iterator fidx = m_addrMap.find(idx);
+            IndexToPosition::iterator fidx = m_addrMap.find(it->second);
             if (fidx != m_addrMap.end())
                 return fidx->second;
         }
     }
-    return -1;
-}
 
+    return UNDEFINED;
+}
 
 
 void BinaryWriter::writeHeader()
@@ -152,6 +156,9 @@ void BinaryWriter::writeHeader()
 
     TVMHeader header = {};
     header.code  = TYPE_ID2('T', 'V');
+
+    // TODO pre-compute section sizes 
+
     header.flags = 0;
     header.txt   = sizeof(TVMHeader);  // offsets to data
     header.dat   = 0;
@@ -165,7 +172,6 @@ void BinaryWriter::writeSections()
         return;
 
     TVMSection sec = {};
-
     sec.size = (uint32_t)mapInstructions();
     if (sec.size <= 0)
         return;
@@ -174,22 +180,23 @@ void BinaryWriter::writeSections()
     sec.start = m_loc + sizeof(TVMSection);
     sec.entry = findLabel("main");
     
-    if (sec.entry == -1)
+    if (sec.entry == UNDEFINED)
     {
         cout << "Failed to find main.\n";
         return;
     }
+
     int64_t lookup;
     write(&sec, sizeof(TVMSection));
 
     for (Instruction ins : m_ins)
     {
-        // look for changes in the labels then 
-        // save the first position
         if (!ins.labelName.empty())
         {
+            // modify the first argument so that it points
+            // to the correct instruction index.
             lookup = findLabel(ins.labelName);
-            if (lookup != -1)
+            if (lookup != UNDEFINED)
             {
                 ins.argv[0] = lookup;
                 ins.flags |= IF_ADDR;
@@ -210,4 +217,6 @@ void BinaryWriter::writeSections()
         if (ins.argc > 2)
             write64(ins.argv[2]);
     }
+
+    // TODO store values from .data sections
 }
