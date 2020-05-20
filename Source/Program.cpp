@@ -19,24 +19,23 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#include <iomanip>
-#include <iostream>
+#include "Program.h"
 #include <stdint.h>
 #include <functional>
-#include <vector>
+#include <iomanip>
+#include <iostream>
 #include <stack>
-#include "Instruction.h"
-#include "Program.h"
+#include <vector>
 #include "BlockReader.h"
 #include "Declarations.h"
+#include "Instruction.h"
 
 using namespace std;
 
-uint8_t restrict8(const uint8_t &inp, const uint8_t &mi, const uint8_t& ma)
+uint8_t restrict8(const uint8_t& inp, const uint8_t& mi, const uint8_t& ma)
 {
     return inp > ma ? ma : inp < mi ? mi : inp;
 }
-
 
 Program::Program() :
     m_reader(0),
@@ -51,7 +50,7 @@ Program::~Program()
     delete m_reader;
 }
 
-void Program::load(const char *fname)
+void Program::load(const char* fname)
 {
     if (m_reader)
         delete m_reader;
@@ -64,7 +63,6 @@ void Program::load(const char *fname)
     TVMSection code;
     m_reader->read(&code, sizeof(TVMSection));
 
-
     uint8_t ops[4];
     size_t  i = 0;
     while (i < code.size)
@@ -73,7 +71,7 @@ void Program::load(const char *fname)
             break;
         m_reader->read(ops, 4);
         i += 4;
-        if (ops[0]>=0 && ops[0] < OP_MAX)
+        if (ops[0] >= 0 && ops[0] < OP_MAX)
         {
             ExecInstruction exec = {};
 
@@ -94,12 +92,10 @@ void Program::load(const char *fname)
         }
     }
 
-
     m_curinst = 0;
     if (code.entry < m_ins.size())
         m_curinst = code.entry;
 }
-
 
 int Program::launch(void)
 {
@@ -108,18 +104,17 @@ int Program::launch(void)
 
     size_t tinst = m_ins.size();
 
-    ExecInstruction *basePtr = m_ins.data();
+    ExecInstruction* basePtr = m_ins.data();
     m_stack.push(0);
 
     while (m_curinst < tinst)
     {
-        ExecInstruction &inst = basePtr[m_curinst++];
+        ExecInstruction& inst = basePtr[m_curinst++];
         if (OPCodeTable[inst.op] != nullptr)
             (this->*OPCodeTable[inst.op])(inst);
     }
     return m_return;
 }
-
 
 void Program::handle_OP_RET(ExecInstruction& inst)
 {
@@ -143,22 +138,19 @@ void Program::handle_OP_MOV(ExecInstruction& inst)
     }
 }
 
-
 void Program::handle_OP_CALL(ExecInstruction& inst)
 {
     m_curinst = inst.argv[0];
 }
-
 
 void Program::handle_OP_INC(ExecInstruction& inst)
 {
     if (inst.flags & IF_DREG)
     {
         if (inst.argv[0] <= 9)
-            m_regi[inst.argv[0]].x += 1; 
+            m_regi[inst.argv[0]].x += 1;
     }
 }
-
 
 void Program::handle_OP_DEC(ExecInstruction& inst)
 {
@@ -211,7 +203,6 @@ void Program::handle_OP_JNE(ExecInstruction& inst)
     }
 }
 
-
 void Program::handle_OP_JLE(ExecInstruction& inst)
 {
     if (m_flags & PF_E)
@@ -226,7 +217,6 @@ void Program::handle_OP_JLE(ExecInstruction& inst)
     }
 }
 
-
 void Program::handle_OP_JGE(ExecInstruction& inst)
 {
     if (m_flags & PF_E)
@@ -240,7 +230,6 @@ void Program::handle_OP_JGE(ExecInstruction& inst)
         m_curinst = inst.argv[0];
     }
 }
-
 
 void Program::handle_OP_JLT(ExecInstruction& inst)
 {
@@ -259,7 +248,6 @@ void Program::handle_OP_JGT(ExecInstruction& inst)
         m_curinst = inst.argv[0];
     }
 }
-
 
 void Program::handle_OP_ADD(ExecInstruction& inst)
 {
@@ -321,7 +309,6 @@ void Program::handle_OP_DIV(ExecInstruction& inst)
     }
 }
 
-
 void Program::handle_OP_PRG(ExecInstruction& inst)
 {
     if (inst.flags & IF_DREG && inst.argv[0] <= 9)
@@ -355,7 +342,6 @@ void Program::handle_OP_PRGI(ExecInstruction& inst)
         }
     }
 }
-
 
 const Program::Operation Program::OPCodeTable[] = {
     nullptr,

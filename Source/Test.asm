@@ -1,9 +1,12 @@
-
-
-main:           // main code
-    mov x0, 0   // x0 = 0
-    mul x0, 0   // x0 = 0
-    add x0, 1   // x0 = 0
-    mul x0, 10   // x0 = 0
-    div x0, 2   // x0 = 0
+main:
+    mov x0, 0
+    mov x1, 100
+ top:
+    cmp x0, x1
+    jeq done
+    inc x0
     prg x0
+    jmp top
+done:
+    mov x0, 0
+    ret

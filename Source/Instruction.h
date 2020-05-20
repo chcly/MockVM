@@ -23,7 +23,7 @@
 #define _Instruction_h_
 
 #include <stdint.h>
-#include <string.h>
+#include <string>
 
 #include "Declarations.h"
 

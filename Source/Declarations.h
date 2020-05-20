@@ -27,10 +27,15 @@
 #include <string.h>
 
 #define INS_ARGM 3
+
+// return value for actions that need to scan
+// for more information before returning a token.
+#define CONTINUE -1
+// Common error return code
+#define UNDEFINED -1
+
 #define TYPE_ID4(a, b, c, d) ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
 #define TYPE_ID2(a, b) ((b) << 8 | (a))
-
-
 
 typedef union Register {
     uint8_t  b[8];
@@ -129,18 +134,22 @@ enum Opcode
     OP_MAX
 };
 
-enum RegisterCode
+
+enum Actions
 {
-    REG_X0 = 0x00,
-    REG_X1 = 0x01,
-    REG_X2 = 0x02,
-    REG_X3 = 0x03,
-    REG_X4 = 0x04,
-    REG_X5 = 0x05,
-    REG_X6 = 0x06,
-    REG_X7 = 0x07,
-    REG_X8 = 0x08,
-    REG_X9 = 0x09,
+    AC_IG = -3,  // Ignore this character
+    AC_0L = -2,  // return TOK_EOL
+    AC_0E = -1,  // error
+    AC_00,       // push current character to token
+    AC_01,       // if the token is keyword then return token TOK_MNEMONIC otherwise TOK_IDENTIFIER
+    AC_02,       // add char to token then goto STATE ST_READ_ID
+    AC_03,       // goto state ST_INITIAL, return TOK_LABEL
+    AC_04,       // goto state ST_INITIAL, return TOK_IDENTIFIER
+    AC_05,       // goto state ST_INITIAL and continue scanning
+    AC_06,       // goto state ST_DIGIT and continue scanning
+    AC_07,       // goto state ST_CONTINUE return TOK_DIGIT
+    AC_SC,       // goto state ST_SECTION
+    AC_DS,       // goto state ST_INITIAL and return TOK_SECTION
 };
 
 

@@ -27,17 +27,9 @@
 
 using namespace std;
 
-// return value for actions that need to scan 
-// for more information before returning a token.
-#define CONTINUE -1
-
-const string     Blank            = "";
+const string     Blank        = "";
 const Token      InvalidToken = {0xFF, 0xFF, {0}, TOK_MAX, Blank, -1};
 const KeywordMap NullKeyword  = {{'\0'}, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-
-
-
 
 Parser::Parser() :
     m_state(0),
@@ -110,7 +102,6 @@ int32_t Parser::parse(const char* fname)
 
 int32_t Parser::scan(void)
 {
-
     while (!m_reader.eof())
     {
         int32_t actionResult, currentAction;
@@ -124,6 +115,7 @@ int32_t Parser::scan(void)
             {
                 while (!m_reader.eof() && ch != '\n')
                     ch = m_reader.next();
+                m_lineNo++;
             }
             else
             {
@@ -131,10 +123,7 @@ int32_t Parser::scan(void)
             }
         }
 
-
-
-
-        tk = getType(ch);
+        tk            = getType(ch);
         currentAction = States[m_state][tk];
 
         if (currentAction >= 0 && currentAction < ActionCount)
@@ -158,20 +147,23 @@ int32_t Parser::scan(void)
             }
             else
             {
-                cout << "skipping action " << currentAction << '\n';
+                // should only happen if a nullptr is
+                // supplied in the action table
+                error("skipping action %i for character '%c'\n", currentAction, ch);
+                return PS_ERROR;
             }
         }
-        else if (currentAction == -1)
+        else if (currentAction == AC_0E)
         {
             error("undefined action for character '%c'\n", ch);
             return PS_ERROR;
         }
         else
         {
-            cout << "skipping char " << ch << '\n';
+            error("unknown character type '%c'\n", ch);
+            return PS_ERROR;
         }
     }
-
     return PS_OK;
 }
 
@@ -201,7 +193,7 @@ Token Parser::scanNextToken(void)
 int32_t Parser::TokenSECTION(void)
 {
     const Token& tok = getLastToken();
-    m_section = getSection(tok.value);
+    m_section        = getSection(tok.value);
     if (m_section == -1)
     {
         error("undefined section '%s'\n", tok.value.c_str());
@@ -224,11 +216,10 @@ int32_t Parser::TokenLABEL(void)
         // This will be resolved after all text has been parsed.
         // For now this just needs to map to a unique index.
         m_labels[label.value] = ++m_label;
-
     }
     else
     {
-        // should not happen unless Token::type is not the 
+        // should not happen unless Token::type is not the
         // same value that trigged this function.
         error("internal error, token type does not match the scanned token.\n");
         return PS_ERROR;
@@ -237,7 +228,6 @@ int32_t Parser::TokenLABEL(void)
     m_curString.clear();
     return PS_OK;
 }
-
 
 int32_t Parser::handleArgument(Instruction&      ins,
                                const KeywordMap& kwd,
@@ -253,7 +243,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         }
 
         ins.argv[idx] = tok.reg;
-        ins.flags |= IF_DREG;
+        ins.flags |= idx <= 0 ? IF_DREG : IF_SREG;
     }
     else if (kwd.argv[idx] == AT_LIT)
     {
@@ -263,19 +253,19 @@ int32_t Parser::handleArgument(Instruction&      ins,
             return PS_ERROR;
         }
         ins.argv[idx] = tok.ival.x;
-        ins.flags |= IF_DLIT;
+        ins.flags |= idx <= 0 ? IF_DLIT : IF_SLIT;
     }
     else if (kwd.argv[idx] == AT_REGLIT)
     {
         if (tok.type == TOK_DIGIT)
         {
             ins.argv[idx] = tok.ival.x;
-            ins.flags |= IF_DLIT;
+            ins.flags |= idx <= 0 ? IF_DLIT : IF_SLIT;
         }
         else if (tok.type == TOK_REGISTER)
         {
             ins.argv[idx] = tok.reg;
-            ins.flags |= IF_DREG;
+            ins.flags |= idx <= 0 ? IF_DREG : IF_SREG;
         }
         else
         {
@@ -298,17 +288,15 @@ int32_t Parser::handleArgument(Instruction&      ins,
     return PS_OK;
 }
 
-
-
 int32_t Parser::handleOpCode(const Token& tok)
 {
     const KeywordMap& kwd = getKeyword(tok.index);
-    if (kwd.op != -1)
+    if (kwd.op != UNDEFINED)
     {
         Instruction ins = {};
-        ins.op    = kwd.op;
-        ins.argc  = kwd.narg;
-        ins.label = m_label;
+        ins.op          = kwd.op;
+        ins.argc        = kwd.narg;
+        ins.label       = m_label;
 
         if (ins.argc > 0)
         {
@@ -347,7 +335,7 @@ int32_t Parser::getSection(const std::string& val)
 int32_t Parser::getKeywordIndex(const uint8_t& val)
 {
     if (val == 0)
-        return -1;
+        return UNDEFINED;
 
     int32_t i;
     for (i = 0; i < KeywordTableSize; ++i)
@@ -355,12 +343,12 @@ int32_t Parser::getKeywordIndex(const uint8_t& val)
         if (KeywordTable[i].op == val)
             return i;
     }
-    return -1;
+    return UNDEFINED;
 }
 
 const KeywordMap& Parser::getKeyword(const int32_t& val)
 {
-    if (val != -1)
+    if (val != UNDEFINED)
     {
         if (val >= 0 && val < KeywordTableSize)
             return KeywordTable[val];
@@ -380,6 +368,8 @@ int32_t Parser::ActionIdx01(uint8_t ch)
     {
         m_state = ST_CONTINUE;
 
+        // TODO set this up to test
+        // for l, w, and b
         if (m_curString.size() == 2 &&
             m_curString[1] >= '0' &&
             m_curString[1] <= '9')
@@ -397,7 +387,6 @@ int32_t Parser::ActionIdx01(uint8_t ch)
             if (strncmp(KeywordTable[i].word, m_curString.c_str(), 6) == 0)
             {
                 m_state = ST_INITIAL;
-
                 // swap the string with the opcode
                 m_curString.clear();
 
@@ -468,7 +457,6 @@ int32_t Parser::ActionIdxDC(uint8_t ch)
     return TOK_SECTION;
 }
 
-
 void Parser::error(const char* fmt, ...)
 {
     if (fmt != nullptr)
@@ -476,11 +464,10 @@ void Parser::error(const char* fmt, ...)
         va_list l1;
         int     s1, s2;
 
-        char* buffer= nullptr;
+        char* buffer = nullptr;
         va_start(l1, fmt);
         s1 = std::vsnprintf(buffer, 0, fmt, l1);
         va_end(l1);
-
 
         if (s1 > 0)
         {
@@ -496,7 +483,6 @@ void Parser::error(const char* fmt, ...)
         }
     }
 }
-
 
 const Parser::Action Parser::Actions[] = {
     &Parser::ActionIdx00,
@@ -514,23 +500,19 @@ const Parser::Action Parser::Actions[] = {
 
 const size_t Parser::ActionCount = sizeof(Actions) / sizeof(Actions[0]);
 
-enum Actions
-{
-    AC_IG = -3,  // Ignore this character
-    AC_0L = -2,  // return TOK_EOL
-    AC_0E = -1,  // error
-    AC_00,       // push current character to token
-    AC_01,       // if the token is keyword then return token TOK_MNEMONIC otherwise TOK_IDENTIFIER
-    AC_02,       // add char to token then goto STATE ST_READ_ID
-    AC_03,       // goto state ST_INITIAL, return TOK_LABEL
-    AC_04,       // goto state ST_INITIAL, return TOK_IDENTIFIER
-    AC_05,       // goto state ST_INITIAL and continue scanning
-    AC_06,       // goto state ST_DIGIT and continue scanning
-    AC_07,       // goto state ST_CONTINUE return TOK_DIGIT
-    AC_SC,       // goto state ST_SECTION
-    AC_DS,       // goto state ST_INITIAL and return TOK_SECTION
-};
-
+//AC_IG = -3,  // Ignore this character
+//AC_0L = -2,  // return TOK_EOL
+//AC_0E = -1,  // error
+//AC_00,       // push current character to token
+//AC_01,       // if the token is keyword then return token TOK_MNEMONIC otherwise TOK_IDENTIFIER
+//AC_02,       // add char to token then goto STATE ST_READ_ID
+//AC_03,       // goto state ST_INITIAL, return TOK_LABEL
+//AC_04,       // goto state ST_INITIAL, return TOK_IDENTIFIER
+//AC_05,       // goto state ST_INITIAL and continue scanning
+//AC_06,       // goto state ST_DIGIT and continue scanning
+//AC_07,       // goto state ST_CONTINUE return TOK_DIGIT
+//AC_SC,       // goto state ST_SECTION
+//AC_DS,       // goto state ST_INITIAL and return TOK_SECTION
 const Parser::StateTable Parser::States = {
     //[a-z] [A-Z]  [0-9]   ' '    '\n'    ','    '.'    ':'    '''    '"'    '('    ')'    '['    ']'    '#'   '+'     '-'    \0
     {AC_02, AC_02, AC_06, AC_01, AC_05, AC_0E, AC_SC, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_06, AC_01},  // ST_INITIAL
@@ -609,7 +591,7 @@ int32_t Parser::getType(uint8_t ct)
 }
 
 const KeywordMap Parser::KeywordTable[] = {
-    {"mov\0",  OP_MOV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"mov\0", OP_MOV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
     {"call\0", OP_CALL, 1, {AT_ADDR, AT_NULL, AT_NULL}},
     {"ret\0", OP_RET, 0, {AT_NULL, AT_NULL, AT_NULL}},
     {"inc\0", OP_INC, 1, {AT_REG, AT_NULL, AT_NULL}},
