@@ -170,8 +170,11 @@ void BinaryWriter::writeSections()
 
     TVMSection sec = {};
 
+    sec.size = (uint32_t)mapInstructions();
+    if (sec.size <= 0)
+        return;
+
     sec.code  = TYPE_ID2('C', 'S');
-    sec.size  = (uint32_t)mapInstructions();
     sec.start = m_loc + sizeof(TVMSection);
     sec.entry = findLabel("main");
     
@@ -192,7 +195,7 @@ void BinaryWriter::writeSections()
             lookup = findLabel(ins.labelName);
             if (lookup != -1)
             {
-                ins.arg1 = lookup;
+                ins.argv[0] = lookup;
                 ins.flags |= IF_ADDR;
             }
             else
@@ -205,10 +208,10 @@ void BinaryWriter::writeSections()
         write8(0);
 
         if (ins.argc > 0)
-            write64(ins.arg1);
+            write64(ins.argv[0]);
         if (ins.argc > 1)
-            write64(ins.arg2);
+            write64(ins.argv[1]);
         if (ins.argc > 2)
-            write64(ins.arg3);
+            write64(ins.argv[2]);
     }
 }

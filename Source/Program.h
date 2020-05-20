@@ -52,6 +52,7 @@ private:
 
     void handle_OP_RET(ExecInstruction& inst);
     void handle_OP_MOV(ExecInstruction& inst);
+    void handle_OP_CALL(ExecInstruction& inst);
     void handle_OP_INC(ExecInstruction& inst);
     void handle_OP_DEC(ExecInstruction& inst);
     void handle_OP_CMP(ExecInstruction& inst);

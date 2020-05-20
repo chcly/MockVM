@@ -38,9 +38,8 @@ struct ProgramInfo
     vector<string> files;
 };
 
-
-
 void usage(void);
+
 
 int main(int argc, char **argv)
 {
@@ -51,7 +50,6 @@ int main(int argc, char **argv)
     }
 
     ProgramInfo ctx = {};
-
     int    i;
     for (i = 1; i < argc; ++i)
     {
@@ -77,7 +75,8 @@ int main(int argc, char **argv)
 
     if (ctx.output.empty())
     {
-        cout << "Missing output file.\n";
+        usage();
+        cout << "missing output file.\n";
         return 0;
     }
 
@@ -102,7 +101,7 @@ int main(int argc, char **argv)
 void usage(void)
 {
     cout << "tcom <options> <input file>\n";
-    cout << "    options:\n\n";
+    cout << "    options:\n";
     cout << "    -h show this message.\n";
     cout << "    -o output file.\n";
 }

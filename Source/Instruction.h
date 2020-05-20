@@ -25,8 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define TYPE_ID4(a, b, c, d) ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
-#define TYPE_ID2(a, b)      ((b) << 8 | (a))
+#include "Declarations.h"
 
 
 enum SectionCodes
@@ -76,9 +75,7 @@ struct Instruction
     uint8_t     op;
     uint8_t     flags;
     uint8_t     argc;
-    uint64_t    arg1;
-    uint64_t    arg2;
-    uint64_t    arg3;
+    uint64_t    argv[INS_ARGM];
     uint64_t    label;
     std::string labelName;
 };
@@ -90,13 +87,8 @@ struct ExecInstruction
     uint8_t     op;
     uint8_t     flags;
     uint8_t     argc;
-    uint64_t    arg1;
-    uint64_t    arg2;
-    uint64_t    arg3;
+    uint64_t    argv[INS_ARGM];
 };
-
-
-
 
 
 #endif  // _Instruction_h_

@@ -82,11 +82,11 @@ void Program::load(const char *fname)
             exec.flags = restrict8(ops[2], 0, IF_MAX);
 
             if (exec.argc > 0)
-                m_reader->read(&exec.arg1, 8);
+                m_reader->read(&exec.argv[0], 8);
             if (exec.argc > 1)
-                m_reader->read(&exec.arg2, 8);
+                m_reader->read(&exec.argv[1], 8);
             if (exec.argc > 2)
-                m_reader->read(&exec.arg3, 8);
+                m_reader->read(&exec.argv[2], 8);
 
             i += (8 * (size_t)exec.argc);
 
@@ -131,24 +131,31 @@ void Program::handle_OP_RET(ExecInstruction& inst)
 
 void Program::handle_OP_MOV(ExecInstruction& inst)
 {
-    if (inst.arg1 <= 9)
+    if (inst.argv[0] <= 9)
     {
         if (inst.flags & IF_SREG)
         {
-            if (inst.arg2 <= 9)
-                m_regi[inst.arg1].x = m_regi[inst.arg2].x;
+            if (inst.argv[1] <= 9)
+                m_regi[inst.argv[0]].x = m_regi[inst.argv[1]].x;
         }
         else
-            m_regi[inst.arg1].x = inst.arg2;
+            m_regi[inst.argv[0]].x = inst.argv[1];
     }
 }
+
+
+void Program::handle_OP_CALL(ExecInstruction& inst)
+{
+    m_curinst = inst.argv[0];
+}
+
 
 void Program::handle_OP_INC(ExecInstruction& inst)
 {
     if (inst.flags & IF_DREG)
     {
-        if (inst.arg1 <= 9)
-            m_regi[inst.arg1].x += 1; 
+        if (inst.argv[0] <= 9)
+            m_regi[inst.argv[0]].x += 1; 
     }
 }
 
@@ -157,16 +164,16 @@ void Program::handle_OP_DEC(ExecInstruction& inst)
 {
     if (inst.flags & IF_DREG)
     {
-        if (inst.arg1 <= 9)
-            m_regi[inst.arg1].x -= 1;
+        if (inst.argv[0] <= 9)
+            m_regi[inst.argv[0]].x -= 1;
     }
 }
 
 void Program::handle_OP_CMP(ExecInstruction& inst)
 {
     uint64_t a, b;
-    a = inst.arg1;
-    b = inst.arg2;
+    a = inst.argv[0];
+    b = inst.argv[1];
     if (inst.flags & IF_DREG && a <= 9)
         a = m_regi[a].x;
     if (inst.flags & IF_SREG && b <= 9)
@@ -183,7 +190,7 @@ void Program::handle_OP_CMP(ExecInstruction& inst)
 
 void Program::handle_OP_JMP(ExecInstruction& inst)
 {
-    m_curinst = inst.arg1;
+    m_curinst = inst.argv[0];
 }
 
 void Program::handle_OP_JEQ(ExecInstruction& inst)
@@ -191,7 +198,7 @@ void Program::handle_OP_JEQ(ExecInstruction& inst)
     if (m_flags & PF_E)
     {
         m_flags &= ~PF_E;
-        m_curinst = inst.arg1;
+        m_curinst = inst.argv[0];
     }
 }
 
@@ -200,7 +207,7 @@ void Program::handle_OP_JNE(ExecInstruction& inst)
     if (!(m_flags & PF_E))
     {
         m_flags &= ~PF_E;
-        m_curinst = inst.arg1;
+        m_curinst = inst.argv[0];
     }
 }
 
@@ -210,12 +217,12 @@ void Program::handle_OP_JLE(ExecInstruction& inst)
     if (m_flags & PF_E)
     {
         m_flags &= ~PF_E;
-        m_curinst = inst.arg1;
+        m_curinst = inst.argv[0];
     }
     else if (m_flags & PF_L)
     {
         m_flags &= ~PF_L;
-        m_curinst = inst.arg1;
+        m_curinst = inst.argv[0];
     }
 }
 
@@ -225,12 +232,12 @@ void Program::handle_OP_JGE(ExecInstruction& inst)
     if (m_flags & PF_E)
     {
         m_flags &= ~PF_E;
-        m_curinst = inst.arg1;
+        m_curinst = inst.argv[0];
     }
     else if (m_flags & PF_G)
     {
         m_flags &= ~PF_G;
-        m_curinst = inst.arg1;
+        m_curinst = inst.argv[0];
     }
 }
 
@@ -240,7 +247,7 @@ void Program::handle_OP_JLT(ExecInstruction& inst)
     if (m_flags & PF_L)
     {
         m_flags &= ~PF_L;
-        m_curinst = inst.arg1;
+        m_curinst = inst.argv[0];
     }
 }
 
@@ -249,20 +256,20 @@ void Program::handle_OP_JGT(ExecInstruction& inst)
     if (m_flags & PF_G)
     {
         m_flags &= ~PF_G;
-        m_curinst = inst.arg1;
+        m_curinst = inst.argv[0];
     }
 }
 
 
 void Program::handle_OP_ADD(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.arg1;
+    uint64_t x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
         uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.arg2;
+        uint64_t b = inst.argv[1];
 
-        if (inst.arg2 <= 9 && inst.flags & IF_SREG)
+        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
             b = m_regi[b].x;
 
         m_regi[x0].x = a + b;
@@ -271,13 +278,13 @@ void Program::handle_OP_ADD(ExecInstruction& inst)
 
 void Program::handle_OP_SUB(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.arg1;
+    uint64_t x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
         uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.arg2;
+        uint64_t b = inst.argv[1];
 
-        if (inst.arg2 <= 9 && inst.flags & IF_SREG)
+        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
             b = m_regi[b].x;
         m_regi[x0].x = a - b;
     }
@@ -285,13 +292,13 @@ void Program::handle_OP_SUB(ExecInstruction& inst)
 
 void Program::handle_OP_MUL(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.arg1;
+    uint64_t x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
         uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.arg2;
+        uint64_t b = inst.argv[1];
 
-        if (inst.arg2 <= 9 && inst.flags & IF_SREG)
+        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
             b = m_regi[b].x;
 
         m_regi[x0].x = a * b;
@@ -300,13 +307,13 @@ void Program::handle_OP_MUL(ExecInstruction& inst)
 
 void Program::handle_OP_DIV(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.arg1;
+    uint64_t x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
         uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.arg2;
+        uint64_t b = inst.argv[1];
 
-        if (inst.arg2 <= 9 && inst.flags & IF_SREG)
+        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
             b = m_regi[b].x;
 
         if (b != 0)
@@ -317,10 +324,10 @@ void Program::handle_OP_DIV(ExecInstruction& inst)
 
 void Program::handle_OP_PRG(ExecInstruction& inst)
 {
-    if (inst.flags & IF_DREG && inst.arg1 <= 9)
-        cout << m_regi[inst.arg1].x << '\n';
+    if (inst.flags & IF_DREG && inst.argv[0] <= 9)
+        cout << m_regi[inst.argv[0]].x << '\n';
     else
-        cout << inst.arg1 << '\n';
+        cout << inst.argv[0] << '\n';
 }
 
 void Program::handle_OP_PRGI(ExecInstruction& inst)
@@ -354,7 +361,7 @@ const Program::Operation Program::OPCodeTable[] = {
     nullptr,
     &Program::handle_OP_RET,
     &Program::handle_OP_MOV,
-    nullptr,  //OperationTable(OP_CALL),
+    &Program::handle_OP_CALL,
     &Program::handle_OP_INC,
     &Program::handle_OP_DEC,
     &Program::handle_OP_CMP,

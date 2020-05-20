@@ -20,21 +20,24 @@
 -------------------------------------------------------------------------------
 */
 #include "Parser.h"
+#include <cstdarg>
+#include <cstdio>
 #include <iostream>
 #include "Instruction.h"
 
 using namespace std;
 
+// return value for actions that need to scan 
+// for more information before returning a token.
 #define CONTINUE -1
 
 const string     Blank            = "";
-const string     UndefinedToken   = "Undefined token:";
-const string     UnknownArg       = "Missing Argument:";
-const string     EmptyStack       = "Empty token stack";
-const string     UndefinedChar    = "Unknown character parsed";
-const string     Undefinedsection = "Undefined section type";
-const Token      InvalidToken     = {0xFF, 0xFF, {0}, TOK_MAX, Blank};
-const KeywordMap NullKeyword      = {{}, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+const Token      InvalidToken = {0xFF, 0xFF, {0}, TOK_MAX, Blank, -1};
+const KeywordMap NullKeyword  = {{'\0'}, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+
+
+
 
 Parser::Parser() :
     m_state(0),
@@ -47,7 +50,8 @@ Parser::Parser() :
     m_register(0),
     m_tokens(),
     m_labels(),
-    m_instructions()
+    m_instructions(),
+    m_fname()
 {
 }
 
@@ -60,10 +64,12 @@ int32_t Parser::parse(const char* fname)
     m_reader.open(fname);
     if (!m_reader.eof())
     {
-        m_state = ST_INITIAL;
         int32_t sr, rc;
+
         m_section = -1;
         m_label   = 0;
+        m_state   = ST_INITIAL;
+        m_fname   = fname;
 
         while (!m_reader.eof())
         {
@@ -82,17 +88,21 @@ int32_t Parser::parse(const char* fname)
             case PS_OK:
                 return PS_OK;
             default:
+                error("unhanded token %i.\n", sr);
                 rc = PS_ERROR;
                 break;
             }
 
             if (rc != PS_OK)
+            {
+                error("scan error with token %i.\n", sr);
                 return PS_ERROR;
+            }
         }
     }
     else
     {
-        cout << "Failed to load '" << fname << "'\n";
+        error("failed to load file %s.\n", fname);
         return PS_ERROR;
     }
     return PS_OK;
@@ -100,38 +110,68 @@ int32_t Parser::parse(const char* fname)
 
 int32_t Parser::scan(void)
 {
+
     while (!m_reader.eof())
     {
-        uint8_t ch = m_reader.next();
-        int32_t tk = getType(ch);
-        int32_t ac = States[m_state][tk];
+        int32_t actionResult, currentAction;
+        int32_t ch, tk;
 
-        if (ac >= 0 && ac < ActionCount)
+        ch = m_reader.next();
+        if (ch == '/')
         {
-            if (Actions[ac] != nullptr)
+            ch = m_reader.next();
+            if (ch == '/')
             {
-                int32_t rc = (this->*Actions[ac])(ch);
-                if (rc != -1)
+                while (!m_reader.eof() && ch != '\n')
+                    ch = m_reader.next();
+            }
+            else
+            {
+                // should be an error...
+            }
+        }
+
+
+
+
+        tk = getType(ch);
+        currentAction = States[m_state][tk];
+
+        if (currentAction >= 0 && currentAction < ActionCount)
+        {
+            if (Actions[currentAction] != nullptr)
+            {
+                actionResult = (this->*Actions[currentAction])(ch);
+                if (actionResult != CONTINUE)
                 {
                     Token tok  = {};
                     tok.op     = m_op;
                     tok.reg    = m_register;
                     tok.ival.x = m_ival;
                     tok.value  = m_curString;
-                    tok.type   = rc;
+                    tok.type   = actionResult;
                     tok.index  = getKeywordIndex(m_op);
+
                     m_tokens.push(tok);
-                    return rc;
+                    return actionResult;
                 }
             }
+            else
+            {
+                cout << "skipping action " << currentAction << '\n';
+            }
         }
-        else if (ac == -1)
+        else if (currentAction == -1)
         {
-            cout << UndefinedChar << ' '
-                 << '\'' << ch << "'\n";
+            error("undefined action for character '%c'\n", ch);
             return PS_ERROR;
         }
+        else
+        {
+            cout << "skipping char " << ch << '\n';
+        }
     }
+
     return PS_OK;
 }
 
@@ -161,12 +201,10 @@ Token Parser::scanNextToken(void)
 int32_t Parser::TokenSECTION(void)
 {
     const Token& tok = getLastToken();
-
     m_section = getSection(tok.value);
     if (m_section == -1)
     {
-        cout << Undefinedsection << ' '
-             << tok.value << '\n';
+        error("undefined section '%s'\n", tok.value.c_str());
         return PS_ERROR;
     }
     return PS_OK;
@@ -179,21 +217,87 @@ int32_t Parser::TokenLABEL(void)
     {
         if (m_labels.find(label.value) != m_labels.end())
         {
-            cout << "error duplicate label '" << label.value << "'\n";
+            error("duplicate label '%s'\n", label.value.c_str());
             return PS_ERROR;
         }
 
         // This will be resolved after all text has been parsed.
         // For now this just needs to map to a unique index.
         m_labels[label.value] = ++m_label;
+
     }
     else
     {
-        cout << "internal error, token type does not match the scanned token\n";
+        // should not happen unless Token::type is not the 
+        // same value that trigged this function.
+        error("internal error, token type does not match the scanned token.\n");
         return PS_ERROR;
     }
+
+    m_curString.clear();
     return PS_OK;
 }
+
+
+int32_t Parser::handleArgument(Instruction&      ins,
+                               const KeywordMap& kwd,
+                               const Token&      tok,
+                               const int32_t     idx)
+{
+    if (kwd.argv[idx] == AT_REG)
+    {
+        if (tok.type != TOK_REGISTER)
+        {
+            error("expected operand one for %s, to be a register\n", kwd.word);
+            return PS_ERROR;
+        }
+
+        ins.argv[idx] = tok.reg;
+        ins.flags |= IF_DREG;
+    }
+    else if (kwd.argv[idx] == AT_LIT)
+    {
+        if (tok.type != TOK_DIGIT)
+        {
+            error("expected operand one for %s, to be a literal\n", kwd.word);
+            return PS_ERROR;
+        }
+        ins.argv[idx] = tok.ival.x;
+        ins.flags |= IF_DLIT;
+    }
+    else if (kwd.argv[idx] == AT_REGLIT)
+    {
+        if (tok.type == TOK_DIGIT)
+        {
+            ins.argv[idx] = tok.ival.x;
+            ins.flags |= IF_DLIT;
+        }
+        else if (tok.type == TOK_REGISTER)
+        {
+            ins.argv[idx] = tok.reg;
+            ins.flags |= IF_DREG;
+        }
+        else
+        {
+            error("expected operand one for %s, to be a register or a literal\n", kwd.word);
+            return PS_ERROR;
+        }
+    }
+    else if (kwd.argv[idx] == AT_ADDR)
+    {
+        // save this now so it can be resolved after all
+        // labels have been stored
+        ins.labelName = tok.value;
+    }
+    else
+    {
+        error("unknown first operand for %s\n", kwd.word);
+        return PS_ERROR;
+    }
+
+    return PS_OK;
+}
+
 
 
 int32_t Parser::handleOpCode(const Token& tok)
@@ -202,134 +306,19 @@ int32_t Parser::handleOpCode(const Token& tok)
     if (kwd.op != -1)
     {
         Instruction ins = {};
-
         ins.op    = kwd.op;
         ins.argc  = kwd.narg;
         ins.label = m_label;
 
         if (ins.argc > 0)
         {
-            const Token& arg1 = scanNextToken();
-            if (kwd.type_arg1 == AT_REG)
-            {
-                if (arg1.type != TOK_REGISTER)
-                {
-                    cout << "Expected operand one, for " << kwd.word << " to be a ";
-                    cout << "register. found type " << arg1.type;
-                    cout << '\n';
-                    return PS_ERROR;
-                }
-
-                ins.arg1 = arg1.reg;
-                ins.flags |= IF_DREG;
-            }
-            else if (kwd.type_arg1 == AT_LIT)
-            {
-                if (arg1.type != TOK_DIGIT)
-                {
-                    cout << "Expected operand one, for " << kwd.word << " to be a ";
-                    cout << "literal. found type " << arg1.type;
-                    cout << '\n';
-                    return PS_ERROR;
-                }
-
-                ins.arg1 = arg1.ival.x;
-                ins.flags |= IF_DLIT;
-            }
-            else if (kwd.type_arg1 == AT_REGLIT)
-            {
-                if (arg1.type == TOK_DIGIT)
-                {
-                    ins.arg2 = arg1.ival.x;
-                    ins.flags |= IF_DLIT;
-                }
-                else if (arg1.type == TOK_REGISTER)
-                {
-                    ins.arg1 = arg1.reg;
-                    ins.flags |= IF_DREG;
-                }
-                else
-                {
-                    cout << "Expected operand two, for " << kwd.word << " to be either a ";
-                    cout << "literal or a register. found type " << arg1.type;
-                    cout << '\n';
-                    return PS_ERROR;
-                }
-            }
-            else if (kwd.type_arg1 == AT_ADDR)
-            {
-                // save this now so it can be resolved after all
-                // labels have been stored
-                ins.labelName = arg1.value;
-            }
-            else
-            {
-                cout << "Unknown first operand for " << kwd.word << '\n';
+            if (handleArgument(ins, kwd, scanNextToken(), 0) == PS_ERROR)
                 return PS_ERROR;
-            }
         }
-
         if (ins.argc > 1)
         {
-            const Token& arg2 = scanNextToken();
-            if (kwd.type_arg2 == AT_REG)
-            {
-                if (arg2.type != TOK_REGISTER)
-                {
-                    cout << "Expected operand two, for " << kwd.word << " to be a ";
-                    cout << "register. found type " << arg2.type;
-                    cout << '\n';
-                    return PS_ERROR;
-                }
-
-                ins.arg2 = arg2.reg;
-                ins.flags |= IF_SREG;
-            }
-            else if (kwd.type_arg2 == AT_LIT)
-            {
-                if (arg2.type != TOK_DIGIT)
-                {
-                    cout << "Expected operand one, for " << kwd.word << " to be a ";
-                    cout << "literal. found type " << arg2.type;
-                    cout << '\n';
-                    return PS_ERROR;
-                }
-
-                ins.arg2 = arg2.ival.x;
-                ins.flags |= IF_SLIT;
-            }
-
-            else if (kwd.type_arg2 == AT_REGLIT)
-            {
-                if (arg2.type == TOK_DIGIT)
-                {
-                    ins.arg2 = arg2.ival.x;
-                    ins.flags |= IF_SLIT;
-                }
-                else if (arg2.type == TOK_REGISTER)
-                {
-                    ins.arg2 = arg2.reg;
-                    ins.flags |= IF_SREG;
-                }
-                else
-                {
-                    cout << "Expected operand two, for " << kwd.word << " to be either a ";
-                    cout << "literal or a register. found type " << arg2.type;
-                    cout << '\n';
-                    return PS_ERROR;
-                }
-            }
-            else if (kwd.type_arg1 == AT_ADDR)
-            {
-                // save this now so it can be resolved after all
-                // labels have been stored
-                ins.labelName = arg2.value;
-            }
-            else
-            {
-                cout << "Unknown second operand for " << kwd.word << '\n';
+            if (handleArgument(ins, kwd, scanNextToken(), 1) == PS_ERROR)
                 return PS_ERROR;
-            }
         }
 
         m_instructions.push_back(ins);
@@ -479,6 +468,36 @@ int32_t Parser::ActionIdxDC(uint8_t ch)
     return TOK_SECTION;
 }
 
+
+void Parser::error(const char* fmt, ...)
+{
+    if (fmt != nullptr)
+    {
+        va_list l1;
+        int     s1, s2;
+
+        char* buffer= nullptr;
+        va_start(l1, fmt);
+        s1 = std::vsnprintf(buffer, 0, fmt, l1);
+        va_end(l1);
+
+
+        if (s1 > 0)
+        {
+            buffer = (char*)::malloc((size_t)s1 + 1);
+            if (buffer)
+            {
+                va_start(l1, fmt);
+                s2 = std::vsnprintf(buffer, (size_t)s1 + 1, fmt, l1);
+                va_end(l1);
+                fprintf(stdout, "%s(%i): error : %s", m_fname.c_str(), m_lineNo, buffer);
+                ::free(buffer);
+            }
+        }
+    }
+}
+
+
 const Parser::Action Parser::Actions[] = {
     &Parser::ActionIdx00,
     &Parser::ActionIdx01,
@@ -516,7 +535,7 @@ const Parser::StateTable Parser::States = {
     //[a-z] [A-Z]  [0-9]   ' '    '\n'    ','    '.'    ':'    '''    '"'    '('    ')'    '['    ']'    '#'   '+'     '-'    \0
     {AC_02, AC_02, AC_06, AC_01, AC_05, AC_0E, AC_SC, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_06, AC_01},  // ST_INITIAL
     {AC_00, AC_00, AC_00, AC_01, AC_01, AC_01, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_06, AC_01},  // ST_READ_ID
-    {AC_0E, AC_0E, AC_00, AC_07, AC_07, AC_0E, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_00, AC_01},  // ST_DIGIT
+    {AC_0E, AC_0E, AC_00, AC_07, AC_07, AC_01, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_00, AC_01},  // ST_DIGIT
     {AC_0E, AC_0E, AC_0E, AC_0E, AC_0L, AC_0E, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_EXIT
     {AC_0E, AC_0E, AC_0E, AC_0E, AC_0L, AC_0E, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_ERROR
     {AC_0E, AC_0E, AC_0E, AC_05, AC_05, AC_05, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_CONTINUE
@@ -590,24 +609,25 @@ int32_t Parser::getType(uint8_t ct)
 }
 
 const KeywordMap Parser::KeywordTable[] = {
-    {"mov\0", OP_MOV, 2, AT_REG, AT_REGLIT, AT_NULL},
-    {"ret\0", OP_RET, 0, AT_NULL, AT_NULL, AT_NULL},
-    {"inc\0", OP_INC, 1, AT_REG, AT_NULL, AT_NULL},
-    {"dec\0", OP_DEC, 1, AT_REG, AT_NULL, AT_NULL},
-    {"cmp\0", OP_CMP, 2, AT_REGLIT, AT_REGLIT, AT_NULL},
-    {"jmp\0", OP_JMP, 1, AT_ADDR, AT_NULL, AT_NULL},
-    {"jeq\0", OP_JEQ, 1, AT_ADDR, AT_NULL, AT_NULL},
-    {"jne\0", OP_JNE, 1, AT_ADDR, AT_NULL, AT_NULL},
-    {"jlt\0", OP_JLT, 1, AT_ADDR, AT_NULL, AT_NULL},
-    {"jgt\0", OP_JGT, 1, AT_ADDR, AT_NULL, AT_NULL},
-    {"jle\0", OP_JLE, 1, AT_ADDR, AT_NULL, AT_NULL},
-    {"jge\0", OP_JGE, 1, AT_ADDR, AT_NULL, AT_NULL},
-    {"prgi\0", OP_PRGI, 0, AT_NULL, AT_NULL, AT_NULL},
-    {"prg\0", OP_PRG, 1, AT_REGLIT, AT_NULL, AT_NULL},
-    {"add\0", OP_ADD, 2, AT_REG, AT_REGLIT, AT_NULL},
-    {"sub\0", OP_SUB, 2, AT_REG, AT_REGLIT, AT_NULL},
-    {"mul\0", OP_MUL, 2, AT_REG, AT_REGLIT, AT_NULL},
-    {"div\0", OP_DIV, 2, AT_REG, AT_REGLIT, AT_NULL},
+    {"mov\0",  OP_MOV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"call\0", OP_CALL, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"ret\0", OP_RET, 0, {AT_NULL, AT_NULL, AT_NULL}},
+    {"inc\0", OP_INC, 1, {AT_REG, AT_NULL, AT_NULL}},
+    {"dec\0", OP_DEC, 1, {AT_REG, AT_NULL, AT_NULL}},
+    {"cmp\0", OP_CMP, 2, {AT_REGLIT, AT_REGLIT, AT_NULL}},
+    {"jmp\0", OP_JMP, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jeq\0", OP_JEQ, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jne\0", OP_JNE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jlt\0", OP_JLT, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jgt\0", OP_JGT, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jle\0", OP_JLE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jge\0", OP_JGE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"prgi\0", OP_PRGI, 0, {AT_NULL, AT_NULL, AT_NULL}},
+    {"prg\0", OP_PRG, 1, {AT_REGLIT, AT_NULL, AT_NULL}},
+    {"add\0", OP_ADD, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"sub\0", OP_SUB, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"mul\0", OP_MUL, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"div\0", OP_DIV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
 };
 
 const size_t Parser::KeywordTableSize = sizeof(Parser::KeywordTable) / sizeof(KeywordMap);

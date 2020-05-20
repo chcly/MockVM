@@ -70,6 +70,7 @@ public:
 
 
 private:
+
     BlockReader  m_reader;
     int32_t      m_state, m_section, m_label, m_lineNo;
     std::string  m_curString;
@@ -79,16 +80,24 @@ private:
     TokenStack   m_tokens;
     LabelMap     m_labels;
     Instructions m_instructions;
+    std::string  m_fname;
 
     int32_t scan(void);
     int32_t getType(uint8_t ct);
     void    clearState(void);
+    void    error(const char* fmt, ...);
 
     int32_t           getSection(const std::string& val);
     int32_t           getKeywordIndex(const uint8_t& val);
     const KeywordMap& getKeyword(const int32_t& val);
+    
     Token             scanNextToken(void);
     Token             getLastToken(void);
+    int32_t           handleArgument(Instruction&      ins,
+                                     const KeywordMap& kwd,
+                                     const Token&      tok,
+                                     const int32_t     idx);
+
 
 public:
     Parser();

@@ -23,6 +23,13 @@
 #define _Decl_h_
 
 
+#include <stdint.h>
+#include <string.h>
+
+#define INS_ARGM 3
+#define TYPE_ID4(a, b, c, d) ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
+#define TYPE_ID2(a, b) ((b) << 8 | (a))
+
 
 
 typedef union Register {
@@ -152,16 +159,11 @@ typedef char Keyword[7];
 
 struct KeywordMap
 {
-    Keyword       word;
-    unsigned char op;
-    unsigned char narg;
-    unsigned char type_arg1;
-    unsigned char type_arg2;
-    unsigned char type_arg3;
+    Keyword word;
+    uint8_t op;
+    uint8_t narg;
+    uint8_t argv[INS_ARGM];
 };
-
-
-
 
 #define _RELITAVE_TIME_CHECK_BEGIN                                    \
     {                                                                 \
