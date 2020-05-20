@@ -108,7 +108,7 @@ int Program::launch(void)
 
     size_t           tinst   = m_ins.size();
     ExecInstruction* basePtr = m_ins.data();
-    m_stack.push(0);
+    m_stack.push(m_curinst);
 
     while (m_curinst < tinst)
     {
@@ -121,7 +121,12 @@ int Program::launch(void)
 
 void Program::handle_OP_RET(ExecInstruction& inst)
 {
-    m_stack.pop();
+    if (!m_stack.empty())
+    {
+        m_curinst = m_stack.top();
+        m_stack.pop();
+    }
+
     if (m_stack.empty())
         m_curinst = m_ins.size() + 1;
     m_return = (int32_t)m_regi[0].x;
@@ -143,6 +148,7 @@ void Program::handle_OP_MOV(ExecInstruction& inst)
 
 void Program::handle_OP_CALL(ExecInstruction& inst)
 {
+    m_stack.push(m_curinst);
     m_curinst = inst.argv[0];
 }
 
