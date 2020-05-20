@@ -50,6 +50,10 @@ private:
     size_t computeInstructionSize(const Instruction& ins);
     size_t mapInstructions(void);
 
+
+    int64_t findLabel(const std::string& name); 
+
+
 public:
 
     BinaryWriter();

@@ -50,7 +50,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    ProgramInfo ctx;
+    ProgramInfo ctx = {};
 
     int    i;
     for (i = 1; i < argc; ++i)
@@ -73,10 +73,13 @@ int main(int argc, char **argv)
         }
         else
             ctx.files.push_back(argv[i]);
-
-
     }
 
+    if (ctx.output.empty())
+    {
+        cout << "Missing output file.\n";
+        return 0;
+    }
 
     BinaryWriter w;
     for (string file : ctx.files)

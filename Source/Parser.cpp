@@ -177,9 +177,15 @@ int32_t Parser::TokenLABEL(void)
     const Token& label = getLastToken();
     if (label.type == TOK_LABEL)
     {
-        // use position in buffer for its mapping.
-        m_label++;
-        m_labels[label.value] = m_label;
+        if (m_labels.find(label.value) != m_labels.end())
+        {
+            cout << "error duplicate label '" << label.value << "'\n";
+            return PS_ERROR;
+        }
+
+        // This will be resolved after all text has been parsed.
+        // For now this just needs to map to a unique index.
+        m_labels[label.value] = ++m_label;
     }
     else
     {
@@ -188,6 +194,7 @@ int32_t Parser::TokenLABEL(void)
     }
     return PS_OK;
 }
+
 
 int32_t Parser::handleOpCode(const Token& tok)
 {

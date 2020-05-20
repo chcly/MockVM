@@ -23,13 +23,11 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include <iostream>
-#include <stdio.h>
 #include "BinaryWriter.h"
+#include <stdio.h>
+#include <iostream>
 
 using namespace std;
-
-
 
 BinaryWriter::BinaryWriter() :
     m_fp(0),
@@ -43,7 +41,6 @@ BinaryWriter::~BinaryWriter()
         fclose((FILE*)m_fp);
 }
 
-
 void BinaryWriter::mergeInstructions(const Instructions& insl)
 {
     m_ins.reserve(insl.size());
@@ -53,10 +50,16 @@ void BinaryWriter::mergeInstructions(const Instructions& insl)
 
 void BinaryWriter::mergeLabels(const LabelMap& map)
 {
-    m_labels = map;
+    LabelMap::const_iterator it = map.begin();
+    while (it != map.end())
+    {
+        if (m_labels.find(it->first) != m_labels.end())
+            cout << "Duplicate label " << it->first << '\n';
+        else
+            m_labels[it->first] = it->second;
+        ++it;
+    }
 }
-
-
 
 void BinaryWriter::write(void* v, size_t size)
 {
@@ -87,22 +90,18 @@ void BinaryWriter::write64(uint64_t v)
     write(&v, sizeof(uint64_t));
 }
 
-
-
 void BinaryWriter::open(const char* fname)
 {
     if (m_fp)
         fclose((FILE*)m_fp);
-
     m_fp = fopen(fname, "wb");
     if (!m_fp)
         cout << "Failed to open '" << fname << "' for writing.\n";
 }
 
-
 size_t BinaryWriter::computeInstructionSize(const Instruction& ins)
 {
-    size_t size = 4;// op, nr, flags, pad
+    size_t size = 4;  // op, nr, flags, pad
     if (ins.argc > 0)
         size += 8;
     if (ins.argc > 1)
@@ -114,14 +113,14 @@ size_t BinaryWriter::mapInstructions(void)
 {
     uint64_t label = -1;
     uint64_t size  = 0;
-    int64_t  insp   = 0;
+    int64_t  insp  = 0;
 
     m_addrMap.clear();
     for (Instruction ins : m_ins)
     {
         if (ins.label != label)
         {
-            label = ins.label;
+            label            = ins.label;
             m_addrMap[label] = insp;
         }
         size += computeInstructionSize(ins);
@@ -130,6 +129,25 @@ size_t BinaryWriter::mapInstructions(void)
     return size;
 }
 
+
+int64_t BinaryWriter::findLabel(const std::string& name)
+{
+    if (!name.empty())
+    {
+        LabelMap::iterator it = m_labels.find(name);
+        if (it != m_labels.end())
+        {
+            size_t                    idx  = it->second;
+            IndexToPosition::iterator fidx = m_addrMap.find(idx);
+            if (fidx != m_addrMap.end())
+                return fidx->second;
+        }
+    }
+    return -1;
+}
+
+
+
 void BinaryWriter::writeHeader()
 {
     if (!m_fp)
@@ -137,11 +155,11 @@ void BinaryWriter::writeHeader()
 
     TVMHeader header = {};
 
-    header.code      = TYPE_ID2('T', 'V');
-    header.flags     = 0;
-    header.txt       = sizeof(TVMHeader);  // offsets to data
-    header.dat       = 0;
-    header.str       = 0;
+    header.code  = TYPE_ID2('T', 'V');
+    header.flags = 0;
+    header.txt   = sizeof(TVMHeader);  // offsets to data
+    header.dat   = 0;
+    header.str   = 0;
     write(&header, sizeof(TVMHeader));
 }
 
@@ -155,31 +173,32 @@ void BinaryWriter::writeSections()
     sec.code  = TYPE_ID2('C', 'S');
     sec.size  = (uint32_t)mapInstructions();
     sec.start = m_loc + sizeof(TVMSection);
-    write(&sec, sizeof(TVMHeader));
+    sec.entry = findLabel("main");
+    
+    if (sec.entry == -1)
+    {
+        cout << "Failed to find main.\n";
+        return;
+    }
+    int64_t lookup;
+    write(&sec, sizeof(TVMSection));
+
     for (Instruction ins : m_ins)
     {
-        // look for changes in the labels then save the 
-        // first position 
+        // look for changes in the labels then save the
+        // first position
         if (!ins.labelName.empty())
         {
-            LabelMap::iterator it = m_labels.find(ins.labelName);
-            if (it != m_labels.end())
+            lookup = findLabel(ins.labelName);
+            if (lookup != -1)
             {
-                // name to index
-                size_t idx = it->second;
-                IndexToPosition::iterator fidx = m_addrMap.find(idx);
-
-                if (fidx != m_addrMap.end())
-                {
-                    ins.arg1 = fidx->second;
-                    ins.flags |= IF_ADDR;
-                }
-                else
-                    cout << "Unable to map index for " << ins.labelName << '\n';
+                ins.arg1 = lookup;
+                ins.flags |= IF_ADDR;
             }
             else
                 cout << "Unable to find index for " << ins.labelName << '\n';
         }
+
         write8(ins.op);
         write8(ins.argc);
         write8(ins.flags);

@@ -93,6 +93,11 @@ void Program::load(const char *fname)
             m_ins.push_back(exec);
         }
     }
+
+
+    m_curinst = 0;
+    if (code.entry < m_ins.size())
+        m_curinst = code.entry;
 }
 
 
@@ -105,7 +110,7 @@ int Program::launch(void)
 
     ExecInstruction *basePtr = m_ins.data();
     m_stack.push(0);
-    m_curinst = 0;
+
     while (m_curinst < tinst)
     {
         ExecInstruction &inst = basePtr[m_curinst++];

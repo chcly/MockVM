@@ -61,11 +61,13 @@ struct TVMHeader
 
 struct TVMSection
 {
-    uint16_t code;  // 2
-    uint16_t flags; // 2
-    uint32_t pad;   // 4 
-    uint32_t size;  // 4
-    uint32_t start; // 4 -- 16
+    uint16_t code;   // 2
+    uint16_t flags;  // 2 4
+    uint64_t entry;  // 8 12
+    uint32_t pad;    // 4 16
+    uint32_t size;   // 4 20
+    uint32_t start;  // 4 24
+    uint64_t padding;// 8 32
 };
 
 
