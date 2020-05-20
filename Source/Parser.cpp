@@ -615,6 +615,8 @@ const KeywordMap Parser::KeywordTable[] = {
     {"sub\0", OP_SUB, 2, {AT_REG, AT_REGLIT, AT_NULL}},
     {"mul\0", OP_MUL, 2, {AT_REG, AT_REGLIT, AT_NULL}},
     {"div\0", OP_DIV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"shr\0", OP_SHR, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"shl\0", OP_SHL, 2, {AT_REG, AT_REGLIT, AT_NULL}},
 };
 
 const size_t Parser::KeywordTableSize = sizeof(Parser::KeywordTable) / sizeof(KeywordMap);

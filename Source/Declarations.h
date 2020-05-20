@@ -1,6 +1,6 @@
 /*
 -------------------------------------------------------------------------------
-    Copyright (c) 20120 Charles Carley.
+    Copyright (c) 2020 Charles Carley.
 
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -132,6 +132,8 @@ enum Opcode
     OP_SUB,   // sub r(n), src
     OP_MUL,   // mul r(n), src
     OP_DIV,   // div r(n), src
+    OP_SHR,   // shr r(n), src
+    OP_SHL,   // shl r(n), src
               // ---- debugging ----
     OP_PRG,   // print register
     OP_PRGI,  // print all registers

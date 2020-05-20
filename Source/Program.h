@@ -66,6 +66,8 @@ private:
     void handle_OP_SUB(ExecInstruction& inst);
     void handle_OP_MUL(ExecInstruction& inst);
     void handle_OP_DIV(ExecInstruction& inst);
+    void handle_OP_SHR(ExecInstruction& inst);
+    void handle_OP_SHL(ExecInstruction& inst);
     void handle_OP_PRG(ExecInstruction& inst);
     void handle_OP_PRGI(ExecInstruction& inst);
 

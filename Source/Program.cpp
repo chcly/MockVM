@@ -177,11 +177,12 @@ void Program::handle_OP_CMP(ExecInstruction& inst)
         b = m_regi[b].x;
 
     m_flags = 0;
-    if (a == b)
+    int64_t r = (int64_t)a - (int64_t)b;
+    if (r == 0)
         m_flags |= PF_E;
-    else if (a < b)
+    else if (r < 0)
         m_flags |= PF_L;
-    else if (a > b)
+    else if (r > 0)
         m_flags |= PF_G;
 }
 
@@ -315,12 +316,43 @@ void Program::handle_OP_DIV(ExecInstruction& inst)
     }
 }
 
+void Program::handle_OP_SHR(ExecInstruction& inst)
+{
+    uint64_t x0 = inst.argv[0];
+    if (x0 <= 9 && inst.flags & IF_DREG)
+    {
+        uint64_t a = m_regi[x0].x;
+        uint64_t b = inst.argv[1];
+
+        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
+            b = m_regi[b].x;
+
+        m_regi[x0].x = a >> b;
+    }
+}
+
+void Program::handle_OP_SHL(ExecInstruction& inst)
+{
+    uint64_t x0 = inst.argv[0];
+    if (x0 <= 9 && inst.flags & IF_DREG)
+    {
+        uint64_t a = m_regi[x0].x;
+        uint64_t b = inst.argv[1];
+
+        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
+            b = m_regi[b].x;
+
+        m_regi[x0].x = a << b;
+    }
+}
+
+
 void Program::handle_OP_PRG(ExecInstruction& inst)
 {
     if (inst.flags & IF_DREG && inst.argv[0] <= 9)
-        cout << m_regi[inst.argv[0]].x << '\n';
+        cout << (int64_t)m_regi[inst.argv[0]].x << '\n';
     else
-        cout << inst.argv[0] << '\n';
+        cout << (int64_t)inst.argv[0] << '\n';
 }
 
 void Program::handle_OP_PRGI(ExecInstruction& inst)
@@ -366,6 +398,8 @@ const Program::Operation Program::OPCodeTable[] = {
     &Program::handle_OP_SUB,
     &Program::handle_OP_MUL,
     &Program::handle_OP_DIV,
+    &Program::handle_OP_SHR,
+    &Program::handle_OP_SHL,
     &Program::handle_OP_PRG,
     &Program::handle_OP_PRGI,
 };
