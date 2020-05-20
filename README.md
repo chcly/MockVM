@@ -38,8 +38,13 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 | jlt    | jlt label        | addr     |              |                                                   |
 | jge    | jge label        | addr     |              |                                                   |
 | jle    | jle label        | addr     |              |                                                   |
+| add    | add op1, op2     | reg      | reg or value |                                                   |
+| sub    | sub op1, op2     | reg      | reg or value |                                                   |
+| mul    | mul op1, op2     | reg      | reg or value |                                                   |
+| div    | div op1, op2     | reg      | reg or value |                                                   |
 | prg    | prg op1          | addr     |              | prints the operand to stdout.                     |
 | prgi   | prgi             |          |              | prints the contents of all registers to stdout.   |
+
 
 ## tvm
 
