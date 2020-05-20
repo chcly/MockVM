@@ -278,6 +278,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         // save this now so it can be resolved after all
         // labels have been stored
         ins.labelName = tok.value;
+        m_curString.clear();
     }
     else
     {

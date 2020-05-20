@@ -8,9 +8,11 @@ top:
     jlt lt5
     prg 1
     jmp top
+
 lt5:
     prg 0
     jmp top
+
 done:
     mov x0, 0
     ret
