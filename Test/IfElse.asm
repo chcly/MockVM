@@ -2,6 +2,7 @@ main:
     mov x0, 0
 
 top:
+
     cmp x0, 10
     jge done
     inc x0
