@@ -80,7 +80,7 @@ int32_t Parser::parse(const char* fname)
             case PS_OK:
                 return PS_OK;
             default:
-                error("unhanded token %i.\n", sr);
+                error("unhandled token %i.\n", sr);
                 rc = PS_ERROR;
                 break;
             }
