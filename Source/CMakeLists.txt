@@ -23,11 +23,6 @@ add_executable(tvm
 )
 
 
-#add_executable(timechk
-#   TimeCheck.cpp
-#)
-
-
 set(INSTALL_PATH CACHE STRING "")
 if (NOT INSTALL_PATH STREQUAL "")
     message(STATUS "INSTALL ==> ${INSTALL_PATH}")
