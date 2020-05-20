@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <string>
 #include <stack>
+#include <vector>
 #include <unordered_map>
 
 

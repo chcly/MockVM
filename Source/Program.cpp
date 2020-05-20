@@ -43,7 +43,7 @@ Program::Program() :
     m_flags(0),
     m_return(0)
 {
-    //memset(m_regi, 0, sizeof(Registers));
+    memset(m_regi, 0, sizeof(Registers));
 }
 
 Program::~Program()
