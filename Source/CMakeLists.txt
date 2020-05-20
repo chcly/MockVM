@@ -21,6 +21,7 @@ add_executable(tvm
     BlockReader.cpp
     Program.cpp
     VM.cpp
+    ../README.md
 )
 
 

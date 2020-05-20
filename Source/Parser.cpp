@@ -597,6 +597,10 @@ const KeywordMap Parser::KeywordTable[] = {
     {"jge\0", OP_JGE, 1, AT_ADDR, AT_NULL, AT_NULL},
     {"prgi\0", OP_PRGI, 0, AT_NULL, AT_NULL, AT_NULL},
     {"prg\0", OP_PRG, 1, AT_REGLIT, AT_NULL, AT_NULL},
+    {"add\0", OP_ADD, 2, AT_REG, AT_REGLIT, AT_NULL},
+    {"sub\0", OP_SUB, 2, AT_REG, AT_REGLIT, AT_NULL},
+    {"mul\0", OP_MUL, 2, AT_REG, AT_REGLIT, AT_NULL},
+    {"div\0", OP_DIV, 2, AT_REG, AT_REGLIT, AT_NULL},
 };
 
 const size_t Parser::KeywordTableSize = sizeof(Parser::KeywordTable) / sizeof(KeywordMap);

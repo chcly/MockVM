@@ -162,7 +162,6 @@ void Program::handle_OP_CMP(ExecInstruction& inst)
     uint64_t a, b;
     a = inst.arg1;
     b = inst.arg2;
-
     if (inst.flags & IF_DREG && a <= 9)
         a = m_regi[a].x;
     if (inst.flags & IF_SREG && b <= 9)
@@ -250,6 +249,67 @@ void Program::handle_OP_JGT(ExecInstruction& inst)
 }
 
 
+void Program::handle_OP_ADD(ExecInstruction& inst)
+{
+    uint64_t x0 = inst.arg1;
+    if (x0 <= 9 && inst.flags & IF_DREG)
+    {
+        uint64_t a = m_regi[x0].x;
+        uint64_t b = inst.arg2;
+
+        if (inst.arg2 <= 9 && inst.flags & IF_SREG)
+            b = m_regi[b].x;
+
+        m_regi[x0].x = a + b;
+    }
+}
+
+void Program::handle_OP_SUB(ExecInstruction& inst)
+{
+    uint64_t x0 = inst.arg1;
+    if (x0 <= 9 && inst.flags & IF_DREG)
+    {
+        uint64_t a = m_regi[x0].x;
+        uint64_t b = inst.arg2;
+
+        if (inst.arg2 <= 9 && inst.flags & IF_SREG)
+            b = m_regi[b].x;
+        m_regi[x0].x = a - b;
+    }
+}
+
+void Program::handle_OP_MUL(ExecInstruction& inst)
+{
+    uint64_t x0 = inst.arg1;
+    if (x0 <= 9 && inst.flags & IF_DREG)
+    {
+        uint64_t a = m_regi[x0].x;
+        uint64_t b = inst.arg2;
+
+        if (inst.arg2 <= 9 && inst.flags & IF_SREG)
+            b = m_regi[b].x;
+
+        m_regi[x0].x = a * b;
+    }
+}
+
+void Program::handle_OP_DIV(ExecInstruction& inst)
+{
+    uint64_t x0 = inst.arg1;
+    if (x0 <= 9 && inst.flags & IF_DREG)
+    {
+        uint64_t a = m_regi[x0].x;
+        uint64_t b = inst.arg2;
+
+        if (inst.arg2 <= 9 && inst.flags & IF_SREG)
+            b = m_regi[b].x;
+
+        if (b != 0)
+            m_regi[x0].x = a / b;
+    }
+}
+
+
 void Program::handle_OP_PRG(ExecInstruction& inst)
 {
     if (inst.flags & IF_DREG && inst.arg1 <= 9)
@@ -300,6 +360,10 @@ const Program::Operation Program::OPCodeTable[] = {
     &Program::handle_OP_JGT,
     &Program::handle_OP_JLE,
     &Program::handle_OP_JGE,
+    &Program::handle_OP_ADD,
+    &Program::handle_OP_SUB,
+    &Program::handle_OP_MUL,
+    &Program::handle_OP_DIV,
     &Program::handle_OP_PRG,
     &Program::handle_OP_PRGI,
 };

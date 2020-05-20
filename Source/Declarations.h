@@ -111,6 +111,11 @@ enum Opcode
     OP_JGT,   // jump >
     OP_JLE,   // jump <=
     OP_JGE,   // jump >=
+
+    OP_ADD,   // add r(n), src
+    OP_SUB,   // sub r(n), src
+    OP_MUL,   // mul r(n), src
+    OP_DIV,   // div r(n), src
               // ---- debugging ----
     OP_PRG,   // print register
     OP_PRGI,  // print all registers
