@@ -391,12 +391,11 @@ int32_t Parser::ActionIdx01(uint8_t ch)
         size_t i = 0;
         for (i = 0; i < KeywordTableSize; ++i)
         {
-            if (strncmp(KeywordTable[i].word, m_curString.c_str(), 6) == 0)
+            if (strncmp(KeywordTable[i].word, m_curString.c_str(), MAX_KEYWORD) == 0)
             {
                 m_state = ST_INITIAL;
                 // swap the string with the opcode
                 m_curString.clear();
-
                 m_op = KeywordTable[i].op;
                 return TOK_MNEMONIC;
             }

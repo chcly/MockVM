@@ -27,6 +27,7 @@
 #include <string.h>
 
 #define INS_ARGM 3
+#define MAX_KEYWORD 6
 
 // return value for actions that need to scan
 // for more information before returning a token.
@@ -162,7 +163,7 @@ enum ArgType
     AT_NULL,
 };
 
-typedef char Keyword[7];
+typedef char Keyword[MAX_KEYWORD+1];
 
 struct KeywordMap
 {
