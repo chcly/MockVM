@@ -1,6 +1,6 @@
 # ToyVM
 
-Is a custom assembly compiler and a virtual machine to execute the compiled code. 
+Is a custom assembly compiler and a virtual machine to execute the compiled code.
 The implemented assembly is a mixture of ARM and Intel operations, but it tends towards a more ARM like architecture.
 As of right now, there are two main programs in the repo.
 
@@ -29,7 +29,7 @@ main:           ; label
    mov x0, 0    ; op dest, src
 top:
    cmp x0, 10
-   jge end
+   jge done
    inc x0
    jmp top
 done:

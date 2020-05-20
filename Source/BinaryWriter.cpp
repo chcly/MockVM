@@ -102,10 +102,7 @@ void BinaryWriter::open(const char* fname)
 size_t BinaryWriter::computeInstructionSize(const Instruction& ins)
 {
     size_t size = 4;  // op, nr, flags, pad
-    if (ins.argc > 0)
-        size += 8;
-    if (ins.argc > 1)
-        size += 8;
+    size += 8 * ins.argc; 
     return size;
 }
 
