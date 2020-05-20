@@ -100,8 +100,8 @@ int main(int argc, char **argv)
 
 void usage(void)
 {
-    cout << "tcom <options> <input file>\n";
-    cout << "    options:\n";
-    cout << "    -h show this message.\n";
-    cout << "    -o output file.\n";
+    cout << "tcom <options> <input file>\n\n";
+    cout << "    options:\n\n";
+    cout << "        -h show this message.\n";
+    cout << "        -o output file.\n";
 }

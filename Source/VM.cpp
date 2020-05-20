@@ -56,6 +56,11 @@ int main(int argc, char **argv)
             char ch = argv[i][1];
             if (ch == 't')
                 ctx.time = true;
+            else if (ch == 'h')
+            {
+                usage();
+                return 0;
+            }
         }
     }
 
@@ -83,6 +88,7 @@ int main(int argc, char **argv)
 void usage(void)
 {
     cout << "tvm <options> <program_path>\n\n";
-    cout << "    options:\n";
-    cout << "        t display execution time\n\n";
+    cout << "    options:\n\n";
+    cout << "        -h display this message\n";
+    cout << "        -t display execution time\n";
 }

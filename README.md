@@ -1,22 +1,46 @@
 # ToyVM
 
-Is what the name suggests. It is a simple assembly compiler and a virtual machine to execute the binary. The assembly language is a mixture of ARM and Intel ish operations. As of right now, there are two main programs in the repo.
+Is a custom assembly compiler and a virtual machine to execute the compiled code. 
+The implemented assembly is a mixture of ARM and Intel operations, but it tends towards a more ARM like architecture.
+As of right now, there are two main programs in the repo.
 
 * tcom
 * tvm
-
-1. [ToyVM](#toyvm)
-    1. [tcom](#tcom)
-    2. [tvm](#tvm)
-    3. [Building](#building)
 
 ## tcom
 
 Takes the assembly source and compiles the program.
 
+### Usage
+
+```txt
+tcom <options> <input file>
+
+   options:
+      -h show this message.
+      -o output file.
+```
+
+## Syntax
+
+```asm
+                ;  comment
+main:           ; label
+   mov x0, 0    ; op dest, src
+top:
+   cmp x0, 10
+   jge end
+   inc x0
+   jmp top
+done:
+   mov x0, 0    ; return value is in x0
+   ret          ; return 10
+```
+
+#### Registers
+
 It has a total of ten 64 bit registers that it can use.
 
-Each register is a union, so for ten 64 bit registers, there are a total of 20 32-bit registers, 40 16 bit registers, and 80 8-bit registers.
 
 | Registers | Size   | Offset | status |
 |:----------|--------|--------|--------|
@@ -25,6 +49,11 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 | w(n)      | 16-bit | 4      | todo   |
 | b(n)      | 8-bit  | 8      | todo   |
 
+Each register is a union, so for ten 64 bit registers, there are a total of 20 32-bit registers, 
+40 16 bit registers, and 80 8-bit registers.
+
+
+#### Current op codes
 
 | Opcode | Usage            | Operand1 | Operand2     | Description                                           |
 |:-------|:-----------------|:---------|:-------------|-------------------------------------------------------|
@@ -45,18 +74,31 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 | prg    | prg op1          | addr     |              | prints the operand to stdout.                         |
 | prgi   | prgi             |          |              | prints the contents of all registers to stdout.       |
 
+
+
+
 ## tvm
 
 tvm runs the executable generated from tcom.
+
+### Usage
+
+```txt
+tvm <options> <program_path>
+
+   options:
+      -h display this message
+      -t display execution time
+```
 
 ## Building
 
 Building with CMAKE.
 
 ```txt
+To compile the basic tests add -DBUILD_TEST=ON to the CMake command line.
+
 mkdir Build
 cd Build
 cmake ..
 ```
-
-To compile the basic tests add -DBUILD_TESTS=ON to the CMake command line or switch the option to on from the CMake GUI.  
