@@ -122,6 +122,13 @@ int32_t Parser::scan(void)
                 // should be an error...
             }
         }
+        if (ch == ';')
+        {
+            ch = m_reader.next();
+            while (!m_reader.eof() && ch != '\n')
+                ch = m_reader.next();
+            m_lineNo++;
+        }
 
         tk            = getType(ch);
         currentAction = States[m_state][tk];

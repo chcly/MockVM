@@ -10,5 +10,5 @@ main:
     mov x8, 100000000
     mov x9, 1000000000
     prgi
-    mov x0, 0 // needed to pass the test
+    mov x0, 0
     ret

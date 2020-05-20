@@ -15,6 +15,7 @@ Is what the name suggests. It is a simple assembly compiler and a virtual machin
 Takes the assembly source and compiles the program.
 
 It has a total of ten 64 bit registers that it can use.
+
 Each register is a union, so for ten 64 bit registers, there are a total of 20 32-bit registers, 40 16 bit registers, and 80 8-bit registers.
 
 | Registers | Size   | Offset | status |
@@ -23,7 +24,6 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 | l(n)      | 32-bit | 2      | todo   |
 | w(n)      | 16-bit | 4      | todo   |
 | b(n)      | 8-bit  | 8      | todo   |
-
 
 
 | Opcode | Usage            | Operand1 | Operand2     | Description                                           |
@@ -47,7 +47,7 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 
 ## tvm
 
-tvm executes the file compiled with tcom.
+tvm runs the executable generated from tcom.
 
 ## Building
 

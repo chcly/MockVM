@@ -74,11 +74,9 @@ void Program::load(const char* fname)
 
         m_reader->read(ops, 4);
         i += 4;
-
         if (ops[0] >= 0 && ops[0] < OP_MAX)
         {
             ExecInstruction exec = {};
-
             exec.op    = restrict8(ops[0], OP_RET, OP_MAX - 1);
             exec.argc  = restrict8(ops[1], 0, 3);
             exec.flags = restrict8(ops[2], 0, IF_MAX);
