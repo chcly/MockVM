@@ -7,6 +7,7 @@ main:
     inc   x0
     prg   x0
     jmp   top
+
 done:
     mov  x0, 0
     ret
