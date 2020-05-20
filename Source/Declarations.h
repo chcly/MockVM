@@ -25,6 +25,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <string.h>
 
 #define INS_ARGM 3
 #define MAX_KEYWORD 6
