@@ -14,8 +14,7 @@ macro(add_test Target)
     )
 
 endmacro(add_test)
-
-
 add_test(ForLoop       ForLoop.asm)
 add_test(IfElse        IfElse.asm)
 add_test(PrintRegister PrintRegister.asm)
+add_test(Compact       Compact.asm)
