@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <vector>
 #include <unordered_map>
-#include "Instruction.h"
+#include "Declarations.h"
 
 class BinaryWriter
 {

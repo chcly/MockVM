@@ -27,7 +27,6 @@
 #include <stack>
 #include <vector>
 #include <unordered_map>
-#include "Instruction.h"
 #include "BlockReader.h"
 #include "Declarations.h"
 

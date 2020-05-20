@@ -4,7 +4,6 @@ add_executable(tcom
     BlockReader.h
     BinaryWriter.h
     Parser.h
-    Instruction.h
     Declarations.h
     BlockReader.cpp
     BinaryWriter.cpp
@@ -15,7 +14,6 @@ add_executable(tcom
 add_executable(tvm 
     BlockReader.h
     Program.h
-    Instruction.h
     Declarations.h
 
     BlockReader.cpp

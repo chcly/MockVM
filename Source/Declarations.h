@@ -19,12 +19,12 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#ifndef _Decl_h_
-#define _Decl_h_
+#ifndef _Declarations_h_
+#define _Declarations_h_
 
 
 #include <stdint.h>
-#include <string.h>
+#include <string>
 
 #define INS_ARGM 3
 #define MAX_KEYWORD 6
@@ -173,6 +173,72 @@ struct KeywordMap
     uint8_t argv[INS_ARGM];
 };
 
+
+
+
+
+enum SectionCodes
+{
+    SEC_DAT = 0xFF,
+    SEC_TXT,
+    SEC_STR,
+};
+
+
+enum InstructionFlags
+{
+    IF_DREG = (1 << 0),
+    IF_DLIT = (1 << 1),
+    IF_SREG = (1 << 2),
+    IF_SLIT = (1 << 3),
+    IF_ADDR = (1 << 4),
+    IF_MAX  = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR
+};
+
+
+
+struct TVMHeader
+{
+    uint16_t code;   // 2
+    uint8_t  flags;  // 1
+    uint8_t  txt;    // 1
+    uint32_t dat;    // 4
+    uint64_t str;    // 8 -- 16
+};
+
+struct TVMSection
+{
+    uint16_t code;     // 2
+    uint16_t flags;    // 2 4
+    uint64_t entry;    // 8 12
+    uint32_t pad;      // 4 16
+    uint32_t size;     // 4 20
+    uint32_t start;    // 4 24
+    uint64_t padding;  // 8 32
+};
+
+
+struct Instruction
+{
+    uint8_t     op;
+    uint8_t     flags;
+    uint8_t     argc;
+    uint64_t    argv[INS_ARGM];
+    uint64_t    label;
+    std::string labelName;
+};
+
+
+
+struct ExecInstruction
+{
+    uint8_t  op;
+    uint8_t  flags;
+    uint8_t  argc;
+    uint64_t argv[INS_ARGM];
+};
+
+
 #define _RELITAVE_TIME_CHECK_BEGIN                                    \
     {                                                                 \
         chrono::high_resolution_clock::time_point begintick, endtick; \
@@ -187,4 +253,4 @@ struct KeywordMap
          << endl;                                                     \
     }
 
-#endif // _Decl_h_
+#endif  // _Declarations_h_

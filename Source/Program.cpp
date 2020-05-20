@@ -28,7 +28,6 @@
 #include <vector>
 #include "BlockReader.h"
 #include "Declarations.h"
-#include "Instruction.h"
 
 using namespace std;
 

@@ -23,7 +23,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <iostream>
-#include "Instruction.h"
+#include "Declarations.h"
 
 using namespace std;
 
