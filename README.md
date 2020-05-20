@@ -9,7 +9,7 @@ As of right now, there are two main programs in the repo.
 
 ## tcom
 
-Takes the assembly source and compiles the program.
+Is the assembly compiler.
 
 ### Usage
 
@@ -37,6 +37,9 @@ done:
    ret          ; return 10
 ```
 
+Each program needs at least one label called main.
+
+
 #### Registers
 
 It has a total of ten 64 bit registers that it can use.
@@ -49,9 +52,8 @@ It has a total of ten 64 bit registers that it can use.
 | w(n)      | 16-bit | 4      | todo   |
 | b(n)      | 8-bit  | 8      | todo   |
 
-Each register is a union, so for ten 64 bit registers, there are a total of 20 32-bit registers, 
+Each register is a union, so for ten 64 bit registers, there are a total of 20 32-bit registers,
 40 16 bit registers, and 80 8-bit registers.
-
 
 #### Current op codes
 
@@ -73,8 +75,6 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 | div    | div op1, op2     | reg      | reg or value | divide  op1, and op2 and store the result in op1      |
 | prg    | prg op1          | addr     |              | prints the operand to stdout.                         |
 | prgi   | prgi             |          |              | prints the contents of all registers to stdout.       |
-
-
 
 
 ## tvm
