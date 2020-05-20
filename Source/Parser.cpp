@@ -395,6 +395,7 @@ int32_t Parser::ActionIdx01(uint8_t ch)
             }
         }
 
+        m_state = ST_INITIAL;
         return TOK_IDENTIFIER;
     }
     return CONTINUE;
