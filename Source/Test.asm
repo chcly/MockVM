@@ -1,12 +1,11 @@
 main:
-    mov x0, 1 
-    prg x0
-    add x0, 1 
-    prg x0
-    mul x0, 2 
-    prg x0
-    div x0, 2 
-    prg x0
-    sub x0, 1 
-    prg x0
+    mov x0, 0
+    mov x1, 100000000
+top:
+    cmp x0, x1
+    jge done
+    inc x0
+    jmp top
+done:
+    mov x0, 0
     ret

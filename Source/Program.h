@@ -23,13 +23,11 @@
 #define _Program_h_
 
 #include <stdint.h>
-#include <vector>
 #include <stack>
-#include "Instruction.h"
-#include "Declarations.h"
+#include <vector>
 #include "BlockReader.h"
-
-
+#include "Declarations.h"
+#include "Instruction.h"
 
 class Program
 {
@@ -41,21 +39,16 @@ public:
     typedef Operation OpCodes[OP_MAX];
 
 private:
-    Instructions m_ins;
-    BlockReader* m_reader;
-    TVMHeader    m_header;
-    Registers    m_regi;
-    uint32_t     m_flags;
-    int32_t      m_return;
-    uint64_t     m_curinst;
-
-    std::stack<int32_t> m_stack;
-
+    Instructions         m_ins;
+    BlockReader*         m_reader;
+    TVMHeader            m_header;
+    Registers            m_regi;
+    uint32_t             m_flags;
+    int32_t              m_return;
+    uint64_t             m_curinst;
+    std::stack<int32_t>  m_stack;
     const static OpCodes OPCodeTable;
     const static size_t  OPCodeTableSize;
-
-
-    void dumpRegi(void);
 
     void handle_OP_RET(ExecInstruction& inst);
     void handle_OP_MOV(ExecInstruction& inst);
@@ -80,8 +73,8 @@ public:
     Program();
     ~Program();
 
-    void load(const char *fname);
-    int launch(void);
+    void load(const char* fname);
+    int  launch(void);
 };
 
 #endif  //_Program_h_

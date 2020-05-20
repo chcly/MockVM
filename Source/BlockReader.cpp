@@ -23,12 +23,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include "BlockReader.h"
 #include <stdio.h>
 #include <string.h>
-#include "BlockReader.h"
-
-
-
 
 BlockReader::BlockReader(const char *fname) :
     m_block(),
@@ -39,20 +36,18 @@ BlockReader::BlockReader(const char *fname) :
     open(fname);
 }
 
-
 BlockReader::BlockReader() :
     m_block(),
     m_fileLen(0),
     m_loc(0),
     m_fp(0)
 {
-
 }
 
 BlockReader::~BlockReader()
 {
     if (m_fp)
-        fclose((FILE*)m_fp);
+        fclose((FILE *)m_fp);
 }
 
 uint8_t BlockReader::next(void)
@@ -73,7 +68,6 @@ uint8_t BlockReader::next(void)
     return rc;
 }
 
-
 void BlockReader::read(void *blk, size_t nr)
 {
     if (m_fp)
@@ -81,10 +75,8 @@ void BlockReader::read(void *blk, size_t nr)
         size_t i = 0;
         while (i < nr && i < m_fileLen)
             ((uint8_t *)blk)[i++] = next();
-    }   
+    }
 }
-    
- 
 
 void BlockReader::offset(size_t nr)
 {
@@ -136,4 +128,3 @@ void BlockReader::open(const char *fname)
     else
         puts("Invalid file name.");
 }
-
