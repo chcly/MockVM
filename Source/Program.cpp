@@ -43,7 +43,7 @@ Program::Program() :
     m_flags(0),
     m_return(0)
 {
-    memset(m_regi, 0, sizeof(Registers));
+    //memset(m_regi, 0, sizeof(Registers));
 }
 
 Program::~Program()
@@ -262,21 +262,21 @@ void Program::handle_OP_PRGI(ExecInstruction& inst)
 {
     for (int i = 0; i < 10; ++i)
     {
-        if (m_regi[i].x != 0)
+        //if (m_regi[i].x != 0)
         {
             cout << setw(4) << ' ' << 'x' << i << ' ';
             cout << setw(22);
             cout << m_regi[i].x << setw(4) << ' ';
             cout << setfill('0');
             cout << hex;
-            cout << setw(2) << (int)m_regi[i].a[7] << ' ';
-            cout << setw(2) << (int)m_regi[i].a[6] << ' ';
-            cout << setw(2) << (int)m_regi[i].a[5] << ' ';
-            cout << setw(2) << (int)m_regi[i].a[4] << ' ';
-            cout << setw(2) << (int)m_regi[i].a[3] << ' ';
-            cout << setw(2) << (int)m_regi[i].a[2] << ' ';
-            cout << setw(2) << (int)m_regi[i].a[1] << ' ';
-            cout << setw(2) << (int)m_regi[i].a[0] << ' ';
+            cout << setw(2) << (int)m_regi[i].b[7] << ' ';
+            cout << setw(2) << (int)m_regi[i].b[6] << ' ';
+            cout << setw(2) << (int)m_regi[i].b[5] << ' ';
+            cout << setw(2) << (int)m_regi[i].b[4] << ' ';
+            cout << setw(2) << (int)m_regi[i].b[3] << ' ';
+            cout << setw(2) << (int)m_regi[i].b[2] << ' ';
+            cout << setw(2) << (int)m_regi[i].b[1] << ' ';
+            cout << setw(2) << (int)m_regi[i].b[0] << ' ';
             cout << dec;
             cout << setfill(' ');
             cout << '\n';

@@ -30,21 +30,6 @@
 #include "BlockReader.h"
 
 
-typedef union Register
-{
-    uint8_t  a[8];
-    uint16_t w[4];
-    uint32_t l[2];
-    uint64_t x;
-} Register;
-
-enum ProgramFlags
-{
-    PF_E = 1 << 0,
-    PF_G = 1 << 1,
-    PF_L = 1 << 2,
-};
-
 
 class Program
 {

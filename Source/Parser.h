@@ -36,7 +36,7 @@ struct Token
 {
     uint8_t     op;
     uint8_t     reg;
-    int64_t     ival;
+    Register    ival;
     int32_t     type;
     std::string value;
     int32_t     index;

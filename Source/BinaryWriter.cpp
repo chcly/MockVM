@@ -153,7 +153,7 @@ void BinaryWriter::writeSections()
     TVMSection sec = {};
 
     sec.code  = TYPE_ID2('C', 'S');
-    sec.size  = mapInstructions();
+    sec.size  = (uint32_t)mapInstructions();
     sec.start = m_loc + sizeof(TVMSection);
     write(&sec, sizeof(TVMHeader));
     for (Instruction ins : m_ins)

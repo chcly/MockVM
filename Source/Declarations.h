@@ -24,6 +24,24 @@
 
 
 
+
+typedef union Register {
+    uint8_t  b[8];
+    uint16_t w[4];
+    uint32_t l[2];
+    uint64_t x;
+} Register;
+
+enum ProgramFlags
+{
+    PF_E = 1 << 0,
+    PF_G = 1 << 1,
+    PF_L = 1 << 2,
+};
+
+
+
+
 enum TokenCode
 {
     TOK_MNEMONIC,  // keyword
@@ -68,7 +86,7 @@ enum CharType
 enum ParserState
 {
     ST_INITIAL = 0,
-    ST_READ_ID,
+    ST_ID,
     ST_DIGIT,
     ST_EXIT,
     ST_ERROR,
