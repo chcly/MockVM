@@ -23,7 +23,7 @@
 #define _BlockReader_h_
 
 #include <stdint.h>
-
+#include <stdlib.h>
 
 class BlockReader
 {
