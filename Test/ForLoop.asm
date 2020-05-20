@@ -1,7 +1,6 @@
 main:
-
     mov  x0, 0
-    mov  x1, 100
+    mov  x1, 99
 
  top:
 

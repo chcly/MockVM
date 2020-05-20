@@ -8,12 +8,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Configure
-      run: cmake .
+      run: cmake . -DBUILD_TEST=ON
     - name: Build
       run: make
-      
-    - name: Test0
-      run: ./Source/tcom -o test1 Test/ForLoop.asm
-    - name: Run Test0
-      run: ./Source/tvm test1
-  
+    
