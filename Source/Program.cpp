@@ -32,7 +32,9 @@
 
 using namespace std;
 
-uint8_t restrict8(const uint8_t& inp, const uint8_t& mi, const uint8_t& ma)
+uint8_t restrict8(const uint8_t& inp,
+                  const uint8_t& mi,
+                  const uint8_t& ma)
 {
     return inp > ma ? ma : inp < mi ? mi : inp;
 }
@@ -69,8 +71,10 @@ void Program::load(const char* fname)
     {
         if (m_reader->eof())
             break;
+
         m_reader->read(ops, 4);
         i += 4;
+
         if (ops[0] >= 0 && ops[0] < OP_MAX)
         {
             ExecInstruction exec = {};
@@ -102,8 +106,7 @@ int Program::launch(void)
     if (!m_reader)
         return -1;
 
-    size_t tinst = m_ins.size();
-
+    size_t           tinst   = m_ins.size();
     ExecInstruction* basePtr = m_ins.data();
     m_stack.push(0);
 
@@ -163,9 +166,8 @@ void Program::handle_OP_DEC(ExecInstruction& inst)
 
 void Program::handle_OP_CMP(ExecInstruction& inst)
 {
-    uint64_t a, b;
-    a = inst.argv[0];
-    b = inst.argv[1];
+    uint64_t a = inst.argv[0];
+    uint64_t b = inst.argv[1];
     if (inst.flags & IF_DREG && a <= 9)
         a = m_regi[a].x;
     if (inst.flags & IF_SREG && b <= 9)
@@ -274,6 +276,7 @@ void Program::handle_OP_SUB(ExecInstruction& inst)
 
         if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
             b = m_regi[b].x;
+
         m_regi[x0].x = a - b;
     }
 }
@@ -319,27 +322,25 @@ void Program::handle_OP_PRG(ExecInstruction& inst)
 
 void Program::handle_OP_PRGI(ExecInstruction& inst)
 {
-    for (int i = 0; i < 10; ++i)
+    int i;
+    for (i = 0; i < 10; ++i)
     {
-        //if (m_regi[i].x != 0)
-        {
-            cout << setw(4) << ' ' << 'x' << i << ' ';
-            cout << setw(22);
-            cout << m_regi[i].x << setw(4) << ' ';
-            cout << setfill('0');
-            cout << hex;
-            cout << setw(2) << (int)m_regi[i].b[7] << ' ';
-            cout << setw(2) << (int)m_regi[i].b[6] << ' ';
-            cout << setw(2) << (int)m_regi[i].b[5] << ' ';
-            cout << setw(2) << (int)m_regi[i].b[4] << ' ';
-            cout << setw(2) << (int)m_regi[i].b[3] << ' ';
-            cout << setw(2) << (int)m_regi[i].b[2] << ' ';
-            cout << setw(2) << (int)m_regi[i].b[1] << ' ';
-            cout << setw(2) << (int)m_regi[i].b[0] << ' ';
-            cout << dec;
-            cout << setfill(' ');
-            cout << '\n';
-        }
+        cout << setw(4) << ' ' << 'x' << i << ' ';
+        cout << setw(22);
+        cout << m_regi[i].x << setw(4) << ' ';
+        cout << setfill('0');
+        cout << hex;
+        cout << setw(2) << (int)m_regi[i].b[7] << ' ';
+        cout << setw(2) << (int)m_regi[i].b[6] << ' ';
+        cout << setw(2) << (int)m_regi[i].b[5] << ' ';
+        cout << setw(2) << (int)m_regi[i].b[4] << ' ';
+        cout << setw(2) << (int)m_regi[i].b[3] << ' ';
+        cout << setw(2) << (int)m_regi[i].b[2] << ' ';
+        cout << setw(2) << (int)m_regi[i].b[1] << ' ';
+        cout << setw(2) << (int)m_regi[i].b[0] << ' ';
+        cout << dec;
+        cout << setfill(' ');
+        cout << '\n';
     }
 }
 

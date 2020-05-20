@@ -154,7 +154,6 @@ void BinaryWriter::writeHeader()
         return;
 
     TVMHeader header = {};
-
     header.code  = TYPE_ID2('T', 'V');
     header.flags = 0;
     header.txt   = sizeof(TVMHeader);  // offsets to data
@@ -188,8 +187,8 @@ void BinaryWriter::writeSections()
 
     for (Instruction ins : m_ins)
     {
-        // look for changes in the labels then save the
-        // first position
+        // look for changes in the labels then 
+        // save the first position
         if (!ins.labelName.empty())
         {
             lookup = findLabel(ins.labelName);

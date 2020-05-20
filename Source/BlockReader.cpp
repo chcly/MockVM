@@ -109,9 +109,7 @@ void BlockReader::read()
 void BlockReader::open(const char *fname)
 {
     if (m_fp)
-    {
         fclose((FILE *)m_fp);
-    }
 
     if (fname)
     {

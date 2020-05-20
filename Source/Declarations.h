@@ -34,8 +34,8 @@
 // Common error return code
 #define UNDEFINED -1
 
-#define TYPE_ID4(a, b, c, d) ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
-#define TYPE_ID2(a, b) ((b) << 8 | (a))
+#define TYPE_ID4(a, b, c, d)    ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
+#define TYPE_ID2(a, b)          ((b) << 8 | (a))
 
 typedef union Register {
     uint8_t  b[8];
@@ -44,6 +44,7 @@ typedef union Register {
     uint64_t x;
 } Register;
 
+
 enum ProgramFlags
 {
     PF_E = 1 << 0,
@@ -51,12 +52,15 @@ enum ProgramFlags
     PF_L = 1 << 2,
 };
 
-
-
+enum ParseResult
+{
+    PS_ERROR = -10,
+    PS_OK,
+};
 
 enum TokenCode
 {
-    TOK_MNEMONIC,  // keyword
+    TOK_MNEMONIC,
     TOK_REGISTER,
     TOK_IDENTIFIER,
     TOK_COLON,
@@ -94,7 +98,6 @@ enum CharType
     CT_MAX,
 };
 
-
 enum ParserState
 {
     ST_INITIAL = 0,
@@ -110,7 +113,7 @@ enum ParserState
 enum Opcode
 {
     OP_BEG,
-    OP_RET,
+    OP_RET,   // ret
     OP_MOV,   // mov r(n), src
     OP_CALL,  // call address
     OP_INC,   // inc, r(n)
@@ -123,7 +126,6 @@ enum Opcode
     OP_JGT,   // jump >
     OP_JLE,   // jump <=
     OP_JGE,   // jump >=
-
     OP_ADD,   // add r(n), src
     OP_SUB,   // sub r(n), src
     OP_MUL,   // mul r(n), src
@@ -133,7 +135,6 @@ enum Opcode
     OP_PRGI,  // print all registers
     OP_MAX
 };
-
 
 enum Actions
 {
@@ -152,7 +153,6 @@ enum Actions
     AC_DS,       // goto state ST_INITIAL and return TOK_SECTION
 };
 
-
 enum ArgType
 {
     AT_REG,
@@ -162,9 +162,7 @@ enum ArgType
     AT_NULL,
 };
 
-
 typedef char Keyword[7];
-
 
 struct KeywordMap
 {

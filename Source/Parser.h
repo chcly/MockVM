@@ -27,11 +27,10 @@
 #include <stack>
 #include <vector>
 #include <unordered_map>
-
-
 #include "Instruction.h"
 #include "BlockReader.h"
 #include "Declarations.h"
+
 
 struct Token
 {
@@ -43,20 +42,12 @@ struct Token
     int32_t     index;
 };
 
-enum ParseResult
-{
-    PS_ERROR=-10,
-    PS_OK,
-};
-
 
 class Parser
 {
 public:
     typedef int32_t StateTable[ST_MAX][CT_MAX];
     typedef int32_t (Parser::*Action)(uint8_t ch);
-    
-    
 
     typedef std::stack<Token>                       TokenStack;
     typedef std::unordered_map<std::string, size_t> LabelMap;
@@ -68,11 +59,12 @@ public:
     const static KeywordMap     KeywordTable[];
     const static size_t         KeywordTableSize;
 
-
 private:
-
     BlockReader  m_reader;
-    int32_t      m_state, m_section, m_label, m_lineNo;
+    int32_t      m_state;
+    int32_t      m_section;
+    int32_t      m_label;
+    int32_t      m_lineNo;
     std::string  m_curString;
     int64_t      m_ival;
     uint8_t      m_op;
