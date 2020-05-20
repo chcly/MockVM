@@ -29,7 +29,6 @@
 #include "Parser.h"
 #include "Declarations.h"
 
-
 using namespace std;
 
 struct ProgramInfo
@@ -87,7 +86,8 @@ int main(int argc, char **argv)
         if (p.parse(file.c_str()) != PS_OK)
             return -1;
 
-        w.mergeLabels(p.getLabels());
+        // This has not been tested on multiple files yet.
+        w.mergeLabels(p.getLabels()); 
         w.mergeInstructions(p.getInstructions());
     }
 

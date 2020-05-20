@@ -11,7 +11,7 @@ As of right now, there are two main programs in the repo.
 
 Is the assembly compiler.
 
-### Usage
+### tcom Usage
 
 ```txt
 tcom <options> <input file>
@@ -24,7 +24,7 @@ tcom <options> <input file>
 ## Syntax
 
 ```asm
-                ;  comment
+                ; comment
 main:           ; label
    mov x0, 0    ; op dest, src
 top:
@@ -39,11 +39,9 @@ done:
 
 Each program needs at least one label called main.
 
-
-#### Registers
+### Registers
 
 It has a total of ten 64 bit registers that it can use.
-
 
 | Registers | Size   | Offset | status |
 |:----------|--------|--------|--------|
@@ -62,6 +60,8 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 | mov    | mov dest, source | reg      | reg or value | moves the source value into the destination register. |
 | ret    | ret              |          |              | return values should be placed in the 0 registers.    |
 | cmp    | cmp op1, op2     | reg      | reg or value | Does a logical comparison  of op1, and op2            |
+| inc    | inc op1          | reg      |              | op1+=1                                                |
+| dec    | dec op1          | reg      |              | op1-=1                                                |
 | jmp    | jmp label        | addr     |              | unconditional jump.                                   |
 | jeq    | jeq label        | addr     |              | jump if the E flag is set.                            |
 | jne    | jne label        | addr     |              | jump if the E flag is not set.                        |
@@ -76,12 +76,11 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 | prg    | prg op1          | addr     |              | prints the operand to stdout.                         |
 | prgi   | prgi             |          |              | prints the contents of all registers to stdout.       |
 
-
 ## tvm
 
 tvm runs the executable generated from tcom.
 
-### Usage
+### tvm Usage
 
 ```txt
 tvm <options> <program_path>
