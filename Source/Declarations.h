@@ -23,7 +23,6 @@
 #define _Declarations_h_
 
 #include <stdint.h>
-#include <string.h>
 #include <string>
 
 #define INS_ARG 3

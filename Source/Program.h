@@ -45,7 +45,7 @@ private:
     uint32_t             m_flags;
     int32_t              m_return;
     uint64_t             m_curinst;
-    std::stack<int32_t>  m_stack;
+    std::stack<uint64_t> m_stack;
     const static OpCodes OPCodeTable;
     const static size_t  OPCodeTableSize;
 

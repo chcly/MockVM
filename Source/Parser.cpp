@@ -150,7 +150,7 @@ int32_t Parser::handleInitialState(Token& tok)
     }
     else if (isNewLine(ch))
     {
-        while (isNewLine(ch))
+        while (isNewLine(ch) && !m_reader.eof())
         {
             countNewLine(ch);
             ch = m_reader.next();
@@ -456,7 +456,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
     {
         if (tok.type != TOK_DIGIT)
         {
-            error("expected operand one for %s, to be a literal\n", kwd.word);
+            error("expected operand one for %s, to be a value\n", kwd.word);
             return PS_ERROR;
         }
         ins.argv[idx] = tok.ival.x;

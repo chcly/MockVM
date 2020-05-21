@@ -22,15 +22,11 @@
 #ifndef _Parser_h_
 #define _Parser_h_
 
-#include <stdint.h>
-#include <string>
-#include <stack>
-#include <vector>
+
 #include <unordered_map>
+#include <vector>
 #include "BlockReader.h"
 #include "Declarations.h"
-
-
 
 class Parser
 {
@@ -38,8 +34,8 @@ public:
     typedef std::unordered_map<std::string, size_t> LabelMap;
     typedef std::vector<Instruction>                Instructions;
 
-    const static KeywordMap     KeywordTable[];
-    const static size_t         KeywordTableSize;
+    const static KeywordMap KeywordTable[];
+    const static size_t     KeywordTableSize;
 
 private:
     BlockReader  m_reader;
@@ -51,29 +47,18 @@ private:
     Instructions m_instructions;
     std::string  m_fname;
 
-    int32_t scan(Token &tok);
-    void    error(const char* fmt, ...);
-
-    int32_t           getSection(const std::string& val);
-    int32_t           getKeywordIndex(const uint8_t& val);
-    const KeywordMap& getKeyword(const int32_t& val);
-    
-    int32_t           handleArgument(Instruction&      ins,
-                                     const KeywordMap& kwd,
-                                     const Token&      tok,
-                                     const int32_t     idx);
 public:
     Parser();
     ~Parser();
 
     int32_t parse(const char* fname);
 
-    inline const Instructions& getInstructions()
+    inline const Instructions& getInstructions(void)
     {
         return m_instructions;
     }
 
-    inline const LabelMap& getLabels()
+    inline const LabelMap& getLabels(void)
     {
         return m_labels;
     }
@@ -90,6 +75,18 @@ private:
     int32_t handleDigitState(Token& dest);
     int32_t handleSectionState(Token& dest);
     uint8_t eatWhiteSpace(uint8_t ch);
+
+    int32_t scan(Token& tok);
+    void    error(const char* fmt, ...);
+
+    int32_t           getSection(const std::string& val);
+    int32_t           getKeywordIndex(const uint8_t& val);
+    const KeywordMap& getKeyword(const int32_t& val);
+
+    int32_t handleArgument(Instruction&      ins,
+                           const KeywordMap& kwd,
+                           const Token&      tok,
+                           const int32_t     idx);
 };
 
 #endif  //_Parser_h_

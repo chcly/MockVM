@@ -27,21 +27,15 @@
 
 class BlockReader
 {
-public:
-    static const size_t BLOCKSIZE = 1024;
-    typedef uint8_t     Block[BLOCKSIZE + 1];
-
 private:
-    Block  m_block;
-    size_t m_fileLen;
-    size_t m_loc;
-    void * m_fp;
-    bool   m_read;
-
-
+    uint8_t *m_block;
+    size_t   m_fileLen;
+    size_t   m_loc;
+    bool     m_read;
     void read(void);
 
 public:
+
     BlockReader(const char *fname);
     BlockReader();
     ~BlockReader();
@@ -56,7 +50,7 @@ public:
         
     inline bool eof(void)
     {
-        return m_fp == nullptr || m_loc > m_fileLen;
+        return m_loc >= m_fileLen;
     }
 
     inline size_t tell(void)

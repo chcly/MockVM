@@ -21,6 +21,7 @@ macro(add_compile_tests OUT)
             COMMAND tcom -o ${GEN_FILE} ${ASMFILE}
             COMMAND tvm ${GEN_FILE} -t
             MAIN_DEPENDENCY ${ASMFILE}
+            DEPENDS tcom tvm
             COMMENT "${ASMNAME}"
         )
     endforeach(it)

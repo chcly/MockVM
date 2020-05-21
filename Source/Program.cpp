@@ -26,6 +26,8 @@
 #include <iostream>
 #include <stack>
 #include <vector>
+#include <string.h>
+
 #include "BlockReader.h"
 #include "Declarations.h"
 
