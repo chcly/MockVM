@@ -80,7 +80,7 @@ void Program::load(const char* fname)
             ExecInstruction exec = {};
             exec.op    = restrict8(ops[0], OP_RET, OP_MAX - 1);
             exec.argc  = restrict8(ops[1], 0, 3);
-            exec.flags = restrict8(ops[2], 0, IF_MAX);
+            exec.flags = restrict8(ops[2], 0, IF_MAXF);
 
             if (exec.argc > 0)
                 m_reader->read(&exec.argv[0], 8);
@@ -102,8 +102,8 @@ void Program::load(const char* fname)
 
 int Program::launch(void)
 {
-    if (!m_reader)
-        return -1;
+    if (m_ins.empty())
+        return PS_OK; 
 
     size_t           tinst   = m_ins.size();
     ExecInstruction* basePtr = m_ins.data();

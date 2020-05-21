@@ -26,15 +26,7 @@
 #include <string>
 
 #define INS_ARG 3
-#define MAX_KWD 6
-
-// return value for actions that need to scan
-// for more information before returning a token.
-#define CONTINUE -1
-// Common error return code
-#define UNDEFINED -1
-
-#define TYPE_ID4(a, b, c, d) ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
+#define MAX_KWD 5
 #define TYPE_ID2(a, b) ((b) << 8 | (a))
 
 typedef union Register {
@@ -51,12 +43,6 @@ enum ProgramFlags
     PF_L = 1 << 2,
 };
 
-enum ParseResult
-{
-    PS_ERROR = -10,
-    PS_OK,
-};
-
 struct Token
 {
     uint8_t     op;
@@ -68,21 +54,21 @@ struct Token
     bool        hasComma;
 };
 
-enum TokenCode
+enum ParseResult
 {
-    TOK_OPCODE,
-    TOK_REGISTER,
-    TOK_IDENTIFIER,
-    TOK_DIGIT,
-    TOK_LABEL,
-    TOK_SECTION,
-    TOK_EOL,
-    TOK_MAX,
+    PS_ERROR = -3,
+    // Common error return code
+    PS_UNDEFINED,
+    // return value for actions that need to scan
+    // for more information before returning a token.
+    PS_CONTINUE,
+    PS_OK,
+    PS_MAX
 };
 
 enum ParserState
 {
-    ST_INITIAL = 0,
+    ST_INITIAL = PS_MAX + 1,
     ST_ID,
     ST_DIGIT,
     ST_SECTION,
@@ -90,51 +76,66 @@ enum ParserState
     ST_MAX,
 };
 
+enum TokenCode
+{
+    TOK_OPCODE = ST_MAX + 1,
+    TOK_REGISTER,
+    TOK_IDENTIFIER,
+    TOK_DIGIT,
+    TOK_LABEL,
+    TOK_SECTION,
+    TOK_MAX,
+};
+
+// The value here needs to start at zero 
+// and match the method table index in the program.
+// class. The only reason is to prevent having to do 
+// a lookup during execution.
 enum Opcode
 {
-    OP_BEG,
-    OP_RET,   // ret
-    OP_MOV,   // mov r(n), src
-    OP_CALL,  // call address
-    OP_INC,   // inc, r(n)
-    OP_DEC,   // dec, r(n)
-    OP_CMP,   // cmp, r(n), src
-    OP_JMP,   // jump
-    OP_JEQ,   // jump ==
-    OP_JNE,   // jump !
-    OP_JLT,   // jump <
-    OP_JGT,   // jump >
-    OP_JLE,   // jump <=
-    OP_JGE,   // jump >=
-    OP_ADD,   // add r(n), src
-    OP_SUB,   // sub r(n), src
-    OP_MUL,   // mul r(n), src
-    OP_DIV,   // div r(n), src
-    OP_SHR,   // shr r(n), src
-    OP_SHL,   // shl r(n), src
-              // ---- debugging ----
-    OP_PRG,   // print register
-    OP_PRGI,  // print all registers
+    OP_BEG = 0,  // unused padding
+    OP_RET,      // ret
+    OP_MOV,      // mov r(n), src
+    OP_GTO,      // call address
+    OP_INC,      // inc, r(n)
+    OP_DEC,      // dec, r(n)
+    OP_CMP,      // cmp, r(n), src
+    OP_JMP,      // jump
+    OP_JEQ,      // jump ==
+    OP_JNE,      // jump !
+    OP_JLT,      // jump <
+    OP_JGT,      // jump >
+    OP_JLE,      // jump <=
+    OP_JGE,      // jump >=
+    OP_ADD,      // add r(n), src
+    OP_SUB,      // sub r(n), src
+    OP_MUL,      // mul r(n), src
+    OP_DIV,      // div r(n), src
+    OP_SHR,      // shr r(n), src
+    OP_SHL,      // shl r(n), src
+                 // ---- debugging ----
+    OP_PRG,      // print register
+    OP_PRI,      // print all registers
     OP_MAX
 };
 
 enum ArgType
 {
-    AT_REG,
-    AT_LIT,
-    AT_ADDR,
-    AT_REGLIT,
     AT_NULL,
+    AT_REGI,
+    AT_SVAL,
+    AT_ADDR,
+    AT_RVAL,
 };
 
 typedef char Keyword[MAX_KWD + 1];
 
 struct KeywordMap
 {
-    Keyword word;
-    uint8_t op;
-    uint8_t narg;
-    uint8_t argv[INS_ARG];
+    Keyword        word;
+    uint8_t        op;
+    uint8_t        narg;
+    const uint8_t *argv;
 };
 
 enum SectionCodes
@@ -151,7 +152,7 @@ enum InstructionFlags
     IF_SREG = (1 << 2),
     IF_SLIT = (1 << 3),
     IF_ADDR = (1 << 4),
-    IF_MAX  = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR
+    IF_MAXF  = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR
 };
 
 struct TVMHeader

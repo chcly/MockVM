@@ -27,7 +27,8 @@
 #include "Declarations.h"
 
 using namespace std;
-const KeywordMap NullKeyword = {{'\0'}, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+const uint8_t    nullarg[3]  = {0xFF, 0xFF, 0xFF};
+const KeywordMap NullKeyword = {{'\0'}, 0xFF, 0, nullarg};
 
 inline bool isWhiteSpace(uint8_t ch);
 inline bool isAlphaL(uint8_t ch);
@@ -85,7 +86,7 @@ int32_t Parser::parse(const char* fname)
                 return PS_OK;
             default:
                 if (sr != PS_ERROR)
-                    error("unhandled token %i\n", sr);
+                    error("token %i parsed out of context\n", sr);
                 rc = PS_ERROR;
                 break;
             }
@@ -408,7 +409,7 @@ uint8_t Parser::eatWhiteSpace(uint8_t ch)
 int32_t Parser::handleSection(const Token& tok)
 {
     m_section = getSection(tok.value);
-    if (m_section == UNDEFINED)
+    if (m_section == PS_UNDEFINED)
     {
         error("undefined section '%s'\n", tok.value.c_str());
         return PS_ERROR;
@@ -445,7 +446,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
                                const Token&      tok,
                                const int32_t     idx)
 {
-    if (kwd.argv[idx] == AT_REG)
+    if (kwd.argv[idx] == AT_REGI)
     {
         if (tok.type != TOK_REGISTER)
         {
@@ -456,7 +457,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         ins.argv[idx] = tok.reg;
         ins.flags |= idx <= 0 ? (int)IF_DREG : (int)IF_SREG;
     }
-    else if (kwd.argv[idx] == AT_LIT)
+    else if (kwd.argv[idx] == AT_SVAL)
     {
         if (tok.type != TOK_DIGIT)
         {
@@ -466,7 +467,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         ins.argv[idx] = tok.ival.x;
         ins.flags |= idx <= 0 ? (int)IF_DLIT : (int)IF_SLIT;
     }
-    else if (kwd.argv[idx] == AT_REGLIT)
+    else if (kwd.argv[idx] == AT_RVAL)
     {
         if (tok.type == TOK_DIGIT)
         {
@@ -502,15 +503,13 @@ int32_t Parser::handleArgument(Instruction&      ins,
 int32_t Parser::handleOpCode(const Token& tok)
 {
     const KeywordMap& kwd = getKeyword(tok.index);
-    if (kwd.op != UNDEFINED)
+
+    if (kwd.op != PS_UNDEFINED)
     {
         Instruction ins = {};
-
         ins.op    = kwd.op;
         ins.argc  = kwd.narg;
         ins.label = m_label;
-
- 
 
         // TODO, use lastTok.hasComma
         // to determine what should be scanned
@@ -555,13 +554,13 @@ int32_t Parser::getSection(const std::string& val)
         return SEC_DAT;
     else if (val == "text")
         return SEC_TXT;
-    return UNDEFINED;
+    return PS_UNDEFINED;
 }
 
 int32_t Parser::getKeywordIndex(const uint8_t& val)
 {
     if (val == 0)
-        return UNDEFINED;
+        return PS_UNDEFINED;
 
     int32_t i;
     for (i = 0; i < KeywordTableSize; ++i)
@@ -569,12 +568,12 @@ int32_t Parser::getKeywordIndex(const uint8_t& val)
         if (KeywordTable[i].op == val)
             return i;
     }
-    return UNDEFINED;
+    return PS_UNDEFINED;
 }
 
 const KeywordMap& Parser::getKeyword(const int32_t& val)
 {
-    if (val != UNDEFINED)
+    if (val != PS_UNDEFINED)
     {
         if (val >= 0 && val < KeywordTableSize)
             return KeywordTable[val];
@@ -582,28 +581,36 @@ const KeywordMap& Parser::getKeyword(const int32_t& val)
     return NullKeyword;
 }
 
+
+const uint8_t ArgTypeStd1[3] = {AT_REGI, AT_RVAL, AT_NULL};
+const uint8_t ArgTypeStd2[3] = {AT_RVAL, AT_RVAL, AT_NULL};
+const uint8_t ArgTypeStd3[3] = {AT_RVAL, AT_NULL, AT_NULL};
+const uint8_t ArgTypeReg1[3] = {AT_REGI, AT_NULL, AT_NULL};
+const uint8_t ArgTypeAdr1[3] = {AT_ADDR, AT_NULL, AT_NULL};
+const uint8_t ArgTypeNone[3] = {AT_REGI, AT_RVAL, AT_NULL};
+
 const KeywordMap Parser::KeywordTable[] = {
-    {"mov\0", OP_MOV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"call\0", OP_CALL, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"ret\0", OP_RET, 0, {AT_NULL, AT_NULL, AT_NULL}},
-    {"inc\0", OP_INC, 1, {AT_REG, AT_NULL, AT_NULL}},
-    {"dec\0", OP_DEC, 1, {AT_REG, AT_NULL, AT_NULL}},
-    {"cmp\0", OP_CMP, 2, {AT_REGLIT, AT_REGLIT, AT_NULL}},
-    {"jmp\0", OP_JMP, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jeq\0", OP_JEQ, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jne\0", OP_JNE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jlt\0", OP_JLT, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jgt\0", OP_JGT, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jle\0", OP_JLE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jge\0", OP_JGE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"prgi\0", OP_PRGI, 0, {AT_NULL, AT_NULL, AT_NULL}},
-    {"prg\0", OP_PRG, 1, {AT_REGLIT, AT_NULL, AT_NULL}},
-    {"add\0", OP_ADD, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"sub\0", OP_SUB, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"mul\0", OP_MUL, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"div\0", OP_DIV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"shr\0", OP_SHR, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"shl\0", OP_SHL, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"mov\0 ", OP_MOV, 2, ArgTypeStd1},
+    {"call\0", OP_GTO, 1, ArgTypeAdr1},
+    {"ret\0 ", OP_RET, 0, ArgTypeNone},
+    {"inc\0 ", OP_INC, 1, ArgTypeReg1},
+    {"dec\0 ", OP_DEC, 1, ArgTypeReg1},
+    {"cmp\0 ", OP_CMP, 2, ArgTypeStd2},
+    {"jmp\0 ", OP_JMP, 1, ArgTypeAdr1},
+    {"jeq\0 ", OP_JEQ, 1, ArgTypeAdr1},
+    {"jne\0 ", OP_JNE, 1, ArgTypeAdr1},
+    {"jlt\0 ", OP_JLT, 1, ArgTypeAdr1},
+    {"jgt\0 ", OP_JGT, 1, ArgTypeAdr1},
+    {"jle\0 ", OP_JLE, 1, ArgTypeAdr1},
+    {"jge\0 ", OP_JGE, 1, ArgTypeAdr1},
+    {"prgi\0", OP_PRI, 0, ArgTypeAdr1},
+    {"prg\0 ", OP_PRG, 1, ArgTypeStd3},
+    {"add\0 ", OP_ADD, 2, ArgTypeStd1},
+    {"sub\0 ", OP_SUB, 2, ArgTypeStd1},
+    {"mul\0 ", OP_MUL, 2, ArgTypeStd1},
+    {"div\0 ", OP_DIV, 2, ArgTypeStd1},
+    {"shr\0 ", OP_SHR, 2, ArgTypeStd1},
+    {"shl\0 ", OP_SHL, 2, ArgTypeStd1},
 };
 
 const size_t Parser::KeywordTableSize = sizeof(Parser::KeywordTable) / sizeof(KeywordMap);

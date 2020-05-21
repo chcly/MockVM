@@ -108,7 +108,7 @@ size_t BinaryWriter::computeInstructionSize(const Instruction& ins)
 
 size_t BinaryWriter::mapInstructions(void)
 {
-    uint64_t label = -1;
+    uint64_t label = PS_UNDEFINED;
     uint64_t size  = 0;
     int64_t  insp  = 0;
 
@@ -145,7 +145,7 @@ int64_t BinaryWriter::findLabel(const std::string& name)
         }
     }
 
-    return UNDEFINED;
+    return PS_UNDEFINED;
 }
 
 
@@ -180,7 +180,7 @@ void BinaryWriter::writeSections()
     sec.start = m_loc + sizeof(TVMSection);
     sec.entry = findLabel("main");
     
-    if (sec.entry == UNDEFINED)
+    if (sec.entry == PS_UNDEFINED)
     {
         cout << "Failed to find main.\n";
         return;
@@ -196,7 +196,7 @@ void BinaryWriter::writeSections()
             // modify the first argument so that it points
             // to the correct instruction index.
             lookup = findLabel(ins.labelName);
-            if (lookup != UNDEFINED)
+            if (lookup != PS_UNDEFINED)
             {
                 ins.argv[0] = lookup;
                 ins.flags |= IF_ADDR;

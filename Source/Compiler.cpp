@@ -84,7 +84,7 @@ int main(int argc, char **argv)
     {
         Parser p;
         if (p.parse(file.c_str()) != PS_OK)
-            return -1;
+            return PS_ERROR;
 
         // This has not been tested on multiple files yet.
         w.mergeLabels(p.getLabels()); 
