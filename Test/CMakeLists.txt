@@ -34,7 +34,7 @@ set(TestFiles
     CR.asm
     LF.asm
     Empty.asm
-    Empty.asm
+    Keywords.asm
     Comment.asm
     ParseArg.asm
     ForLoop.asm
