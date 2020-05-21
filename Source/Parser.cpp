@@ -26,7 +26,7 @@
 #include "Declarations.h"
 
 using namespace std;
-const KeywordMap NullKeyword  = {{'\0'}, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+const KeywordMap NullKeyword = {{'\0'}, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 inline bool isWhiteSpace(uint8_t ch);
 inline bool isAlphaL(uint8_t ch);
@@ -160,7 +160,6 @@ int32_t Parser::handleInitialState(Token& tok)
     if (isWhiteSpace(ch))
         ch = eatWhiteSpace(ch);
 
-
     if (isAlpha(ch))
     {
         m_reader.offset(-1);
@@ -181,8 +180,6 @@ int32_t Parser::handleInitialState(Token& tok)
         return PS_ERROR;
     }
     return ST_CONTINUE;
-
-
 }
 
 int32_t Parser::handleIdState(Token& tok)
@@ -203,17 +200,17 @@ int32_t Parser::handleIdState(Token& tok)
         if (isTerminator(ch))
         {
             if (isNewLine(ch))
-                m_reader.offset(-1);
-
-            if (isWhiteSpace(ch))
             {
-                ch           = eatWhiteSpace(ch);
-                tok.hasComma = ch == ',';
                 m_reader.offset(-1);
             }
-  
-            m_state = ST_INITIAL;
+            else if (isWhiteSpace(ch))
+            {
+                ch = eatWhiteSpace(ch);
+                m_reader.offset(-1);
+                tok.hasComma = ch == ',';
+            }
 
+            m_state = ST_INITIAL;
             if (tok.value.size() == 2 &&
                 tok.value[1] >= '0' &&
                 tok.value[1] <= '9')
@@ -241,8 +238,6 @@ int32_t Parser::handleIdState(Token& tok)
                 }
             }
 
-
-
             tok.type = TOK_IDENTIFIER;
             return ST_MAX;
         }
@@ -264,6 +259,7 @@ int32_t Parser::handleDigitState(Token& tok)
 
     if (isNumber(ch))
     {
+        int  base    = 10;
         bool convert = ch == '0';
         bool b2 = false, b16 = false;
 
@@ -274,10 +270,8 @@ int32_t Parser::handleDigitState(Token& tok)
                 error("invalid binary number.\n");
                 return PS_ERROR;
             }
-
             tok.value.push_back(ch);
             ch = m_reader.next();
-
 
             if (convert)
             {
@@ -287,27 +281,26 @@ int32_t Parser::handleDigitState(Token& tok)
                     b2 = true;
             }
         }
-
         if (!b16 && !b2)
             convert = false;
 
         if (isTerminator(ch))
         {
             if (isNewLine(ch))
-                m_reader.offset(-1);
-
-            if (isWhiteSpace(ch))
             {
-                ch = eatWhiteSpace(ch);
-
-                tok.hasComma = ch == ',';
                 m_reader.offset(-1);
             }
+            else if (isWhiteSpace(ch))
+            {
+                ch = eatWhiteSpace(ch);
+                m_reader.offset(-1);
 
-            m_state    = ST_INITIAL;
-            tok.type   = TOK_DIGIT;
+                tok.hasComma = ch == ',';
+            }
 
-            int base = 10;
+            m_state  = ST_INITIAL;
+            tok.type = TOK_DIGIT;
+
             if (convert)
             {
                 tok.value = tok.value.substr(2, tok.value.size());
@@ -325,7 +318,6 @@ int32_t Parser::handleDigitState(Token& tok)
     return ST_CONTINUE;
 }
 
-
 int32_t Parser::handleSectionState(Token& tok)
 {
     uint8_t ch = m_reader.next();
@@ -340,7 +332,6 @@ int32_t Parser::handleSectionState(Token& tok)
             ch = m_reader.next();
         }
 
-
         if (isNewLine(ch))
             m_reader.offset(-1);
 
@@ -352,7 +343,6 @@ int32_t Parser::handleSectionState(Token& tok)
     error("undefined character. '%c'\n", ch);
     return PS_ERROR;
 }
-
 
 uint8_t Parser::scanEol(void)
 {
@@ -368,7 +358,6 @@ void Parser::countNewLine(uint8_t ch)
     // handle CRLF, LF, CR
     if (ch == '\r')
     {
-        // check the next position
         ch = m_reader.next();
         if (ch != '\n')
         {
@@ -388,7 +377,6 @@ uint8_t Parser::eatWhiteSpace(uint8_t ch)
         ch = m_reader.next();
     return ch;
 }
-
 
 int32_t Parser::handleSection(const Token& tok)
 {
@@ -506,7 +494,7 @@ int32_t Parser::handleOpCode(const Token& tok)
         }
 
         // TODO, use lastTok.hasComma
-        // to determine what should be scanned 
+        // to determine what should be scanned
         // next and also use it to add overloading
         // for example:
         //  add x0, x1     <- x0 = x0 + x1
@@ -619,11 +607,8 @@ inline bool isNumber(uint8_t ch)
 
 inline bool isEncodedNumber(uint8_t ch)
 {
-    return isNumber(ch) 
-        || ch >= 'a' && ch <= 'f' 
-        || ch >= 'A' && ch <= 'A' || ch == 'x';
+    return isNumber(ch) || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <= 'F' || ch == 'x';
 }
-
 
 inline bool isAlphaNumeric(uint8_t ch)
 {
