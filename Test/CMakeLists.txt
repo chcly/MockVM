@@ -38,6 +38,7 @@ set(TestFiles
     IfElse.asm
     Factorial.asm
     Compact.asm
+    Label.asm
 )
 add_compile_tests(OutFiles ${TestFiles})
 
