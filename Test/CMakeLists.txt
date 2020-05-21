@@ -1,18 +1,51 @@
-macro(add_test Target)
-    set(Input "${CMAKE_SOURCE_DIR}/Test/${ARGN}")
 
 
-    add_custom_target(${Target} ALL
-        COMMAND tcom -o ${Target} ${Input}
-        COMMAND tvm ${Target}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Compiling ${ARGN}"
-        SOURCES ${Input}
-    )
+macro(add_compile_tests OUT)
+    # Tests to make sure that everything 
+    # compiles and executes
 
-endmacro(add_test)
-add_test(ForLoop       ForLoop.asm)
-add_test(IfElse        IfElse.asm)
-add_test(PrintRegister PrintRegister.asm)
-add_test(Factorial     Factorial.asm)
-add_test(Compact       Compact.asm)
+    foreach (it ${ARGN})
+        get_filename_component(ASMFILE ${it}      ABSOLUTE)
+        get_filename_component(GENNAME ${ASMFILE} NAME_WE)
+        get_filename_component(ASMNAME ${it}      NAME)
+        
+        set(GEN_FILE ${CMAKE_BINARY_DIR}/${GENNAME})
+        list(APPEND ${OUT} ${GEN_FILE})
+        list(APPEND ${OUT} ${ASMFILE})
+
+        source_group("Assembly" FILES ${ASMFILE})
+        source_group("Generated" FILES ${GEN_FILE})
+
+        add_custom_command(
+            OUTPUT ${GEN_FILE}
+            COMMAND tcom -o ${GEN_FILE} ${ASMFILE}
+            COMMAND tvm ${GEN_FILE} -t
+            MAIN_DEPENDENCY ${ASMFILE}
+            COMMENT "${ASMNAME}"
+        )
+    endforeach(it)
+
+
+endmacro(add_compile_tests)
+
+
+set(TestFiles
+    Empty.asm
+    Comment.asm
+    ParseArg.asm
+    ForLoop.asm
+    PrintRegister.asm
+    IfElse.asm
+    Factorial.asm
+    Compact.asm
+)
+add_compile_tests(OutFiles ${TestFiles})
+
+set(SRC_ALL
+    Macro.h
+    catch/catch.hpp
+    Main.cpp
+    ${OutFiles}
+)
+
+add_executable(tvmtest ${SRC_ALL})

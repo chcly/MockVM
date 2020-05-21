@@ -69,7 +69,6 @@ int32_t Parser::parse(const char* fname)
         {
             Token curTok;
             sr = scan(curTok);
-
             switch (sr)
             {
             case TOK_OPCODE:
@@ -84,13 +83,14 @@ int32_t Parser::parse(const char* fname)
             case PS_OK:
                 return PS_OK;
             default:
-                error("unhandled token %i.\n", sr);
+                if (sr != PS_ERROR)
+                    error("unhandled token %i\n", sr);
                 rc = PS_ERROR;
                 break;
             }
             if (rc != PS_OK)
             {
-                error("scan error with token %i.\n", sr);
+                error("syntax error\n");
                 return PS_ERROR;
             }
         }
@@ -125,8 +125,10 @@ int32_t Parser::scan(Token& tok)
         default:
             break;
         }
+
         if (res == PS_ERROR)
             return PS_ERROR;
+
         else if (res != ST_CONTINUE)
             return tok.type;
     }
@@ -165,7 +167,7 @@ int32_t Parser::handleInitialState(Token& tok)
         m_reader.offset(-1);
         m_state = ST_ID;
     }
-    else if (isDigit(ch))
+    else if (isDigit(ch) || ch == '-')
     {
         m_reader.offset(-1);
         m_state = ST_DIGIT;
@@ -174,9 +176,19 @@ int32_t Parser::handleInitialState(Token& tok)
     {
         m_state = ST_SECTION;
     }
+    else if (ch == '#')
+    {
+        scanEol();
+        return ST_CONTINUE;
+    }
+    else if (ch == ';')
+    {
+        scanEol();
+        return ST_CONTINUE;
+    }
     else if (!isNewLine(ch) && ch != 0)
     {
-        error("undefined character. '%c'\n", ch);
+        error("undefined character '%c'\n", ch);
         return PS_ERROR;
     }
     return ST_CONTINUE;
@@ -185,6 +197,16 @@ int32_t Parser::handleInitialState(Token& tok)
 int32_t Parser::handleIdState(Token& tok)
 {
     uint8_t ch = m_reader.next();
+    if (ch == '#')
+    {
+        scanEol();
+        return ST_CONTINUE;
+    }
+    else if (ch == ';')
+    {
+        scanEol();
+        return ST_CONTINUE;
+    }
 
     if (isWhiteSpace(ch))
         ch = eatWhiteSpace(ch);
@@ -199,15 +221,15 @@ int32_t Parser::handleIdState(Token& tok)
 
         if (isTerminator(ch))
         {
-            if (isNewLine(ch))
-            {
-                m_reader.offset(-1);
-            }
-            else if (isWhiteSpace(ch))
+            if (isWhiteSpace(ch))
             {
                 ch = eatWhiteSpace(ch);
                 m_reader.offset(-1);
                 tok.hasComma = ch == ',';
+            }
+            else if (isNewLine(ch))
+            {
+                m_reader.offset(-1);
             }
 
             m_state = ST_INITIAL;
@@ -257,7 +279,7 @@ int32_t Parser::handleDigitState(Token& tok)
     if (isWhiteSpace(ch))
         ch = eatWhiteSpace(ch);
 
-    if (isNumber(ch))
+    if (isNumber(ch) || ch == '-')
     {
         int  base    = 10;
         bool convert = ch == '0';
@@ -270,6 +292,7 @@ int32_t Parser::handleDigitState(Token& tok)
                 error("invalid binary number.\n");
                 return PS_ERROR;
             }
+
             tok.value.push_back(ch);
             ch = m_reader.next();
 
@@ -281,21 +304,22 @@ int32_t Parser::handleDigitState(Token& tok)
                     b2 = true;
             }
         }
+
         if (!b16 && !b2)
             convert = false;
 
         if (isTerminator(ch))
         {
-            if (isNewLine(ch))
-            {
-                m_reader.offset(-1);
-            }
-            else if (isWhiteSpace(ch))
+            if (isWhiteSpace(ch))
             {
                 ch = eatWhiteSpace(ch);
                 m_reader.offset(-1);
 
                 tok.hasComma = ch == ',';
+            }
+            else if (isNewLine(ch))
+            {
+                m_reader.offset(-1);
             }
 
             m_state  = ST_INITIAL;
@@ -364,7 +388,6 @@ void Parser::countNewLine(uint8_t ch)
             // CR, so put back the last char
             m_reader.offset(-1);
         }
-        ch = m_reader.current();
         m_lineNo++;
     }
     else if (ch == '\n')
@@ -427,7 +450,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         }
 
         ins.argv[idx] = tok.reg;
-        ins.flags |= idx <= 0 ? IF_DREG : IF_SREG;
+        ins.flags |= idx <= 0 ? (int)IF_DREG : (int)IF_SREG;
     }
     else if (kwd.argv[idx] == AT_LIT)
     {
@@ -499,6 +522,7 @@ int32_t Parser::handleOpCode(const Token& tok)
         // for example:
         //  add x0, x1     <- x0 = x0 + x1
         //  add x0, x1, x2 <- x0 = x1 + x2
+
 
         if (ins.argc > 1)
         {
@@ -602,7 +626,7 @@ inline bool isDigit(uint8_t ch)
 
 inline bool isNumber(uint8_t ch)
 {
-    return ch >= '0' && ch <= '9' || ch == '-' || ch == '+';
+    return ch >= '0' && ch <= '9';
 }
 
 inline bool isEncodedNumber(uint8_t ch)
@@ -633,20 +657,26 @@ void Parser::error(const char* fmt, ...)
         int     s1, s2;
 
         char* buffer = nullptr;
+
         va_start(l1, fmt);
         s1 = std::vsnprintf(buffer, 0, fmt, l1);
         va_end(l1);
 
         if (s1 > 0)
         {
-            buffer = (char*)::malloc((size_t)s1 + 1);
+            buffer = (char*)malloc((size_t)s1 + 1);
             if (buffer)
             {
                 va_start(l1, fmt);
                 s2 = std::vsnprintf(buffer, (size_t)s1 + 1, fmt, l1);
                 va_end(l1);
-                fprintf(stdout, "%s(%i): error : %s", m_fname.c_str(), m_lineNo, buffer);
-                ::free(buffer);
+                
+                fprintf(stdout, 
+                    "%s(%i): error : %s", 
+                    m_fname.c_str(), 
+                    m_lineNo, buffer);
+                
+                free(buffer);
             }
         }
     }

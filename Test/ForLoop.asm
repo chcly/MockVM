@@ -8,13 +8,13 @@
 
 main:
     mov x0, 0
-    mov x1, 0b1010
+    mov x1, 0xFF
 top:
     cmp x0, x1
     jge done
     inc x0
-    prg x0
     jmp top
 done:
+    prg x0
     mov x0, 0
     ret
