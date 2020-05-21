@@ -22,6 +22,7 @@
 #include "Parser.h"
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <iostream>
 #include "Declarations.h"
 
