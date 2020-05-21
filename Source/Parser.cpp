@@ -510,16 +510,7 @@ int32_t Parser::handleOpCode(const Token& tok)
         ins.argc  = kwd.narg;
         ins.label = m_label;
 
-        Token lastTok = {};
-        if (ins.argc > 0)
-        {
-            if (scan(lastTok) == PS_ERROR)
-                return PS_ERROR;
-
-            if (handleArgument(ins, kwd, lastTok, 0) == PS_ERROR)
-                return PS_ERROR;
-        }
-
+ 
 
         // TODO, use lastTok.hasComma
         // to determine what should be scanned
@@ -527,16 +518,13 @@ int32_t Parser::handleOpCode(const Token& tok)
         // for example:
         //  add x0, x1     <- x0 = x0 + x1
         //  add x0, x1, x2 <- x0 = x1 + x2
-
-
-
-
-
-        if (ins.argc > 1)
+        
+        Token lastTok = {};
+        for (int i = 0; i < ins.argc; ++i)
         {
-            if (!lastTok.hasComma)
+            if (i > 0 && !lastTok.hasComma)
             {
-                error("Missing comma after the first operand.\n");
+                error("Missing comma after operand %i.\n", i+1);
                 error("%s expects %i arguments.\n", kwd.word, ins.argc);
                 return PS_ERROR;
             }
@@ -545,9 +533,15 @@ int32_t Parser::handleOpCode(const Token& tok)
             if (scan(lastTok) == PS_ERROR)
                 return PS_ERROR;
 
-            if (handleArgument(ins, kwd, lastTok, 1) == PS_ERROR)
+            if (handleArgument(ins, kwd, lastTok, i) == PS_ERROR)
                 return PS_ERROR;
         }
+
+        // if (kwd.allowsOverloading && lastTok.hasComma)
+        // {
+        // 
+        // }
+
 
         m_instructions.push_back(ins);
         return PS_OK;
