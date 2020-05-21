@@ -8,7 +8,7 @@
 
 main:
     mov x0, 0
-    mov x1, 10
+    mov x1, 0b1010
 top:
     cmp x0, x1
     jge done

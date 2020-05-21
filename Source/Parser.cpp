@@ -26,9 +26,6 @@
 #include "Declarations.h"
 
 using namespace std;
-
-const string     Blank        = "";
-const Token      InvalidToken = {0xFF, 0xFF, {0}, TOK_MAX, Blank, -1};
 const KeywordMap NullKeyword  = {{'\0'}, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 inline bool isWhiteSpace(uint8_t ch);
@@ -37,6 +34,7 @@ inline bool isAlphaU(uint8_t ch);
 inline bool isAlpha(uint8_t ch);
 inline bool isDigit(uint8_t ch);
 inline bool isNumber(uint8_t ch);
+inline bool isEncodedNumber(uint8_t ch);
 inline bool isAlphaNumeric(uint8_t ch);
 inline bool isNewLine(uint8_t ch);
 inline bool isTerminator(uint8_t ch);
@@ -90,7 +88,6 @@ int32_t Parser::parse(const char* fname)
                 rc = PS_ERROR;
                 break;
             }
-
             if (rc != PS_OK)
             {
                 error("scan error with token %i.\n", sr);
@@ -109,7 +106,6 @@ int32_t Parser::parse(const char* fname)
 int32_t Parser::scan(Token& tok)
 {
     int32_t res = PS_ERROR;
-
     while (!m_reader.eof())
     {
         switch (m_state)
@@ -129,7 +125,6 @@ int32_t Parser::scan(Token& tok)
         default:
             break;
         }
-
         if (res == PS_ERROR)
             return PS_ERROR;
         else if (res != ST_CONTINUE)
@@ -141,16 +136,10 @@ int32_t Parser::scan(Token& tok)
 int32_t Parser::handleInitialState(Token& tok)
 {
     uint8_t ch = m_reader.next();
-    if (ch == '/')
+    if (ch == '#')
     {
-        ch = m_reader.next();
-        if (ch == '/')
-            ch = scanEol();
-        else
-        {
-            error("undefined character. '/'\n");
-            return PS_ERROR;
-        }
+        scanEol();
+        return ST_CONTINUE;
     }
     else if (ch == ';')
     {
@@ -169,11 +158,7 @@ int32_t Parser::handleInitialState(Token& tok)
     }
 
     if (isWhiteSpace(ch))
-    {
-        // eat any white space
-        while (isWhiteSpace(ch) && !m_reader.eof())
-            ch = m_reader.next();
-    }
+        ch = eatWhiteSpace(ch);
 
 
     if (isAlpha(ch))
@@ -203,11 +188,9 @@ int32_t Parser::handleInitialState(Token& tok)
 int32_t Parser::handleIdState(Token& tok)
 {
     uint8_t ch = m_reader.next();
+
     if (isWhiteSpace(ch))
-    {
-        while (isWhiteSpace(ch) && !m_reader.eof())
-            ch = m_reader.next();
-    }
+        ch = eatWhiteSpace(ch);
 
     if (isAlpha(ch))
     {
@@ -222,6 +205,13 @@ int32_t Parser::handleIdState(Token& tok)
             if (isNewLine(ch))
                 m_reader.offset(-1);
 
+            if (isWhiteSpace(ch))
+            {
+                ch           = eatWhiteSpace(ch);
+                tok.hasComma = ch == ',';
+                m_reader.offset(-1);
+            }
+  
             m_state = ST_INITIAL;
 
             if (tok.value.size() == 2 &&
@@ -250,6 +240,9 @@ int32_t Parser::handleIdState(Token& tok)
                     return ST_MAX;
                 }
             }
+
+
+
             tok.type = TOK_IDENTIFIER;
             return ST_MAX;
         }
@@ -267,27 +260,64 @@ int32_t Parser::handleDigitState(Token& tok)
 {
     uint8_t ch = m_reader.next();
     if (isWhiteSpace(ch))
-    {
-        while (isWhiteSpace(ch) && !m_reader.eof())
-            ch = m_reader.next();
-    }
+        ch = eatWhiteSpace(ch);
 
     if (isNumber(ch))
     {
-        while (isNumber(ch) && !m_reader.eof())
+        bool convert = ch == '0';
+        bool b2 = false, b16 = false;
+
+        while (isEncodedNumber(ch) && !m_reader.eof())
         {
+            if (b2 && ch != '1' && ch != '0' && ch != 'b')
+            {
+                error("invalid binary number.\n");
+                return PS_ERROR;
+            }
+
             tok.value.push_back(ch);
             ch = m_reader.next();
+
+
+            if (convert)
+            {
+                if (ch == 'x')
+                    b16 = true;
+                if (ch == 'b')
+                    b2 = true;
+            }
         }
+
+        if (!b16 && !b2)
+            convert = false;
 
         if (isTerminator(ch))
         {
             if (isNewLine(ch))
                 m_reader.offset(-1);
 
+            if (isWhiteSpace(ch))
+            {
+                ch = eatWhiteSpace(ch);
+
+                tok.hasComma = ch == ',';
+                m_reader.offset(-1);
+            }
+
             m_state    = ST_INITIAL;
             tok.type   = TOK_DIGIT;
-            tok.ival.x = std::strtoull(tok.value.c_str(), nullptr, 10);
+
+            int base = 10;
+            if (convert)
+            {
+                tok.value = tok.value.substr(2, tok.value.size());
+                if (b2)
+                    base = 2;
+                if (b16)
+                    base = 16;
+            }
+
+            tok.ival.x = std::strtoull(tok.value.c_str(), nullptr, base);
             tok.value.clear();
             return ST_MAX;
         }
@@ -300,10 +330,7 @@ int32_t Parser::handleSectionState(Token& tok)
 {
     uint8_t ch = m_reader.next();
     if (isWhiteSpace(ch))
-    {
-        while (isWhiteSpace(ch) && !m_reader.eof())
-            ch = m_reader.next();
-    }
+        ch = eatWhiteSpace(ch);
 
     if (isAlphaL(ch))
     {
@@ -354,6 +381,14 @@ void Parser::countNewLine(uint8_t ch)
     else if (ch == '\n')
         m_lineNo++;
 }
+
+uint8_t Parser::eatWhiteSpace(uint8_t ch)
+{
+    while (isWhiteSpace(ch) && !m_reader.eof())
+        ch = m_reader.next();
+    return ch;
+}
+
 
 int32_t Parser::handleSection(const Token& tok)
 {
@@ -581,6 +616,14 @@ inline bool isNumber(uint8_t ch)
 {
     return ch >= '0' && ch <= '9' || ch == '-' || ch == '+';
 }
+
+inline bool isEncodedNumber(uint8_t ch)
+{
+    return isNumber(ch) 
+        || ch >= 'a' && ch <= 'f' 
+        || ch >= 'A' && ch <= 'A' || ch == 'x';
+}
+
 
 inline bool isAlphaNumeric(uint8_t ch)
 {
