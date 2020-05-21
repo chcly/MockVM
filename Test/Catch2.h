@@ -4,6 +4,8 @@
 
 #include "catch/catch.hpp"
 #include "TestConfig.h"
+#include <string.h>
+#include <memory.h>
 
 #define EXPECT_EQ(A, B) REQUIRE((A) == (B))
 #define EXPECT_NE(A, B) REQUIRE((A) != (B))
