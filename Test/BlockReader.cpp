@@ -20,10 +20,38 @@
 -------------------------------------------------------------------------------
 */
 #include "Catch2.h"
+#include "BlockReader.h"
 
-
+const std::string KeywordsFile = std::string(TestDirectory) + "/Keywords.asm";
 
 TEST_CASE("BlockReder_0")
 {
+    BlockReader r;
+    r.open(KeywordsFile.c_str());
+    EXPECT_FALSE(r.eof());
 
+    size_t size = r.size(), i;
+
+    uint8_t *tmp = new uint8_t[size + 1];
+
+
+
+    for (i =0; i<size && !r.eof(); ++i)
+    {
+        // current returns the buffer at the internal position
+        uint8_t tch = r.current();
+
+        // current returns the buffer at the internal position
+        // then advances the position by one
+        uint8_t ch = r.next();
+        tmp[i] = ch;
+        EXPECT_EQ(ch, tch);
+
+        r.offset(-1);
+        EXPECT_EQ(ch, r.current());
+        r.offset(1);
+    }
+
+    EXPECT_EQ(memcmp(tmp, r.ptr(), size), 0);
+    delete[] tmp;
 }

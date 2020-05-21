@@ -79,13 +79,16 @@ void BlockReader::read(void *blk, size_t nr)
 
 void BlockReader::offset(int32_t nr)
 {
-    if (!eof())
-    {
-        int32_t lo = (int32_t)m_loc;
-        if (m_fileLen > 0 && (lo - nr) >= 0)
-            m_loc += nr;
-    
-    }
+    if (m_loc == 0 && nr < 0)
+        return;
+
+    int32_t lo = (int32_t)m_loc;
+    lo += nr;
+    if (lo < 0)
+        lo = 0;
+    if (lo > m_fileLen)
+        lo = m_fileLen - 1;
+    m_loc = lo;
 }
 
 void BlockReader::moveTo(size_t loc)
@@ -119,22 +122,4 @@ void BlockReader::open(const char *fname)
     }
     else
         puts("Invalid file name.");
-}
-
-
-void BlockReader::open(const void *mem, size_t len)
-{
-    if (mem != nullptr && len > 0)
-    {
-        if (m_block)
-            delete[] m_block;
-
-        m_block = new uint8_t[len + 1];
-        memcpy(m_block, mem, len);
-
-        m_fileLen = len;
-        m_block[m_fileLen] = 0;
-    }
-    else
-        puts("failed to open memory.");
 }

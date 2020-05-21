@@ -53,7 +53,11 @@ set(SRC_ALL
     Main.cpp
     BlockReader.cpp
     ${OutFiles}
+    ${ToyVM_BINARY_DIR}/TestConfig.h
 )
+
+
+include_directories(../Source ${ToyVM_BINARY_DIR})
 
 add_executable(tvmtest ${SRC_ALL})
 target_link_libraries(tvmtest libtvm)
