@@ -31,8 +31,6 @@ private:
     uint8_t *m_block;
     size_t   m_fileLen;
     size_t   m_loc;
-    bool     m_read;
-    void read(void);
 
 public:
 

@@ -156,7 +156,8 @@ int32_t Parser::handleInitialState(Token& tok)
             countNewLine(ch);
             ch = m_reader.next();
         }
-        m_reader.offset(-1);
+        if (!m_reader.eof())
+            m_reader.offset(-1);
         return ST_CONTINUE;
     }
 
@@ -222,16 +223,7 @@ int32_t Parser::handleIdState(Token& tok)
 
         if (isTerminator(ch))
         {
-            if (isWhiteSpace(ch))
-            {
-                ch = eatWhiteSpace(ch);
-                m_reader.offset(-1);
-                tok.hasComma = ch == ',';
-            }
-            else if (isNewLine(ch))
-            {
-                m_reader.offset(-1);
-            }
+            prepNextCall(tok, ch);
 
             m_state = ST_INITIAL;
             if (tok.value.size() == 2 &&
@@ -311,17 +303,7 @@ int32_t Parser::handleDigitState(Token& tok)
 
         if (isTerminator(ch))
         {
-            if (isWhiteSpace(ch))
-            {
-                ch = eatWhiteSpace(ch);
-                m_reader.offset(-1);
-
-                tok.hasComma = ch == ',';
-            }
-            else if (isNewLine(ch))
-            {
-                m_reader.offset(-1);
-            }
+            prepNextCall(tok, ch);
 
             m_state  = ST_INITIAL;
             tok.type = TOK_DIGIT;
@@ -394,6 +376,27 @@ void Parser::countNewLine(uint8_t ch)
     else if (ch == '\n')
         m_lineNo++;
 }
+
+
+
+void Parser::prepNextCall(Token& tok, uint8_t ch)
+{
+    // trim any white space and 
+    // if there is a comma, flag the token
+    // indicating there is another argument 
+    // that comes next
+    if (isWhiteSpace(ch))
+    {
+        ch = eatWhiteSpace(ch);
+        m_reader.offset(-1);
+        tok.hasComma = ch == ',';
+    }
+    else if (isNewLine(ch))
+        m_reader.offset(-1);
+    else if (ch == ',')
+        tok.hasComma = true;
+}
+
 
 uint8_t Parser::eatWhiteSpace(uint8_t ch)
 {
@@ -517,6 +520,7 @@ int32_t Parser::handleOpCode(const Token& tok)
                 return PS_ERROR;
         }
 
+
         // TODO, use lastTok.hasComma
         // to determine what should be scanned
         // next and also use it to add overloading
@@ -525,8 +529,18 @@ int32_t Parser::handleOpCode(const Token& tok)
         //  add x0, x1, x2 <- x0 = x1 + x2
 
 
+
+
+
         if (ins.argc > 1)
         {
+            if (!lastTok.hasComma)
+            {
+                error("Missing comma after the first operand.\n");
+                error("%s expects %i arguments.\n", kwd.word, ins.argc);
+                return PS_ERROR;
+            }
+
             lastTok = {};
             if (scan(lastTok) == PS_ERROR)
                 return PS_ERROR;

@@ -34,8 +34,7 @@
 BlockReader::BlockReader(const char *fname) :
     m_block(nullptr),
     m_fileLen(0),
-    m_loc(0),
-    m_read(false)
+    m_loc(0)
 {
     open(fname);
 }
@@ -43,8 +42,7 @@ BlockReader::BlockReader(const char *fname) :
 BlockReader::BlockReader() :
     m_block(nullptr),
     m_fileLen(0),
-    m_loc(0),
-    m_read(false)
+    m_loc(0)
 {
 }
 
@@ -84,7 +82,7 @@ void BlockReader::offset(int32_t nr)
     if (!eof())
     {
         int32_t lo = (int32_t)m_loc;
-        if (m_fileLen > 0 && (lo - nr) > 0)
+        if (m_fileLen > 0 && (lo - nr) >= 0)
             m_loc += nr;
     
     }
@@ -94,10 +92,6 @@ void BlockReader::moveTo(size_t loc)
 {
     if (loc < m_fileLen)
         m_loc = loc;
-}
-
-void BlockReader::read()
-{
 }
 
 void BlockReader::open(const char *fname)

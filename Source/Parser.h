@@ -87,6 +87,8 @@ private:
                            const KeywordMap& kwd,
                            const Token&      tok,
                            const int32_t     idx);
+
+    void prepNextCall(Token& tok, uint8_t ch);
 };
 
 #endif  //_Parser_h_
