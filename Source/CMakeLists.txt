@@ -1,29 +1,38 @@
 
+set(CommonSource
+    BlockReader.cpp
+    BinaryWriter.cpp
+    Parser.cpp
+    BlockReader.cpp
+    Program.cpp
+)
 
-add_executable(tcom 
+
+set(CommonHeader
     BlockReader.h
     BinaryWriter.h
     Parser.h
     Declarations.h
-    BlockReader.cpp
-    BinaryWriter.cpp
-    Parser.cpp
-    Compiler.cpp
-)
-
-add_executable(tvm 
     BlockReader.h
     Program.h
-    Declarations.h
-
-    BlockReader.cpp
-    Program.cpp
-    VM.cpp
     ../README.md
 )
 
+add_library(libtvm  ${CommonSource} ${CommonHeader})
+
+add_executable(tcom 
+    Compiler.cpp
+)
+target_link_libraries(tcom libtvm)
+
+add_executable(tvm 
+    VM.cpp
+)
+target_link_libraries(tvm libtvm)
+
 
 set(INSTALL_PATH CACHE STRING "")
+
 if (NOT INSTALL_PATH STREQUAL "")
     message(STATUS "INSTALL ==> ${INSTALL_PATH}")
     add_custom_command(TARGET tcom 

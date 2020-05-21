@@ -39,6 +39,9 @@ public:
     ~BlockReader();
 
     void    open(const char *fname);
+    void    open(const void *mem, size_t len);
+
+
     uint8_t next(void);
     uint8_t current(void);
 

@@ -450,7 +450,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
     {
         if (tok.type != TOK_REGISTER)
         {
-            error("expected operand one for %s, to be a register\n", kwd.word);
+            error("expected operand %i for %s, to be a register\n", idx, kwd.word);
             return PS_ERROR;
         }
 
@@ -461,7 +461,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
     {
         if (tok.type != TOK_DIGIT)
         {
-            error("expected operand one for %s, to be a value\n", kwd.word);
+            error("expected operand %i for %s, to be a value\n", idx, kwd.word);
             return PS_ERROR;
         }
         ins.argv[idx] = tok.ival.x;
@@ -481,7 +481,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         }
         else
         {
-            error("expected operand one for %s, to be a register or a value\n", kwd.word);
+            error("expected operand %i for %s, to be a register or a value\n",  idx, kwd.word);
             return PS_ERROR;
         }
     }
@@ -493,7 +493,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
     }
     else
     {
-        error("unknown first operand for %s\n", kwd.word);
+        error("unknown operand type for %s\n", kwd.word);
         return PS_ERROR;
     }
 
@@ -519,6 +519,7 @@ int32_t Parser::handleOpCode(const Token& tok)
         //  add x0, x1, x2 <- x0 = x1 + x2
         
         Token lastTok = {};
+
         for (int i = 0; i < ins.argc; ++i)
         {
             if (i > 0 && !lastTok.hasComma)

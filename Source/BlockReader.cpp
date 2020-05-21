@@ -94,6 +94,7 @@ void BlockReader::moveTo(size_t loc)
         m_loc = loc;
 }
 
+
 void BlockReader::open(const char *fname)
 {
     if (fname)
@@ -118,4 +119,22 @@ void BlockReader::open(const char *fname)
     }
     else
         puts("Invalid file name.");
+}
+
+
+void BlockReader::open(const void *mem, size_t len)
+{
+    if (mem != nullptr && len > 0)
+    {
+        if (m_block)
+            delete[] m_block;
+
+        m_block = new uint8_t[len + 1];
+        memcpy(m_block, mem, len);
+
+        m_fileLen = len;
+        m_block[m_fileLen] = 0;
+    }
+    else
+        puts("failed to open memory.");
 }

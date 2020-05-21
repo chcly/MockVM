@@ -1,5 +1,6 @@
 #ifndef __MACRO_H_
 #define __MACRO_H_
+#include "catch/catch.hpp"
 
 #define EXPECT_EQ(A, B) REQUIRE((A) == (B))
 #define EXPECT_NE(A, B) REQUIRE((A) != (B))

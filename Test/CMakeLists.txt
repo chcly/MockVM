@@ -51,7 +51,9 @@ set(SRC_ALL
     Macro.h
     catch/catch.hpp
     Main.cpp
+    BlockReader.cpp
     ${OutFiles}
 )
 
 add_executable(tvmtest ${SRC_ALL})
+target_link_libraries(tvmtest libtvm)
