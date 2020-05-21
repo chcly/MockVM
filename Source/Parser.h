@@ -31,16 +31,6 @@
 #include "Declarations.h"
 
 
-struct Token
-{
-    uint8_t     op;
-    uint8_t     reg;
-    Register    ival;
-    int32_t     type;
-    std::string value;
-    int32_t     index;
-};
-
 
 class Parser
 {
@@ -62,22 +52,16 @@ private:
     std::string  m_fname;
 
     int32_t scan(Token &tok);
-
-
-    int32_t getType(uint8_t ct);
     void    error(const char* fmt, ...);
 
     int32_t           getSection(const std::string& val);
     int32_t           getKeywordIndex(const uint8_t& val);
     const KeywordMap& getKeyword(const int32_t& val);
     
-    Token             scanNextToken(void);
     int32_t           handleArgument(Instruction&      ins,
                                      const KeywordMap& kwd,
                                      const Token&      tok,
                                      const int32_t     idx);
-
-
 public:
     Parser();
     ~Parser();

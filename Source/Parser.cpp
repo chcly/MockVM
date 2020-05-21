@@ -62,7 +62,6 @@ int32_t Parser::parse(const char* fname)
     if (!m_reader.eof())
     {
         int32_t sr, rc;
-
         m_section = -1;
         m_label   = 0;
         m_state   = ST_INITIAL;
@@ -72,6 +71,7 @@ int32_t Parser::parse(const char* fname)
         {
             Token curTok;
             sr = scan(curTok);
+
             switch (sr)
             {
             case TOK_OPCODE:
@@ -240,7 +240,7 @@ int32_t Parser::handleIdState(Token& tok)
             size_t i = 0;
             for (i = 0; i < KeywordTableSize; ++i)
             {
-                if (strncmp(KeywordTable[i].word, tok.value.c_str(), MAX_KEYWORD) == 0)
+                if (strncmp(KeywordTable[i].word, tok.value.c_str(), MAX_KWD) == 0)
                 {
                     // swap the string with the opcode
                     tok.value.clear();
@@ -345,7 +345,6 @@ void Parser::countNewLine(uint8_t ch)
         ch = m_reader.next();
         if (ch != '\n')
         {
-            // untested
             // CR, so put back the last char
             m_reader.offset(-1);
         }
@@ -356,16 +355,9 @@ void Parser::countNewLine(uint8_t ch)
         m_lineNo++;
 }
 
-Token Parser::scanNextToken(void)
-{
-    Token tok;
-    scan(tok);
-    return tok;
-}
-
 int32_t Parser::handleSection(const Token& tok)
 {
-    m_section        = getSection(tok.value);
+    m_section = getSection(tok.value);
     if (m_section == UNDEFINED)
     {
         error("undefined section '%s'\n", tok.value.c_str());
@@ -422,23 +414,23 @@ int32_t Parser::handleArgument(Instruction&      ins,
             return PS_ERROR;
         }
         ins.argv[idx] = tok.ival.x;
-        ins.flags |= idx <= 0 ? IF_DLIT : IF_SLIT;
+        ins.flags |= idx <= 0 ? (int)IF_DLIT : (int)IF_SLIT;
     }
     else if (kwd.argv[idx] == AT_REGLIT)
     {
         if (tok.type == TOK_DIGIT)
         {
             ins.argv[idx] = tok.ival.x;
-            ins.flags |= idx <= 0 ? IF_DLIT : IF_SLIT;
+            ins.flags |= idx <= 0 ? (int)IF_DLIT : (int)IF_SLIT;
         }
         else if (tok.type == TOK_REGISTER)
         {
             ins.argv[idx] = tok.reg;
-            ins.flags |= idx <= 0 ? IF_DREG : IF_SREG;
+            ins.flags |= idx <= 0 ? (int)IF_DREG : (int)IF_SREG;
         }
         else
         {
-            error("expected operand one for %s, to be a register or a literal\n", kwd.word);
+            error("expected operand one for %s, to be a register or a value\n", kwd.word);
             return PS_ERROR;
         }
     }
@@ -463,18 +455,35 @@ int32_t Parser::handleOpCode(const Token& tok)
     if (kwd.op != UNDEFINED)
     {
         Instruction ins = {};
-        ins.op          = kwd.op;
-        ins.argc        = kwd.narg;
-        ins.label       = m_label;
 
+        ins.op    = kwd.op;
+        ins.argc  = kwd.narg;
+        ins.label = m_label;
+
+        Token lastTok = {};
         if (ins.argc > 0)
         {
-            if (handleArgument(ins, kwd, scanNextToken(), 0) == PS_ERROR)
+            if (scan(lastTok) == PS_ERROR)
+                return PS_ERROR;
+
+            if (handleArgument(ins, kwd, lastTok, 0) == PS_ERROR)
                 return PS_ERROR;
         }
+
+        // TODO, use lastTok.hasComma
+        // to determine what should be scanned 
+        // next and also use it to add overloading
+        // for example:
+        //  add x0, x1     <- x0 = x0 + x1
+        //  add x0, x1, x2 <- x0 = x1 + x2
+
         if (ins.argc > 1)
         {
-            if (handleArgument(ins, kwd, scanNextToken(), 1) == PS_ERROR)
+            lastTok = {};
+            if (scan(lastTok) == PS_ERROR)
+                return PS_ERROR;
+
+            if (handleArgument(ins, kwd, lastTok, 1) == PS_ERROR)
                 return PS_ERROR;
         }
 

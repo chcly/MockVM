@@ -22,13 +22,12 @@
 #ifndef _Declarations_h_
 #define _Declarations_h_
 
-
 #include <stdint.h>
-#include <string>
 #include <string.h>
+#include <string>
 
-#define INS_ARGM 3
-#define MAX_KEYWORD 6
+#define INS_ARG 3
+#define MAX_KWD 6
 
 // return value for actions that need to scan
 // for more information before returning a token.
@@ -36,8 +35,8 @@
 // Common error return code
 #define UNDEFINED -1
 
-#define TYPE_ID4(a, b, c, d)    ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
-#define TYPE_ID2(a, b)          ((b) << 8 | (a))
+#define TYPE_ID4(a, b, c, d) ((int)(d) << 24 | (int)(c) << 16 | (b) << 8 | (a))
+#define TYPE_ID2(a, b) ((b) << 8 | (a))
 
 typedef union Register {
     uint8_t  b[8];
@@ -45,7 +44,6 @@ typedef union Register {
     uint32_t l[2];
     uint64_t x;
 } Register;
-
 
 enum ProgramFlags
 {
@@ -60,16 +58,22 @@ enum ParseResult
     PS_OK,
 };
 
+struct Token
+{
+    uint8_t     op;
+    uint8_t     reg;
+    Register    ival;
+    int32_t     type;
+    std::string value;
+    int32_t     index;
+    bool        hasComma;
+};
+
 enum TokenCode
 {
     TOK_OPCODE,
     TOK_REGISTER,
     TOK_IDENTIFIER,
-    TOK_COLON,
-    TOK_COMMA,
-    TOK_PERIOD,
-    TOK_HEX,
-    TOK_BINARY,
     TOK_DIGIT,
     TOK_LABEL,
     TOK_SECTION,
@@ -82,10 +86,8 @@ enum ParserState
     ST_INITIAL = 0,
     ST_ID,
     ST_DIGIT,
-    ST_EXIT,
-    ST_ERROR,
-    ST_CONTINUE,
     ST_SECTION,
+    ST_CONTINUE,
     ST_MAX,
 };
 
@@ -117,7 +119,6 @@ enum Opcode
     OP_MAX
 };
 
-
 enum ArgType
 {
     AT_REG,
@@ -127,19 +128,15 @@ enum ArgType
     AT_NULL,
 };
 
-typedef char Keyword[MAX_KEYWORD+1];
+typedef char Keyword[MAX_KWD + 1];
 
 struct KeywordMap
 {
     Keyword word;
     uint8_t op;
     uint8_t narg;
-    uint8_t argv[INS_ARGM];
+    uint8_t argv[INS_ARG];
 };
-
-
-
-
 
 enum SectionCodes
 {
@@ -147,7 +144,6 @@ enum SectionCodes
     SEC_TXT,
     SEC_STR,
 };
-
 
 enum InstructionFlags
 {
@@ -159,49 +155,43 @@ enum InstructionFlags
     IF_MAX  = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR
 };
 
-
-
 struct TVMHeader
 {
-    uint16_t code;   // 2
-    uint8_t  flags;  // 1
-    uint8_t  txt;    // 1
-    uint32_t dat;    // 4
-    uint64_t str;    // 8 -- 16
+    uint16_t code;
+    uint8_t  flags;
+    uint8_t  txt;
+    uint32_t dat;
+    uint64_t str;
 };
 
 struct TVMSection
 {
-    uint16_t code;     // 2
-    uint16_t flags;    // 2 4
-    uint64_t entry;    // 8 12
-    uint32_t pad;      // 4 16
-    uint32_t size;     // 4 20
-    uint32_t start;    // 4 24
-    uint64_t padding;  // 8 32
+    uint16_t code;
+    uint16_t flags;
+    uint64_t entry;
+    uint32_t pad;
+    uint32_t size;
+    uint32_t start;
+    uint64_t padding;
 };
-
 
 struct Instruction
 {
     uint8_t     op;
     uint8_t     flags;
     uint8_t     argc;
-    uint64_t    argv[INS_ARGM];
+    uint64_t    argv[INS_ARG];
     uint64_t    label;
     std::string labelName;
 };
-
-
 
 struct ExecInstruction
 {
     uint8_t  op;
     uint8_t  flags;
     uint8_t  argc;
-    uint64_t argv[INS_ARGM];
+    uint64_t argv[INS_ARG];
 };
-
 
 #define _RELITAVE_TIME_CHECK_BEGIN                                    \
     {                                                                 \
