@@ -12,4 +12,4 @@ jobs:
     - name: Build
       run: make
     - name: Run Tests
-      run: ./Test/testtvm
+      run: ./Test/tvmtest
