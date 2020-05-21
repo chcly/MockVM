@@ -62,7 +62,7 @@ enum ParseResult
 
 enum TokenCode
 {
-    TOK_MNEMONIC,
+    TOK_OPCODE,
     TOK_REGISTER,
     TOK_IDENTIFIER,
     TOK_COLON,
@@ -75,29 +75,6 @@ enum TokenCode
     TOK_SECTION,
     TOK_EOL,
     TOK_MAX,
-};
-
-enum CharType
-{
-    CT_LALPHA,
-    CT_UALPHA,
-    CT_DIGIT,
-    CT_WS,
-    CT_NL,
-    CT_COMMA,
-    CT_PERIOD,
-    CT_COLON,
-    CT_SQUOTE,
-    CT_DQUOTE,
-    CT_LPARAN,
-    CT_RPARAN,
-    CT_LBRACE,
-    CT_RBRACE,
-    CT_HASH,
-    CT_ADD,
-    CT_SUB,
-    CT_NULL,
-    CT_MAX,
 };
 
 enum ParserState
@@ -140,22 +117,6 @@ enum Opcode
     OP_MAX
 };
 
-enum Actions
-{
-    AC_IG = -3,  // Ignore this character
-    AC_0L = -2,  // return TOK_EOL
-    AC_0E = -1,  // error
-    AC_00,       // push current character to token
-    AC_01,       // if the token is keyword then return token TOK_MNEMONIC otherwise TOK_IDENTIFIER
-    AC_02,       // add char to token then goto STATE ST_READ_ID
-    AC_03,       // goto state ST_INITIAL, return TOK_LABEL
-    AC_04,       // goto state ST_INITIAL, return TOK_IDENTIFIER
-    AC_05,       // goto state ST_INITIAL and continue scanning
-    AC_06,       // goto state ST_DIGIT and continue scanning
-    AC_07,       // goto state ST_CONTINUE return TOK_DIGIT
-    AC_SC,       // goto state ST_SECTION
-    AC_DS,       // goto state ST_INITIAL and return TOK_SECTION
-};
 
 enum ArgType
 {

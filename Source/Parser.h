@@ -45,16 +45,9 @@ struct Token
 class Parser
 {
 public:
-    typedef int32_t StateTable[ST_MAX][CT_MAX];
-    typedef int32_t (Parser::*Action)(uint8_t ch);
-
-    typedef std::stack<Token>                       TokenStack;
     typedef std::unordered_map<std::string, size_t> LabelMap;
     typedef std::vector<Instruction>                Instructions;
 
-    const static Parser::Action Actions[];
-    const static size_t         ActionCount;
-    const static StateTable     States;
     const static KeywordMap     KeywordTable[];
     const static size_t         KeywordTableSize;
 
@@ -64,18 +57,14 @@ private:
     int32_t      m_section;
     int32_t      m_label;
     int32_t      m_lineNo;
-    std::string  m_curString;
-    int64_t      m_ival;
-    uint8_t      m_op;
-    uint8_t      m_register;
-    TokenStack   m_tokens;
     LabelMap     m_labels;
     Instructions m_instructions;
     std::string  m_fname;
 
-    int32_t scan(void);
+    int32_t scan(Token &tok);
+
+
     int32_t getType(uint8_t ct);
-    void    clearState(void);
     void    error(const char* fmt, ...);
 
     int32_t           getSection(const std::string& val);
@@ -83,7 +72,6 @@ private:
     const KeywordMap& getKeyword(const int32_t& val);
     
     Token             scanNextToken(void);
-    Token             getLastToken(void);
     int32_t           handleArgument(Instruction&      ins,
                                      const KeywordMap& kwd,
                                      const Token&      tok,
@@ -107,21 +95,16 @@ public:
     }
 
 private:
-
-    int32_t ActionIdx00(uint8_t ch);
-    int32_t ActionIdx01(uint8_t ch);
-    int32_t ActionIdx02(uint8_t ch);
-    int32_t ActionIdx03(uint8_t ch);
-    int32_t ActionIdx04(uint8_t ch);
-    int32_t ActionIdx05(uint8_t ch);
-    int32_t ActionIdx06(uint8_t ch);
-    int32_t ActionIdx07(uint8_t ch);
-    int32_t ActionIdxSC(uint8_t ch);
-    int32_t ActionIdxDC(uint8_t ch);
-
     int32_t handleOpCode(const Token& tok);
-    int32_t TokenSECTION(void);
-    int32_t TokenLABEL(void);
+    int32_t handleSection(const Token& tok);
+    int32_t handleLabel(const Token& dest);
+
+    void    countNewLine(uint8_t ch);
+    uint8_t scanEol(void);
+    int32_t handleInitialState(Token& dest);
+    int32_t handleIdState(Token& dest);
+    int32_t handleDigitState(Token& dest);
+    int32_t handleSectionState(Token& dest);
 };
 
 #endif  //_Parser_h_

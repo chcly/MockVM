@@ -31,16 +31,21 @@ const string     Blank        = "";
 const Token      InvalidToken = {0xFF, 0xFF, {0}, TOK_MAX, Blank, -1};
 const KeywordMap NullKeyword  = {{'\0'}, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
+inline bool isWhiteSpace(uint8_t ch);
+inline bool isAlphaL(uint8_t ch);
+inline bool isAlphaU(uint8_t ch);
+inline bool isAlpha(uint8_t ch);
+inline bool isDigit(uint8_t ch);
+inline bool isNumber(uint8_t ch);
+inline bool isAlphaNumeric(uint8_t ch);
+inline bool isNewLine(uint8_t ch);
+inline bool isTerminator(uint8_t ch);
+
 Parser::Parser() :
     m_state(0),
     m_section(-1),
     m_label(-1),
     m_lineNo(1),
-    m_curString(),
-    m_ival(0),
-    m_op(0),
-    m_register(0),
-    m_tokens(),
     m_labels(),
     m_instructions(),
     m_fname()
@@ -65,17 +70,18 @@ int32_t Parser::parse(const char* fname)
 
         while (!m_reader.eof())
         {
-            sr = scan();
+            Token curTok;
+            sr = scan(curTok);
             switch (sr)
             {
-            case TOK_MNEMONIC:
-                rc = handleOpCode(getLastToken());
+            case TOK_OPCODE:
+                rc = handleOpCode(curTok);
                 break;
             case TOK_SECTION:
-                rc = TokenSECTION();
+                rc = handleSection(curTok);
                 break;
             case TOK_LABEL:
-                rc = TokenLABEL();
+                rc = handleLabel(curTok);
                 break;
             case PS_OK:
                 return PS_OK;
@@ -100,108 +106,267 @@ int32_t Parser::parse(const char* fname)
     return PS_OK;
 }
 
-int32_t Parser::scan(void)
+int32_t Parser::scan(Token& tok)
 {
+    int32_t res = PS_ERROR;
+
     while (!m_reader.eof())
     {
-        int32_t actionResult, currentAction;
-        int32_t ch, tk;
-
-        ch = m_reader.next();
-        if (ch == '/')
+        switch (m_state)
         {
-            ch = m_reader.next();
-            if (ch == '/')
-            {
-                while (!m_reader.eof() && ch != '\n')
-                    ch = m_reader.next();
-                m_lineNo++;
-            }
-            else
-            {
-                // should be an error...
-            }
-        }
-        if (ch == ';')
-        {
-            ch = m_reader.next();
-            while (!m_reader.eof() && ch != '\n')
-                ch = m_reader.next();
-            m_lineNo++;
+        case ST_INITIAL:
+            res = handleInitialState(tok);
+            break;
+        case ST_ID:
+            res = handleIdState(tok);
+            break;
+        case ST_DIGIT:
+            res = handleDigitState(tok);
+            break;
+        case ST_SECTION:
+            res = handleSectionState(tok);
+            break;
+        default:
+            break;
         }
 
-        tk            = getType(ch);
-        currentAction = States[m_state][tk];
-
-        if (currentAction >= 0 && currentAction < ActionCount)
-        {
-            if (Actions[currentAction] != nullptr)
-            {
-                actionResult = (this->*Actions[currentAction])(ch);
-                if (actionResult != CONTINUE)
-                {
-                    Token tok  = {};
-                    tok.op     = m_op;
-                    tok.reg    = m_register;
-                    tok.ival.x = m_ival;
-                    tok.value  = m_curString;
-                    tok.type   = actionResult;
-                    tok.index  = getKeywordIndex(m_op);
-
-                    m_tokens.push(tok);
-                    return actionResult;
-                }
-            }
-            else
-            {
-                // should only happen if a nullptr is
-                // supplied in the action table
-                error("skipping action %i for character '%c'\n", currentAction, ch);
-                return PS_ERROR;
-            }
-        }
-        else if (currentAction == AC_0E)
-        {
-            error("undefined action for character '%c'\n", ch);
+        if (res == PS_ERROR)
             return PS_ERROR;
-        }
-        else
-        {
-            error("unknown character type '%c'\n", ch);
-            return PS_ERROR;
-        }
+        else if (res != ST_CONTINUE)
+            return tok.type;
     }
     return PS_OK;
 }
 
-Token Parser::getLastToken(void)
+int32_t Parser::handleInitialState(Token& tok)
 {
-    if (!m_tokens.empty())
+    uint8_t ch = m_reader.next();
+    if (ch == '/')
     {
-        Token rval = m_tokens.top();
-        m_tokens.pop();
-        return rval;
+        ch = m_reader.next();
+        if (ch == '/')
+            ch = scanEol();
+        else
+        {
+            error("undefined character. '/'\n");
+            return PS_ERROR;
+        }
     }
-    return InvalidToken;
+    else if (ch == ';')
+    {
+        scanEol();
+        return ST_CONTINUE;
+    }
+    else if (isNewLine(ch))
+    {
+        while (isNewLine(ch))
+        {
+            countNewLine(ch);
+            ch = m_reader.next();
+        }
+        m_reader.offset(-1);
+        return ST_CONTINUE;
+    }
+
+    if (isWhiteSpace(ch))
+    {
+        // eat any white space
+        while (isWhiteSpace(ch) && !m_reader.eof())
+            ch = m_reader.next();
+    }
+
+
+    if (isAlpha(ch))
+    {
+        m_reader.offset(-1);
+        m_state = ST_ID;
+    }
+    else if (isDigit(ch))
+    {
+        m_reader.offset(-1);
+        m_state = ST_DIGIT;
+    }
+    else if (ch == '.')
+    {
+        m_state = ST_SECTION;
+    }
+    else if (!isNewLine(ch) && ch != 0)
+    {
+        error("undefined character. '%c'\n", ch);
+        return PS_ERROR;
+    }
+    return ST_CONTINUE;
+
+
+}
+
+int32_t Parser::handleIdState(Token& tok)
+{
+    uint8_t ch = m_reader.next();
+    if (isWhiteSpace(ch))
+    {
+        while (isWhiteSpace(ch) && !m_reader.eof())
+            ch = m_reader.next();
+    }
+
+    if (isAlpha(ch))
+    {
+        while (isAlphaNumeric(ch) && !m_reader.eof())
+        {
+            tok.value.push_back(ch);
+            ch = m_reader.next();
+        }
+
+        if (isTerminator(ch))
+        {
+            if (isNewLine(ch))
+                m_reader.offset(-1);
+
+            m_state = ST_INITIAL;
+
+            if (tok.value.size() == 2 &&
+                tok.value[1] >= '0' &&
+                tok.value[1] <= '9')
+            {
+                if (tok.value[0] == 'x')
+                {
+                    tok.type = TOK_REGISTER;
+                    tok.reg  = tok.value[1] - '0';
+                    tok.value.clear();
+                    return ST_MAX;
+                }
+            }
+
+            size_t i = 0;
+            for (i = 0; i < KeywordTableSize; ++i)
+            {
+                if (strncmp(KeywordTable[i].word, tok.value.c_str(), MAX_KEYWORD) == 0)
+                {
+                    // swap the string with the opcode
+                    tok.value.clear();
+                    tok.op    = KeywordTable[i].op;
+                    tok.type  = TOK_OPCODE;
+                    tok.index = (int32_t)i;
+                    return ST_MAX;
+                }
+            }
+            tok.type = TOK_IDENTIFIER;
+            return ST_MAX;
+        }
+        else if (ch == ':')
+        {
+            m_state  = ST_INITIAL;
+            tok.type = TOK_LABEL;
+            return ST_MAX;
+        }
+    }
+    return ST_CONTINUE;
+}
+
+int32_t Parser::handleDigitState(Token& tok)
+{
+    uint8_t ch = m_reader.next();
+    if (isWhiteSpace(ch))
+    {
+        while (isWhiteSpace(ch) && !m_reader.eof())
+            ch = m_reader.next();
+    }
+
+    if (isNumber(ch))
+    {
+        while (isNumber(ch) && !m_reader.eof())
+        {
+            tok.value.push_back(ch);
+            ch = m_reader.next();
+        }
+
+        if (isTerminator(ch))
+        {
+            if (isNewLine(ch))
+                m_reader.offset(-1);
+
+            m_state    = ST_INITIAL;
+            tok.type   = TOK_DIGIT;
+            tok.ival.x = std::strtoull(tok.value.c_str(), nullptr, 10);
+            tok.value.clear();
+            return ST_MAX;
+        }
+    }
+    return ST_CONTINUE;
+}
+
+
+int32_t Parser::handleSectionState(Token& tok)
+{
+    uint8_t ch = m_reader.next();
+    if (isWhiteSpace(ch))
+    {
+        while (isWhiteSpace(ch) && !m_reader.eof())
+            ch = m_reader.next();
+    }
+
+    if (isAlphaL(ch))
+    {
+        while (isAlpha(ch) && !m_reader.eof())
+        {
+            tok.value.push_back(ch);
+            ch = m_reader.next();
+        }
+
+
+        if (isNewLine(ch))
+            m_reader.offset(-1);
+
+        m_state  = ST_INITIAL;
+        tok.type = TOK_SECTION;
+        return ST_MAX;
+    }
+
+    error("undefined character. '%c'\n", ch);
+    return PS_ERROR;
+}
+
+
+uint8_t Parser::scanEol(void)
+{
+    uint8_t ch = m_reader.current();
+    while (!m_reader.eof() && (ch != '\n' && ch != '\r'))
+        ch = m_reader.next();
+    countNewLine(ch);
+    return ch;
+}
+
+void Parser::countNewLine(uint8_t ch)
+{
+    // handle CRLF, LF, CR
+    if (ch == '\r')
+    {
+        // check the next position
+        ch = m_reader.next();
+        if (ch != '\n')
+        {
+            // untested
+            // CR, so put back the last char
+            m_reader.offset(-1);
+        }
+        ch = m_reader.current();
+        m_lineNo++;
+    }
+    else if (ch == '\n')
+        m_lineNo++;
 }
 
 Token Parser::scanNextToken(void)
 {
-    scan();
-    if (!m_tokens.empty())
-    {
-        Token reg = m_tokens.top();
-        m_tokens.pop();
-        return reg;
-    }
-    return InvalidToken;
+    Token tok;
+    scan(tok);
+    return tok;
 }
 
-int32_t Parser::TokenSECTION(void)
+int32_t Parser::handleSection(const Token& tok)
 {
-    const Token& tok = getLastToken();
     m_section        = getSection(tok.value);
-    if (m_section == -1)
+    if (m_section == UNDEFINED)
     {
         error("undefined section '%s'\n", tok.value.c_str());
         return PS_ERROR;
@@ -209,9 +374,8 @@ int32_t Parser::TokenSECTION(void)
     return PS_OK;
 }
 
-int32_t Parser::TokenLABEL(void)
+int32_t Parser::handleLabel(const Token& label)
 {
-    const Token& label = getLastToken();
     if (label.type == TOK_LABEL)
     {
         if (m_labels.find(label.value) != m_labels.end())
@@ -231,8 +395,6 @@ int32_t Parser::TokenLABEL(void)
         error("internal error, token type does not match the scanned token.\n");
         return PS_ERROR;
     }
-
-    m_curString.clear();
     return PS_OK;
 }
 
@@ -322,21 +484,13 @@ int32_t Parser::handleOpCode(const Token& tok)
     return PS_ERROR;
 }
 
-void Parser::clearState(void)
-{
-    m_curString.clear();
-    m_op       = 0;
-    m_ival     = 0;
-    m_register = 0;
-}
-
 int32_t Parser::getSection(const std::string& val)
 {
     if (val == "data")
         return SEC_DAT;
     else if (val == "text")
         return SEC_TXT;
-    return -1;
+    return UNDEFINED;
 }
 
 int32_t Parser::getKeywordIndex(const uint8_t& val)
@@ -363,103 +517,75 @@ const KeywordMap& Parser::getKeyword(const int32_t& val)
     return NullKeyword;
 }
 
-int32_t Parser::ActionIdx00(uint8_t ch)
+const KeywordMap Parser::KeywordTable[] = {
+    {"mov\0", OP_MOV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"call\0", OP_CALL, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"ret\0", OP_RET, 0, {AT_NULL, AT_NULL, AT_NULL}},
+    {"inc\0", OP_INC, 1, {AT_REG, AT_NULL, AT_NULL}},
+    {"dec\0", OP_DEC, 1, {AT_REG, AT_NULL, AT_NULL}},
+    {"cmp\0", OP_CMP, 2, {AT_REGLIT, AT_REGLIT, AT_NULL}},
+    {"jmp\0", OP_JMP, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jeq\0", OP_JEQ, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jne\0", OP_JNE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jlt\0", OP_JLT, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jgt\0", OP_JGT, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jle\0", OP_JLE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"jge\0", OP_JGE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
+    {"prgi\0", OP_PRGI, 0, {AT_NULL, AT_NULL, AT_NULL}},
+    {"prg\0", OP_PRG, 1, {AT_REGLIT, AT_NULL, AT_NULL}},
+    {"add\0", OP_ADD, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"sub\0", OP_SUB, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"mul\0", OP_MUL, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"div\0", OP_DIV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"shr\0", OP_SHR, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+    {"shl\0", OP_SHL, 2, {AT_REG, AT_REGLIT, AT_NULL}},
+};
+
+const size_t Parser::KeywordTableSize = sizeof(Parser::KeywordTable) / sizeof(KeywordMap);
+
+inline bool isWhiteSpace(uint8_t ch)
 {
-    m_curString.push_back(ch);
-    return CONTINUE;
+    return ch == ' ' || ch == '\t';
 }
 
-int32_t Parser::ActionIdx01(uint8_t ch)
+inline bool isAlphaL(uint8_t ch)
 {
-    if (!m_curString.empty())
-    {
-        m_state = ST_CONTINUE;
-
-        // TODO set this up to test
-        // for l, w, and b
-        if (m_curString.size() == 2 &&
-            m_curString[1] >= '0' &&
-            m_curString[1] <= '9')
-        {
-            if (m_curString[0] == 'x')
-            {
-                m_register = m_curString[1] - '0';
-                return TOK_REGISTER;
-            }
-        }
-
-        size_t i = 0;
-        for (i = 0; i < KeywordTableSize; ++i)
-        {
-            if (strncmp(KeywordTable[i].word, m_curString.c_str(), MAX_KEYWORD) == 0)
-            {
-                m_state = ST_INITIAL;
-                // swap the string with the opcode
-                m_curString.clear();
-                m_op = KeywordTable[i].op;
-                return TOK_MNEMONIC;
-            }
-        }
-        return TOK_IDENTIFIER;
-    }
-    return CONTINUE;
+    return ch >= 'a' && ch <= 'z';
 }
 
-int32_t Parser::ActionIdx02(uint8_t ch)
+inline bool isAlphaU(uint8_t ch)
 {
-    m_state = ST_ID;
-    if (!m_curString.empty())
-        clearState();
-
-    m_curString.push_back(ch);
-    return CONTINUE;
+    return ch >= 'A' && ch <= 'Z';
 }
 
-int32_t Parser::ActionIdx03(uint8_t ch)
+inline bool isAlpha(uint8_t ch)
 {
-    m_state = ST_INITIAL;
-    return TOK_LABEL;
+    return isAlphaL(ch) || isAlphaU(ch) || ch == '_';
 }
 
-int32_t Parser::ActionIdx04(uint8_t ch)
+inline bool isDigit(uint8_t ch)
 {
-    m_state = ST_INITIAL;
-    return TOK_IDENTIFIER;
+    return ch >= '0' && ch <= '9';
 }
 
-int32_t Parser::ActionIdx05(uint8_t ch)
+inline bool isNumber(uint8_t ch)
 {
-    m_state = ST_INITIAL;
-    clearState();
-    return CONTINUE;
+    return ch >= '0' && ch <= '9' || ch == '-' || ch == '+';
 }
 
-int32_t Parser::ActionIdx06(uint8_t ch)
+inline bool isAlphaNumeric(uint8_t ch)
 {
-    m_state = ST_DIGIT;
-    clearState();
-    m_curString.push_back(ch);
-    return CONTINUE;
+    return isAlpha(ch) || isDigit(ch);
 }
 
-int32_t Parser::ActionIdx07(uint8_t ch)
+inline bool isNewLine(uint8_t ch)
 {
-    m_state = ST_CONTINUE;
-    m_ival  = strtoull(m_curString.c_str(), nullptr, 10);
-    return TOK_DIGIT;
+    return ch == '\r' || ch == '\n';
 }
 
-int32_t Parser::ActionIdxSC(uint8_t ch)
+inline bool isTerminator(uint8_t ch)
 {
-    m_state = ST_SECTION;
-    clearState();
-    return CONTINUE;
-}
-
-int32_t Parser::ActionIdxDC(uint8_t ch)
-{
-    m_state = ST_INITIAL;
-    return TOK_SECTION;
+    return isWhiteSpace(ch) || ch == ',' || isNewLine(ch);
 }
 
 void Parser::error(const char* fmt, ...)
@@ -488,135 +614,3 @@ void Parser::error(const char* fmt, ...)
         }
     }
 }
-
-const Parser::Action Parser::Actions[] = {
-    &Parser::ActionIdx00,
-    &Parser::ActionIdx01,
-    &Parser::ActionIdx02,
-    &Parser::ActionIdx03,
-    &Parser::ActionIdx04,
-    &Parser::ActionIdx05,
-    &Parser::ActionIdx06,
-    &Parser::ActionIdx07,
-    &Parser::ActionIdxSC,
-    &Parser::ActionIdxDC,
-    nullptr,
-};
-
-const size_t Parser::ActionCount = sizeof(Actions) / sizeof(Actions[0]);
-
-//AC_IG = -3,  // Ignore this character
-//AC_0L = -2,  // return TOK_EOL
-//AC_0E = -1,  // error
-//AC_00,       // push current character to token
-//AC_01,       // if the token is keyword then return token TOK_MNEMONIC otherwise TOK_IDENTIFIER
-//AC_02,       // add char to token then goto STATE ST_READ_ID
-//AC_03,       // goto state ST_INITIAL, return TOK_LABEL
-//AC_04,       // goto state ST_INITIAL, return TOK_IDENTIFIER
-//AC_05,       // goto state ST_INITIAL and continue scanning
-//AC_06,       // goto state ST_DIGIT and continue scanning
-//AC_07,       // goto state ST_CONTINUE return TOK_DIGIT
-//AC_SC,       // goto state ST_SECTION
-//AC_DS,       // goto state ST_INITIAL and return TOK_SECTION
-const Parser::StateTable Parser::States = {
-    //[a-z] [A-Z]  [0-9]   ' '    '\n'    ','    '.'    ':'    '''    '"'    '('    ')'    '['    ']'    '#'   '+'     '-'    \0
-    {AC_02, AC_02, AC_06, AC_01, AC_05, AC_0E, AC_SC, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_06, AC_01},  // ST_INITIAL
-    {AC_00, AC_00, AC_00, AC_01, AC_01, AC_01, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_06, AC_01},  // ST_READ_ID
-    {AC_0E, AC_0E, AC_00, AC_07, AC_07, AC_01, AC_IG, AC_03, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_00, AC_01},  // ST_DIGIT
-    {AC_0E, AC_0E, AC_0E, AC_0E, AC_0L, AC_0E, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_EXIT
-    {AC_0E, AC_0E, AC_0E, AC_0E, AC_0L, AC_0E, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_ERROR
-    {AC_02, AC_02, AC_06, AC_05, AC_05, AC_05, AC_IG, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_CONTINUE
-    {AC_00, AC_0E, AC_0E, AC_DS, AC_DS, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0E, AC_0L},  // ST_SECTION
-};
-
-int32_t Parser::getType(uint8_t ct)
-{
-    int32_t rc = CharType::CT_NULL;
-    if (ct >= 'a' && ct <= 'z')
-        rc = CharType::CT_LALPHA;
-    else if (ct >= 'A' && ct <= 'Z')
-        rc = CharType::CT_UALPHA;
-    else if (ct >= '0' && ct <= '9')
-        rc = CharType::CT_DIGIT;
-    else
-    {
-        switch (ct)
-        {
-        case ' ':
-        case '\t':
-            rc = CharType::CT_WS;
-            break;
-        case '\n':
-            m_lineNo++;
-        case '\r':
-            rc = CharType::CT_NL;
-            break;
-        case '\'':
-            rc = CharType::CT_SQUOTE;
-            break;
-        case '"':
-            rc = CharType::CT_DQUOTE;
-            break;
-        case '(':
-            rc = CharType::CT_LPARAN;
-            break;
-        case ')':
-            rc = CharType::CT_RPARAN;
-            break;
-        case '[':
-            rc = CharType::CT_LBRACE;
-            break;
-        case ']':
-            rc = CharType::CT_RBRACE;
-            break;
-        case ',':
-            rc = CharType::CT_COMMA;
-            break;
-        case '.':
-            rc = CharType::CT_PERIOD;
-            break;
-        case ':':
-            rc = CharType::CT_COLON;
-            break;
-        case '#':
-            rc = CharType::CT_HASH;
-            break;
-        case '-':
-            rc = CharType::CT_SUB;
-            break;
-        case '+':
-            rc = CharType::CT_ADD;
-            break;
-        default:
-            rc = CharType::CT_NULL;
-            break;
-        }
-    }
-    return rc;
-}
-
-const KeywordMap Parser::KeywordTable[] = {
-    {"mov\0", OP_MOV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"call\0", OP_CALL, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"ret\0", OP_RET, 0, {AT_NULL, AT_NULL, AT_NULL}},
-    {"inc\0", OP_INC, 1, {AT_REG, AT_NULL, AT_NULL}},
-    {"dec\0", OP_DEC, 1, {AT_REG, AT_NULL, AT_NULL}},
-    {"cmp\0", OP_CMP, 2, {AT_REGLIT, AT_REGLIT, AT_NULL}},
-    {"jmp\0", OP_JMP, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jeq\0", OP_JEQ, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jne\0", OP_JNE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jlt\0", OP_JLT, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jgt\0", OP_JGT, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jle\0", OP_JLE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"jge\0", OP_JGE, 1, {AT_ADDR, AT_NULL, AT_NULL}},
-    {"prgi\0", OP_PRGI, 0, {AT_NULL, AT_NULL, AT_NULL}},
-    {"prg\0", OP_PRG, 1, {AT_REGLIT, AT_NULL, AT_NULL}},
-    {"add\0", OP_ADD, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"sub\0", OP_SUB, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"mul\0", OP_MUL, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"div\0", OP_DIV, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"shr\0", OP_SHR, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-    {"shl\0", OP_SHL, 2, {AT_REG, AT_REGLIT, AT_NULL}},
-};
-
-const size_t Parser::KeywordTableSize = sizeof(Parser::KeywordTable) / sizeof(KeywordMap);

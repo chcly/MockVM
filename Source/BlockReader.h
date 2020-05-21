@@ -36,6 +36,8 @@ private:
     size_t m_fileLen;
     size_t m_loc;
     void * m_fp;
+    bool   m_read;
+
 
     void read(void);
 
@@ -46,8 +48,10 @@ public:
 
     void    open(const char *fname);
     uint8_t next(void);
+    uint8_t current(void);
+
     void    read(void *blk, size_t nr);
-    void    offset(size_t nr);
+    void    offset(int32_t nr);
     void    moveTo(size_t loc);
         
     inline bool eof(void)

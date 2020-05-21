@@ -31,7 +31,8 @@ BlockReader::BlockReader(const char *fname) :
     m_block(),
     m_fileLen(0),
     m_loc(0),
-    m_fp(0)
+    m_fp(0),
+    m_read(false)
 {
     open(fname);
 }
@@ -40,7 +41,8 @@ BlockReader::BlockReader() :
     m_block(),
     m_fileLen(0),
     m_loc(0),
-    m_fp(0)
+    m_fp(0),
+    m_read(false)
 {
 }
 
@@ -52,20 +54,22 @@ BlockReader::~BlockReader()
 
 uint8_t BlockReader::next(void)
 {
-    size_t remain = (m_loc % BLOCKSIZE);
-    if (m_loc <= 0 || remain == 0)
-    {
+    size_t remain = (m_loc + 1 % BLOCKSIZE);
+    if (remain == 0 || !m_read)
         read();
-    }
 
     uint8_t rc = 0;
     if (m_loc < m_fileLen)
-    {
-        rc = m_block[remain];
-    }
-
+        rc = m_block[m_loc % BLOCKSIZE];
     m_loc++;
     return rc;
+}
+
+uint8_t BlockReader::current(void)
+{
+    if (!m_read)
+        read();
+    return m_block[m_loc % BLOCKSIZE];
 }
 
 void BlockReader::read(void *blk, size_t nr)
@@ -78,12 +82,17 @@ void BlockReader::read(void *blk, size_t nr)
     }
 }
 
-void BlockReader::offset(size_t nr)
+void BlockReader::offset(int32_t nr)
 {
-    if (m_fp)
+    if (m_fp && m_fileLen > 0)
     {
-        fseek((FILE *)m_fp, (long)nr, SEEK_CUR);
+        if (((int32_t)m_loc) + nr < 0)
+            m_loc = 0;
+
         m_loc += nr;
+
+        if (m_loc > m_fileLen)
+            m_loc = m_fileLen - 1;
     }
 }
 
@@ -100,6 +109,8 @@ void BlockReader::read()
 {
     if (m_fp)
     {
+        m_read = true;
+
         size_t br = fread(m_block, 1, BLOCKSIZE, (FILE *)m_fp);
         if (br >= 0 && br <= BLOCKSIZE)
             m_block[br] = 0;
