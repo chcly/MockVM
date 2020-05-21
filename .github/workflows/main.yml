@@ -11,4 +11,5 @@ jobs:
       run: cmake . -DBUILD_TEST=ON
     - name: Build
       run: make
-    
+    - name: Run Tests
+      run: ./Test/testtvm

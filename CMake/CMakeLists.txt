@@ -30,7 +30,7 @@ if (MSVC)
 
     file(GLOB CM_FILES *.cmake)
     file(GLOB MD_FILES ../*.md)
-    file(GLOB WF_FILES ../.github/workflows/*.ymp)
+    file(GLOB WF_FILES ../.github/workflows/*.yml)
 
     set(CMAKE_FILES
         ${CM_FILES}

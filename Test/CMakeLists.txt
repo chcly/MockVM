@@ -48,7 +48,7 @@ set(TestFiles
 add_compile_tests(OutFiles ${TestFiles})
 
 set(SRC_ALL
-    Macro.h
+    Catch2.h
     catch/catch.hpp
     Main.cpp
     BlockReader.cpp
