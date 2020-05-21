@@ -30,6 +30,10 @@ endmacro(add_compile_tests)
 
 
 set(TestFiles
+    CRLF.asm
+    CR.asm
+    LF.asm
+    Empty.asm
     Empty.asm
     Comment.asm
     ParseArg.asm
