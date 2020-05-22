@@ -26,6 +26,7 @@
 #include "BinaryWriter.h"
 #include <stdio.h>
 #include <iostream>
+#include <limits>
 
 using namespace std;
 
@@ -99,18 +100,46 @@ void BinaryWriter::open(const char* fname)
         cout << "Failed to open '" << fname << "' for writing.\n";
 }
 
-size_t BinaryWriter::computeInstructionSize(const Instruction& ins)
+
+uint16_t BinaryWriter::calculateSizeFlag(const Instruction& ins)
 {
-    size_t size = 4;  // op, nr, flags, pad
+    uint16_t fl = 0;
 
     int i;
-    for (i=0; i<ins.argc; ++i)
+    for (i = 0; i < ins.argc; ++i)
     {
         bool isReg = i <= 0 ? (ins.flags & IF_DREG) != 0 : (ins.flags & IF_SREG) != 0;
         if (isReg)
-            size += 1;
+            fl |= SizeFlags[i][0];
         else
-            size += 8; 
+        {
+            if (ins.argv[i] < std::numeric_limits<uint8_t>().max())
+                fl |= SizeFlags[i][0];
+            else if (ins.argv[i] < std::numeric_limits<uint16_t>().max())
+                fl |= SizeFlags[i][1];
+            else if (ins.argv[i] < std::numeric_limits<uint32_t>().max())
+                fl |= SizeFlags[i][2];
+        }
+    }
+    return fl;
+}
+
+
+size_t BinaryWriter::computeInstructionSize(const uint16_t& sizeBits, size_t argc)
+{
+    size_t size = 4;  // op, nr, flags, pad
+
+    size_t i;
+    for (i = 0; i < argc; ++i)
+    {
+        if (sizeBits & SizeFlags[i][0])
+            size += 1;
+        else if (sizeBits & SizeFlags[i][1])
+            size += 2;
+        else if (sizeBits & SizeFlags[i][2])
+            size += 4;
+        else
+            size += 8;
     }
     return size;
 }
@@ -133,7 +162,7 @@ size_t BinaryWriter::mapInstructions(void)
             m_addrMap[label] = insp;
         }
 
-        size += computeInstructionSize(ins);
+        size += computeInstructionSize(calculateSizeFlag(ins), ins.argc);
         ++insp;
     }
 
@@ -217,22 +246,21 @@ void BinaryWriter::writeSections()
         write8(ins.op);
         write8(ins.argc);
         write8(ins.flags);
-        write8(0);
+
+        ins.sizes = calculateSizeFlag(ins);
+        write8(ins.sizes);
 
         int i;
         for (i=0; i<ins.argc; ++i)
         {
-            bool isReg = i <= 0 ? (ins.flags & IF_DREG) != 0 : (ins.flags & IF_SREG) != 0;
-
-            if (isReg)
-            {
-                // trim the size
+            if (ins.sizes & SizeFlags[i][0])
                 write8((uint8_t)ins.argv[i]);
-            }
+            else if (ins.sizes & SizeFlags[i][1])
+                write16((uint16_t)ins.argv[i]);
+            else if (ins.sizes & SizeFlags[i][2])
+                write32((uint32_t)ins.argv[i]);
             else
-            {
                 write64(ins.argv[i]);
-            }
         }
     }
 

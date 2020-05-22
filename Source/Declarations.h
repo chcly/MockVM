@@ -36,12 +36,35 @@ typedef union Register {
     uint64_t x;
 } Register;
 
+
+enum RegisterArg
+{
+    A0_1 = 1 << 0,
+    A0_2 = 1 << 1,
+    A0_4 = 1 << 2,
+    A1_1 = 1 << 3,
+    A1_2 = 1 << 4,
+    A1_4 = 1 << 5,
+    A2_1 = 1 << 6,
+    A2_2 = 1 << 7,
+    A2_4 = 1 << 8,
+};
+
+const uint16_t SizeFlags[3][3] = {
+    {A0_1, A0_2, A0_4},
+    {A1_1, A1_2, A1_4},
+    {A2_1, A2_2, A2_4},
+};
+
+
 enum ProgramFlags
 {
     PF_E = 1 << 0,
     PF_G = 1 << 1,
     PF_L = 1 << 2,
 };
+
+
 
 struct Token
 {
@@ -179,6 +202,7 @@ struct Instruction
 {
     uint8_t     op;
     uint8_t     flags;
+    uint8_t     sizes;
     uint8_t     argc;
     uint64_t    argv[INS_ARG];
     uint64_t    label;

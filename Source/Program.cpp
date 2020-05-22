@@ -78,23 +78,38 @@ void Program::load(const char* fname)
         i += 4;
         if (ops[0] >= 0 && ops[0] < OP_MAX)
         {
+
             ExecInstruction exec = {};
             exec.op    = restrict8(ops[0], OP_RET, OP_MAX - 1);
             exec.argc  = restrict8(ops[1], 0, 3);
             exec.flags = restrict8(ops[2], 0, IF_MAXF);
 
 
+            uint16_t sizes = ops[3];
 
             int a;
             for (a=0; a<exec.argc; ++a)
             {
-                bool isReg = a <= 0 ? (exec.flags & IF_DREG) != 0 : (exec.flags & IF_SREG) != 0;
-                if (isReg)
+                if (sizes & SizeFlags[a][0])
                 {
                     uint8_t v;
                     m_reader->read(&v, 1);
                     exec.argv[a] = (uint64_t)v; 
                     i++;
+                }
+                else if (sizes & SizeFlags[a][1])
+                {
+                    uint16_t v;
+                    m_reader->read(&v, 2);
+                    exec.argv[a] = (uint64_t)v;
+                    i += 2;
+                }
+                else if (sizes & SizeFlags[a][2])
+                {
+                    uint32_t v;
+                    m_reader->read(&v, 4);
+                    exec.argv[a] = (uint64_t)v;
+                    i += 4;
                 }
                 else
                 {

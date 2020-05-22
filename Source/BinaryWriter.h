@@ -47,15 +47,13 @@ private:
     void write32(uint32_t v);
     void write64(uint64_t v);
 
-    size_t computeInstructionSize(const Instruction& ins);
-    size_t mapInstructions(void);
-
-
+    size_t  computeInstructionSize(const uint16_t& sizeBits, size_t argc);
+    size_t  mapInstructions(void);
     int64_t findLabel(const std::string& name); 
 
+    uint16_t calculateSizeFlag(const Instruction& ins);
 
 public:
-
     BinaryWriter();
     ~BinaryWriter();
 
