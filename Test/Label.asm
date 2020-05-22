@@ -7,4 +7,5 @@ __ABCDEFGHIJKLMNOPQRSTUVWZYZ_0123456789__:
 main:
     call __abcdefghijklmnopqrstuvwzyz_0123456789__
     call __ABCDEFGHIJKLMNOPQRSTUVWZYZ_0123456789__
+    prg 1
     ret

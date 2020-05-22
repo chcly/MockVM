@@ -9,7 +9,10 @@ macro(add_compile_tests OUT)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
         
-        set(GEN_FILE ${CMAKE_BINARY_DIR}/${GENNAME})
+        set(GEN_FILE     ${CMAKE_BINARY_DIR}/${GENNAME})
+        set(GEN_FILE_ANS ${CMAKE_BINARY_DIR}/${GENNAME}.ans)
+        set(GEN_FILE_EXP ${CMAKE_CURRENT_SOURCE_DIR}/${GENNAME}.ans)
+
         list(APPEND ${OUT} ${GEN_FILE})
         list(APPEND ${OUT} ${ASMFILE})
 
@@ -19,11 +22,14 @@ macro(add_compile_tests OUT)
         add_custom_command(
             OUTPUT ${GEN_FILE}
             COMMAND tcom -o ${GEN_FILE} ${ASMFILE}
-            COMMAND tvm ${GEN_FILE} -t
+            COMMAND tvm ${GEN_FILE} > ${GEN_FILE_ANS}
+            COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol ${GEN_FILE_ANS} ${GEN_FILE_EXP} 
+
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm
-            COMMENT "${ASMNAME}"
+            COMMENT "Testing ${ASMNAME}"
         )
+
     endforeach(it)
 
 
