@@ -42,7 +42,6 @@ uint8_t restrict8(const uint8_t& inp,
 }
 
 Program::Program() :
-    m_reader(0),
     m_flags(0),
     m_return(0)
 {
@@ -51,77 +50,106 @@ Program::Program() :
 
 Program::~Program()
 {
-    delete m_reader;
 }
 
-void Program::load(const char* fname)
+int Program::load(const char* fname)
 {
-    if (m_reader)
-        delete m_reader;
 
-    m_reader = new BlockReader(fname);
-    if (!m_reader->eof())
-        m_reader->read(&m_header, sizeof(TVMHeader));
 
-    m_reader->moveTo(m_header.txt);
-    TVMSection code;
-    m_reader->read(&code, sizeof(TVMSection));
-
-    uint8_t ops[4];
-    size_t  i = 0;
-    while (i < code.size)
+    BlockReader reader = BlockReader(fname);
+    if (reader.eof())
     {
-        if (m_reader->eof())
-            break;
+        printf("failed to load %s\n", fname);
+        return PS_ERROR;
+    }
 
-        m_reader->read(ops, 4);
-        i += 4;
+    reader.read(&m_header, sizeof(TVMHeader));
+    reader.moveTo(m_header.txt);
+
+    TVMSection code;
+    reader.read(&code, sizeof(TVMSection));
+
+    uint8_t  ops[3] = {};
+    uint16_t sizes = 0;
+
+    size_t  i = 0;
+    while (i < code.size && !reader.eof())
+    {
+        reader.read(ops, 3);
+        i += 3;
+        reader.read(&sizes, 2);
+        i += 2;
+
         if (ops[0] >= 0 && ops[0] < OP_MAX)
         {
-
             ExecInstruction exec = {};
-            exec.op    = restrict8(ops[0], OP_RET, OP_MAX - 1);
-            exec.argc  = restrict8(ops[1], 0, 3);
+            exec.op    = ops[0];
+            exec.argc  = restrict8(ops[1], 0, INS_ARG);
             exec.flags = restrict8(ops[2], 0, IF_MAXF);
-            uint8_t sizes = ops[3];
-
+            
             int a;
             for (a=0; a<exec.argc; ++a)
             {
                 if (sizes & SizeFlags[a][0])
                 {
                     uint8_t v;
-                    m_reader->read(&v, 1);
+                    reader.read(&v, 1);
                     exec.argv[a] = (uint64_t)v; 
                     i++;
                 }
                 else if (sizes & SizeFlags[a][1])
                 {
                     uint16_t v;
-                    m_reader->read(&v, 2);
+                    reader.read(&v, 2);
                     exec.argv[a] = (uint64_t)v;
                     i += 2;
                 }
                 else if (sizes & SizeFlags[a][2])
                 {
                     uint32_t v;
-                    m_reader->read(&v, 4);
+                    reader.read(&v, 4);
                     exec.argv[a] = (uint64_t)v;
                     i += 4;
                 }
                 else
                 {
-                    m_reader->read(&exec.argv[a], 8);
+                    reader.read(&exec.argv[a], 8);
                     i += 8;
                 }
-            }
 
+                // check to see if the register is still valid.
+                bool isReg = a <= 0 ? (exec.flags & IF_DREG) != 0 : (exec.flags & IF_SREG) != 0;
+                if (isReg)
+                {
+                    if (!(sizes & SizeFlags[a][0]))
+                    {
+                        printf("error instruction size mismatch\n");
+                        return PS_ERROR;
+                    }
+                }
+            }
             m_ins.push_back(exec);
         }
+        else
+        {
+            // assert that the code falls in a valid range.
+            printf("error invalid opcode %i\n", ops[0]);
+            return PS_ERROR;
+        }
     }
+
+    // assert the calculated size with the reported size
+    if (i != code.size)
+    {
+        printf("misaligned instructions\n");
+        return PS_ERROR;
+    }
+
     m_curinst = 0;
     if (code.entry < m_ins.size())
         m_curinst = code.entry;
+
+    return PS_OK;
 }
 
 int Program::launch(void)

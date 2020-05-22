@@ -51,7 +51,9 @@ private:
     size_t  mapInstructions(void);
     int64_t findLabel(const std::string& name); 
 
-    uint8_t calculateSizeFlag(const Instruction& ins);
+    uint16_t calculateSizeFlag(const Instruction& ins);
+    size_t   getLocation(void);
+
 
 public:
     BinaryWriter();
@@ -60,9 +62,9 @@ public:
     void mergeInstructions(const Instructions& insl);
     void mergeLabels(const LabelMap& map);
 
-    void open(const char* fname);
-    void writeHeader();
-    void writeSections();
+    int open(const char* fname);
+    int writeHeader();
+    int writeSections();
 };
 
 #endif  //_BinaryWriter_h_

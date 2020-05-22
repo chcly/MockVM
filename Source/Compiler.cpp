@@ -76,7 +76,7 @@ int main(int argc, char **argv)
     {
         usage();
         cout << "missing output file.\n";
-        return 0;
+        return PS_ERROR;
     }
 
     BinaryWriter w;
@@ -91,9 +91,12 @@ int main(int argc, char **argv)
         w.mergeInstructions(p.getInstructions());
     }
 
-    w.open(ctx.output.c_str());
-    w.writeHeader();
-    w.writeSections();
+    if (w.open(ctx.output.c_str()) != PS_OK)
+        return PS_ERROR;
+    if (w.writeHeader()!= PS_OK)
+        return PS_ERROR;
+    if (w.writeSections() != PS_OK)
+        return PS_ERROR;
     return 0;
 }
 

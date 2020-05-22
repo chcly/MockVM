@@ -71,7 +71,6 @@ void BinaryWriter::write(void* v, size_t size)
     if (m_fp)
     {
         fwrite(v, 1, size, (FILE*)m_fp);
-        m_loc = ftell((FILE*)m_fp);
     }
 }
 
@@ -95,19 +94,31 @@ void BinaryWriter::write64(uint64_t v)
     write(&v, sizeof(uint64_t));
 }
 
-void BinaryWriter::open(const char* fname)
+int BinaryWriter::open(const char* fname)
 {
     if (m_fp)
         fclose((FILE*)m_fp);
+
+
     m_fp = fopen(fname, "wb");
     if (!m_fp)
-        cout << "Failed to open '" << fname << "' for writing.\n";
+    {
+        printf("Failed to open '%s' for writing.\n", fname);
+        return PS_ERROR;
+    }
+    return PS_OK;
 }
 
-
-uint8_t BinaryWriter::calculateSizeFlag(const Instruction& ins)
+size_t BinaryWriter::getLocation(void)
 {
-    uint8_t fl = 0;
+    m_loc = ftell((FILE*)m_fp);
+    return m_loc;
+
+}
+
+uint16_t BinaryWriter::calculateSizeFlag(const Instruction& ins)
+{
+    uint16_t fl = 0;
     int i;
     for (i = 0; i < ins.argc; ++i)
     {
@@ -124,7 +135,7 @@ uint8_t BinaryWriter::calculateSizeFlag(const Instruction& ins)
 
 size_t BinaryWriter::computeInstructionSize(const uint16_t& sizeBits, size_t argc)
 {
-    size_t size = 4;  // op, nr, flags, sizes
+    size_t size = 5;  // op, nr, flags, sizes
 
     size_t i;
     for (i = 0; i < argc; ++i)
@@ -184,10 +195,10 @@ int64_t BinaryWriter::findLabel(const std::string& name)
 }
 
 
-void BinaryWriter::writeHeader()
+int BinaryWriter::writeHeader()
 {
     if (!m_fp)
-        return;
+        return PS_ERROR;
 
     TVMHeader header = {};
     header.code  = TYPE_ID2('T', 'V');
@@ -199,26 +210,25 @@ void BinaryWriter::writeHeader()
     header.dat   = 0;
     header.str   = 0;
     write(&header, sizeof(TVMHeader));
+
+    return PS_OK;
 }
 
-void BinaryWriter::writeSections()
+int BinaryWriter::writeSections()
 {
     if (!m_fp)
-        return;
+        return PS_ERROR;
 
     TVMSection sec = {};
     sec.size = (uint32_t)mapInstructions();
-    if (sec.size <= 0)
-        return;
-
     sec.code  = TYPE_ID2('C', 'S');
-    sec.start = m_loc + sizeof(TVMSection);
+    sec.start = getLocation() + sizeof(TVMSection);
     sec.entry = findLabel("main");
-    
+
     if (sec.entry == PS_UNDEFINED)
     {
-        cout << "Failed to find main.\n";
-        return;
+        printf("failed to find main entry point.\n");
+        return PS_ERROR;
     }
 
     int64_t lookup;
@@ -237,13 +247,17 @@ void BinaryWriter::writeSections()
                 ins.flags |= IF_ADDR;
             }
             else
-                cout << "Unable to find index for " << ins.labelName << '\n';
+            {
+                // this will have to change when external symbols are introduced.
+                printf("Unable to find index for '%s'\n", ins.labelName.c_str());
+                return PS_ERROR;
+            }
         }
 
         write8(ins.op);
         write8(ins.argc);
         write8(ins.flags);
-        write8(ins.sizes);
+        write16(ins.sizes);
 
         int i;
         for (i=0; i<ins.argc; ++i)
@@ -260,4 +274,6 @@ void BinaryWriter::writeSections()
     }
 
     // TODO store values from .data sections
+
+    return PS_OK;
 }

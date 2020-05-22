@@ -175,7 +175,7 @@ enum InstructionFlags
     IF_SREG = (1 << 2),
     IF_SLIT = (1 << 3),
     IF_ADDR = (1 << 4),
-    IF_MAXF  = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR
+    IF_MAXF = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR
 };
 
 struct TVMHeader
@@ -202,7 +202,7 @@ struct Instruction
 {
     uint8_t     op;
     uint8_t     flags;
-    uint8_t     sizes;
+    uint16_t    sizes;
     uint8_t     argc;
     uint64_t    argv[INS_ARG];
     uint64_t    label;

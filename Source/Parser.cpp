@@ -453,7 +453,6 @@ int32_t Parser::handleArgument(Instruction&      ins,
             error("expected operand %i for %s, to be a register\n", idx, kwd.word);
             return PS_ERROR;
         }
-
         ins.argv[idx] = tok.reg;
         ins.flags |= idx <= 0 ? (int)IF_DREG : (int)IF_SREG;
     }
@@ -489,6 +488,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
     {
         // save this now so it can be resolved after all
         // labels have been stored
+        ins.flags |= IF_ADDR;
         ins.labelName = tok.value;
     }
     else

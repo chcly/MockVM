@@ -39,12 +39,12 @@ public:
 
 private:
     Instructions         m_ins;
-    BlockReader*         m_reader;
     TVMHeader            m_header;
     Registers            m_regi;
     uint32_t             m_flags;
     int32_t              m_return;
     uint64_t             m_curinst;
+
     std::stack<uint64_t> m_stack;
     const static OpCodes OPCodeTable;
     const static size_t  OPCodeTableSize;
@@ -75,8 +75,8 @@ public:
     Program();
     ~Program();
 
-    void load(const char* fname);
-    int  launch(void);
+    int load(const char* fname);
+    int launch(void);
 };
 
 #endif  //_Program_h_

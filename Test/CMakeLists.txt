@@ -34,7 +34,6 @@ set(TestFiles
     CRLF.asm
     CR.asm
     LF.asm
-    Empty.asm
     Keywords.asm
     Comment.asm
     ParseArg.asm

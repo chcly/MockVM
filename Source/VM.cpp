@@ -72,7 +72,12 @@ int main(int argc, char **argv)
     }
 
     Program prog;
-    prog.load(ctx.file.c_str());
+    if (prog.load(ctx.file.c_str()) != PS_OK)
+    {
+        printf("failed to load %s\n", ctx.file.c_str());
+        return -1;
+    }
+
     int rc = 0;
     if (ctx.time)
     {
