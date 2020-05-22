@@ -29,8 +29,6 @@
 #include <string.h>
 #include <cassert>
 
-
-
 BlockReader::BlockReader(const char *fname) :
     m_block(nullptr),
     m_fileLen(0),

@@ -7,7 +7,6 @@ set(CMAKE_MODULE_PATH
 subdirs(CMake)
 include (StaticRuntime)
 set_static_runtime()
-disable_crt_warnings()
 
 subdirs(Source)
 set(BUILD_TEST CACHE BOOL False)

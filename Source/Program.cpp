@@ -33,6 +33,7 @@
 
 using namespace std;
 
+
 uint8_t restrict8(const uint8_t& inp,
                   const uint8_t& mi,
                   const uint8_t& ma)
@@ -259,92 +260,169 @@ void Program::handle_OP_JGT(ExecInstruction& inst)
 
 void Program::handle_OP_ADD(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.argv[0];
+    const uint64_t& x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
-        uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.argv[1];
+        if (inst.argc > 2)
+        {
+            // A, B, C -> A = B + C
+            uint64_t b = inst.argv[1];
+            uint64_t c = inst.argv[2];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            if (c <= 9 && inst.flags & IF_SREG)
+                c = m_regi[c].x;
 
-        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
-            b = m_regi[b].x;
-
-        m_regi[x0].x = a + b;
+            m_regi[x0].x = b + c;
+        }
+        else
+        {
+            // A, B -> A += b
+            uint64_t b = inst.argv[1];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            m_regi[x0].x += b;
+        }
     }
 }
 
 void Program::handle_OP_SUB(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.argv[0];
+    const uint64_t& x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
-        uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.argv[1];
-
-        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
-            b = m_regi[b].x;
-
-        m_regi[x0].x = a - b;
+        if (inst.argc > 2)
+        {
+            // A, B, C -> A = B - C
+            uint64_t b = inst.argv[1];
+            uint64_t c = inst.argv[2];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            if (c <= 9 && inst.flags & IF_SREG)
+                c = m_regi[c].x;
+            m_regi[x0].x = b - c;
+        }
+        else
+        {
+            // A, B -> A -= b
+            uint64_t b = inst.argv[1];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            m_regi[x0].x -= b;
+        }
     }
 }
 
 void Program::handle_OP_MUL(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.argv[0];
+    const uint64_t& x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
-        uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.argv[1];
-
-        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
-            b = m_regi[b].x;
-
-        m_regi[x0].x = a * b;
+        if (inst.argc > 2)
+        {
+            // A, B, C -> A = B * C
+            uint64_t b = inst.argv[1];
+            uint64_t c = inst.argv[2];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            if (c <= 9 && inst.flags & IF_SREG)
+                c = m_regi[c].x;
+            m_regi[x0].x = b * c;
+        }
+        else
+        {
+            // A, B -> A *= b
+            uint64_t b = inst.argv[1];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            m_regi[x0].x *= b;
+        }
     }
 }
 
 void Program::handle_OP_DIV(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.argv[0];
+    const uint64_t& x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
-        uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.argv[1];
+        if (inst.argc > 2)
+        {
+            // A, B, C -> A = B / C
+            uint64_t b = inst.argv[1];
+            uint64_t c = inst.argv[2];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            if (c <= 9 && inst.flags & IF_SREG)
+                c = m_regi[c].x;
 
-        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
-            b = m_regi[b].x;
-
-        if (b != 0)
-            m_regi[x0].x = a / b;
+            if (c != 0)
+                m_regi[x0].x = b / c;
+        }
+        else
+        {
+            // A, B -> A /= b
+            uint64_t b = inst.argv[1];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            if (b != 0)
+                m_regi[x0].x /= b;
+        }
     }
 }
 
 void Program::handle_OP_SHR(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.argv[0];
+    const uint64_t& x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
-        uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.argv[1];
+        if (inst.argc > 2)
+        {
+            // A, B, C -> A = B >> C
+            uint64_t b = inst.argv[1];
+            uint64_t c = inst.argv[2];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            if (c <= 9 && inst.flags & IF_SREG)
+                c = m_regi[c].x;
 
-        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
-            b = m_regi[b].x;
-
-        m_regi[x0].x = a >> b;
+            m_regi[x0].x = b >> c;
+        }
+        else
+        {
+            // A, B -> A >>= b
+            uint64_t b = inst.argv[1];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            m_regi[x0].x >>= b;
+        }
     }
 }
 
 void Program::handle_OP_SHL(ExecInstruction& inst)
 {
-    uint64_t x0 = inst.argv[0];
+    const uint64_t& x0 = inst.argv[0];
     if (x0 <= 9 && inst.flags & IF_DREG)
     {
-        uint64_t a = m_regi[x0].x;
-        uint64_t b = inst.argv[1];
+        if (inst.argc > 2)
+        {
+            // A, B, C -> A = B >> C
+            uint64_t b = inst.argv[1];
+            uint64_t c = inst.argv[2];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            if (c <= 9 && inst.flags & IF_SREG)
+                c = m_regi[c].x;
 
-        if (inst.argv[1] <= 9 && inst.flags & IF_SREG)
-            b = m_regi[b].x;
-
-        m_regi[x0].x = a << b;
+            m_regi[x0].x = b << c;
+        }
+        else
+        {
+            // A, B -> A <<= b
+            uint64_t b = inst.argv[1];
+            if (b <= 9 && inst.flags & IF_SREG)
+                b = m_regi[b].x;
+            m_regi[x0].x <<= b;
+        }
     }
 }
 

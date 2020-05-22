@@ -520,11 +520,14 @@ int32_t Parser::handleOpCode(const Token& tok)
         
         Token lastTok = {};
 
-        for (int i = 0; i < ins.argc; ++i)
+        int arg = 0;
+        int maxArg = ins.argc;
+
+        for (arg = 0; arg < maxArg; ++arg)
         {
-            if (i > 0 && !lastTok.hasComma)
+            if (arg > 0 && !lastTok.hasComma)
             {
-                error("Missing comma after operand %i.\n", i+1);
+                error("Missing comma after operand %i.\n", arg + 1);
                 error("%s expects %i arguments.\n", kwd.word, ins.argc);
                 return PS_ERROR;
             }
@@ -533,15 +536,23 @@ int32_t Parser::handleOpCode(const Token& tok)
             if (scan(lastTok) == PS_ERROR)
                 return PS_ERROR;
 
-            if (handleArgument(ins, kwd, lastTok, i) == PS_ERROR)
+            if (handleArgument(ins, kwd, lastTok, arg) == PS_ERROR)
                 return PS_ERROR;
+
+
+            if (kwd.argv[2] != AT_NULL)
+            {
+                if (lastTok.hasComma && (arg + 1) == ins.argc)
+                {
+                    if (arg + 2 == INS_ARG)
+                    {
+                        maxArg += 1;
+                        ins.argc += 1;
+                    }
+                }
+            }
+
         }
-
-        // if (kwd.allowsOverloading && lastTok.hasComma)
-        // {
-        // 
-        // }
-
 
         m_instructions.push_back(ins);
         return PS_OK;
@@ -586,6 +597,8 @@ const KeywordMap& Parser::getKeyword(const int32_t& val)
 const uint8_t ArgTypeStd1[3] = {AT_REGI, AT_RVAL, AT_NULL};
 const uint8_t ArgTypeStd2[3] = {AT_RVAL, AT_RVAL, AT_NULL};
 const uint8_t ArgTypeStd3[3] = {AT_RVAL, AT_NULL, AT_NULL};
+const uint8_t ArgTypeStd4[3] = {AT_REGI, AT_RVAL, AT_RVAL};
+
 const uint8_t ArgTypeReg1[3] = {AT_REGI, AT_NULL, AT_NULL};
 const uint8_t ArgTypeAdr1[3] = {AT_ADDR, AT_NULL, AT_NULL};
 const uint8_t ArgTypeNone[3] = {AT_REGI, AT_RVAL, AT_NULL};
@@ -606,12 +619,12 @@ const KeywordMap Parser::KeywordTable[] = {
     {"jge\0 ", OP_JGE, 1, ArgTypeAdr1},
     {"prgi\0", OP_PRI, 0, ArgTypeAdr1},
     {"prg\0 ", OP_PRG, 1, ArgTypeStd3},
-    {"add\0 ", OP_ADD, 2, ArgTypeStd1},
-    {"sub\0 ", OP_SUB, 2, ArgTypeStd1},
-    {"mul\0 ", OP_MUL, 2, ArgTypeStd1},
-    {"div\0 ", OP_DIV, 2, ArgTypeStd1},
-    {"shr\0 ", OP_SHR, 2, ArgTypeStd1},
-    {"shl\0 ", OP_SHL, 2, ArgTypeStd1},
+    {"add\0 ", OP_ADD, 2, ArgTypeStd4},
+    {"sub\0 ", OP_SUB, 2, ArgTypeStd4},
+    {"mul\0 ", OP_MUL, 2, ArgTypeStd4},
+    {"div\0 ", OP_DIV, 2, ArgTypeStd4},
+    {"shr\0 ", OP_SHR, 2, ArgTypeStd4},
+    {"shl\0 ", OP_SHL, 2, ArgTypeStd4},
 };
 
 const size_t Parser::KeywordTableSize = sizeof(Parser::KeywordTable) / sizeof(KeywordMap);

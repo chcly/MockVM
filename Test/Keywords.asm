@@ -47,6 +47,8 @@ main:
     prgi
     inc x5
     cmp x5, 23
+    cmp 23, x5
+
     jeq ops
     jmp  fail
     jne  ops

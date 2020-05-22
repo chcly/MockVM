@@ -24,7 +24,7 @@
 
 const std::string KeywordsFile = std::string(TestDirectory) + "/Keywords.asm";
 
-TEST_CASE("BlockReder_0")
+TEST_CASE("BlockReader1")
 {
     BlockReader r;
     r.open(KeywordsFile.c_str());
@@ -33,15 +33,12 @@ TEST_CASE("BlockReder_0")
     size_t size = r.size(), i;
 
     uint8_t *tmp = new uint8_t[size + 1];
-
-
-
     for (i =0; i<size && !r.eof(); ++i)
     {
         // current returns the buffer at the internal position
         uint8_t tch = r.current();
 
-        // current returns the buffer at the internal position
+        // next returns the buffer at the internal position
         // then advances the position by one
         uint8_t ch = r.next();
         tmp[i] = ch;
