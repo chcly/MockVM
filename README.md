@@ -34,7 +34,7 @@ top:
    jmp top
 done:
    mov x0, 0    ; return value is in x0
-   ret          ; return 10
+   ret
 ```
 
 Each program needs at least one label called main.
@@ -55,26 +55,28 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 
 #### Current op codes
 
-| Opcode | Usage            | Operand1 | Operand2     | Description                                           |
-|:-------|:-----------------|:---------|:-------------|-------------------------------------------------------|
-| mov    | mov dest, source | reg      | reg or value | moves the source value into the destination register. |
-| ret    | ret              |          |              | return values should be placed in the 0 registers.    |
-| cmp    | cmp op1, op2     | reg      | reg or value | Does a logical comparison  of op1, and op2            |
-| inc    | inc op1          | reg      |              | op1+=1                                                |
-| dec    | dec op1          | reg      |              | op1-=1                                                |
-| jmp    | jmp label        | addr     |              | unconditional jump.                                   |
-| jeq    | jeq label        | addr     |              | jump if the E flag is set.                            |
-| jne    | jne label        | addr     |              | jump if the E flag is not set.                        |
-| jgt    | jgt label        | addr     |              | jump if the G flag is set.                            |
-| jlt    | jlt label        | addr     |              | jump if the L flag is set.                            |
-| jge    | jge label        | addr     |              | jump if the G or E flags are set.                     |
-| jle    | jle label        | addr     |              | jump if the L or E flags are set.                     |
-| add    | add op1, op2     | reg      | reg or value | add op1, and op2 and store the result in op1          |
-| sub    | sub op1, op2     | reg      | reg or value | subtract op1, and op2 and store the result in op1     |
-| mul    | mul op1, op2     | reg      | reg or value | multiply op1, and op2 and store the result in op1     |
-| div    | div op1, op2     | reg      | reg or value | divide  op1, and op2 and store the result in op1      |
-| prg    | prg op1          | addr     |              | prints the operand to stdout.                         |
-| prgi   | prgi             |          |              | prints the contents of all registers to stdout.       |
+| Opcode | Usage             | Op1 | Op2 | Op3(Ex) | Description                                          |
+|:-------|:------------------|:---:|:---:|:-------:|------------------------------------------------------|
+| mov    | mov dest, source  |  R  | R/V |         | moves the source value into the destination register |
+| ret    | ret               |     |     |         | return values should be placed in the x0 register    |
+| cmp    | cmp Op1, Op2      |  R  | R/V |         | does a logical comparison of Op1, and Op2            |
+| inc    | inc Op1           |  R  |     |         | increments Op1 by 1                                  |
+| dec    | dec Op1           |  R  |     |         | decrements Op1 by 1                                  |
+| jmp    | jmp label         |  A  |     |         | unconditional jump.                                  |
+| jeq    | jeq label         |  A  |     |         | jump if the E flag is set.                           |
+| jne    | jne label         |  A  |     |         | jump if the E flag is not set.                       |
+| jgt    | jgt label         |  A  |     |         | jump if the G flag is set.                           |
+| jlt    | jlt label         |  A  |     |         | jump if the L flag is set.                           |
+| jge    | jge label         |  A  |     |         | jump if the G or E flags are set.                    |
+| jle    | jle label         |  A  |     |         | jump if the L or E flags are set.                    |
+| add    | add Op1, Op2, Op3 |  R  | R/V |   R/V   | add Op1 and Op2 and store the result in Op1          |
+| sub    | sub Op1, Op2, Op3 |  R  | R/V |   R/V   | subtract Op1 and Op2 and store the result in Op1     |
+| mul    | mul Op1, Op2, Op3 |  R  | R/V |   R/V   | multiply Op1 and Op2 and store the result in Op1     |
+| div    | div Op1, Op2, Op3 |  R  | R/V |   R/V   | divide Op1 and Op2 and store the result in Op1       |
+| shr    | shr Op1, Op2, Op3 |  R  | R/V |   R/V   | shift Op1 right by Op2 and store the result in Op1   |
+| shl    | shl Op1, Op2, Op3 |  R  | R/V |   R/V   | shift Op1 left by Op2 and store the result in Op1    |
+| prg    | prg Op1           | R/V |     |         | prints the operand to stdout.                        |
+| prgi   | prgi              |     |     |         | prints the contents of all registers to stdout.      |
 
 ## tvm
 
