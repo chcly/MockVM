@@ -83,9 +83,7 @@ void Program::load(const char* fname)
             exec.op    = restrict8(ops[0], OP_RET, OP_MAX - 1);
             exec.argc  = restrict8(ops[1], 0, 3);
             exec.flags = restrict8(ops[2], 0, IF_MAXF);
-
-
-            uint16_t sizes = ops[3];
+            uint8_t sizes = ops[3];
 
             int a;
             for (a=0; a<exec.argc; ++a)

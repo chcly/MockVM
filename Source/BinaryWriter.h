@@ -51,7 +51,7 @@ private:
     size_t  mapInstructions(void);
     int64_t findLabel(const std::string& name); 
 
-    uint16_t calculateSizeFlag(const Instruction& ins);
+    uint8_t calculateSizeFlag(const Instruction& ins);
 
 public:
     BinaryWriter();
