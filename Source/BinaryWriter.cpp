@@ -65,7 +65,7 @@ void BinaryWriter::write(void* v, size_t size)
 {
     if (m_fp)
     {
-        fwrite(v, size, 1, (FILE*)m_fp);
+        fwrite(v, 1, size, (FILE*)m_fp);
         m_loc = ftell((FILE*)m_fp);
     }
 }
@@ -102,7 +102,16 @@ void BinaryWriter::open(const char* fname)
 size_t BinaryWriter::computeInstructionSize(const Instruction& ins)
 {
     size_t size = 4;  // op, nr, flags, pad
-    size += 8 * (size_t)ins.argc; 
+
+    int i;
+    for (i=0; i<ins.argc; ++i)
+    {
+        bool isReg = i <= 0 ? (ins.flags & IF_DREG) != 0 : (ins.flags & IF_SREG) != 0;
+        if (isReg)
+            size += 1;
+        else
+            size += 8; 
+    }
     return size;
 }
 
@@ -210,12 +219,21 @@ void BinaryWriter::writeSections()
         write8(ins.flags);
         write8(0);
 
-        if (ins.argc > 0)
-            write64(ins.argv[0]);
-        if (ins.argc > 1)
-            write64(ins.argv[1]);
-        if (ins.argc > 2)
-            write64(ins.argv[2]);
+        int i;
+        for (i=0; i<ins.argc; ++i)
+        {
+            bool isReg = i <= 0 ? (ins.flags & IF_DREG) != 0 : (ins.flags & IF_SREG) != 0;
+
+            if (isReg)
+            {
+                // trim the size
+                write8((uint8_t)ins.argv[i]);
+            }
+            else
+            {
+                write64(ins.argv[i]);
+            }
+        }
     }
 
     // TODO store values from .data sections

@@ -83,19 +83,29 @@ void Program::load(const char* fname)
             exec.argc  = restrict8(ops[1], 0, 3);
             exec.flags = restrict8(ops[2], 0, IF_MAXF);
 
-            if (exec.argc > 0)
-                m_reader->read(&exec.argv[0], 8);
-            if (exec.argc > 1)
-                m_reader->read(&exec.argv[1], 8);
-            if (exec.argc > 2)
-                m_reader->read(&exec.argv[2], 8);
 
-            i += (8 * (size_t)exec.argc);
+
+            int a;
+            for (a=0; a<exec.argc; ++a)
+            {
+                bool isReg = a <= 0 ? (exec.flags & IF_DREG) != 0 : (exec.flags & IF_SREG) != 0;
+                if (isReg)
+                {
+                    uint8_t v;
+                    m_reader->read(&v, 1);
+                    exec.argv[a] = (uint64_t)v; 
+                    i++;
+                }
+                else
+                {
+                    m_reader->read(&exec.argv[a], 8);
+                    i += 8;
+                }
+            }
 
             m_ins.push_back(exec);
         }
     }
-
     m_curinst = 0;
     if (code.entry < m_ins.size())
         m_curinst = code.entry;
