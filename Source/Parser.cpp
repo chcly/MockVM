@@ -511,15 +511,7 @@ int32_t Parser::handleOpCode(const Token& tok)
         ins.argc  = kwd.narg;
         ins.label = m_label;
 
-        // TODO, use lastTok.hasComma
-        // to determine what should be scanned
-        // next and also use it to add overloading
-        // for example:
-        //  add x0, x1     <- x0 = x0 + x1
-        //  add x0, x1, x2 <- x0 = x1 + x2
-        
         Token lastTok = {};
-
         int arg = 0;
         int maxArg = ins.argc;
 
@@ -539,7 +531,6 @@ int32_t Parser::handleOpCode(const Token& tok)
             if (handleArgument(ins, kwd, lastTok, arg) == PS_ERROR)
                 return PS_ERROR;
 
-
             if (kwd.argv[2] != AT_NULL)
             {
                 if (lastTok.hasComma && (arg + 1) == ins.argc)
@@ -551,7 +542,6 @@ int32_t Parser::handleOpCode(const Token& tok)
                     }
                 }
             }
-
         }
 
         m_instructions.push_back(ins);
