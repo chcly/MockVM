@@ -530,7 +530,7 @@ int32_t Parser::handleOpCode(const Token& tok)
             if (handleArgument(ins, kwd, lastTok, arg) == PS_ERROR)
                 return PS_ERROR;
 
-            if (kwd.argv[2] != AT_NULL)
+            if (kwd.argv[INS_ARG-1] != AT_NULL)
             {
                 if (lastTok.hasComma && (arg + 1) == ins.argc)
                 {

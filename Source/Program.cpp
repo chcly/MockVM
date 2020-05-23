@@ -111,8 +111,13 @@ int Program::loadStringTable(BlockReader& reader)
         {
             // if this is correctly stored
             // there should be no duplicates
-            m_strtab[str] = tot++;
-            str.resize(0);
+            if (str.empty())
+                i = strTab.size;
+            else
+            {
+                m_strtab[str] = tot++;
+                str.resize(0);
+            }
         }
     }
     return PS_OK;
@@ -286,6 +291,8 @@ void Program::handle_OP_CALL(ExecInstruction& inst)
         if (inst.call != nullptr)
             inst.call(m_regi);
     }
+    else if (inst.flags & IF_SYMU)
+        m_curinst = m_ins.size();
     else
     {
         m_stack.push(m_curinst);
