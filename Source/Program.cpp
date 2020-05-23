@@ -101,7 +101,7 @@ int Program::loadStringTable(BlockReader& reader)
     str_t str;
     uint32_t i;
     size_t   tot =0;
-    for (i =0; i<strTab.size; ++i)
+    for (i = 0; i < strTab.size && !reader.eof(); ++i)
     {
         char ch = reader.next();
 
