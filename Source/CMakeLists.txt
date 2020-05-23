@@ -5,6 +5,7 @@ set(CommonSource
     Parser.cpp
     BlockReader.cpp
     Program.cpp
+    SymbolUtils.cpp
 )
 
 
@@ -15,10 +16,16 @@ set(CommonHeader
     Declarations.h
     BlockReader.h
     Program.h
+    SymbolUtils.h
     ../README.md
 )
 
 add_library(libtvm  ${CommonSource} ${CommonHeader})
+
+if (NOT WIN32)
+    target_link_libraries(libtvm dl)
+endif()
+
 
 add_executable(tcom 
     Compiler.cpp
@@ -29,6 +36,10 @@ add_executable(tvm
     VM.cpp
 )
 target_link_libraries(tvm libtvm)
+
+subdirs(stdlib)
+target_link_libraries(libtvm std)
+
 
 
 set(INSTALL_PATH CACHE STRING "")

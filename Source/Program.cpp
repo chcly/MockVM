@@ -30,8 +30,11 @@
 
 #include "BlockReader.h"
 #include "Declarations.h"
+#include "SymbolUtils.h"
 
 using namespace std;
+
+SYM_EXPORT SymbolMapping* std_init();
 
 
 uint8_t restrict8(const uint8_t& inp,
@@ -41,11 +44,20 @@ uint8_t restrict8(const uint8_t& inp,
     return inp > ma ? ma : inp < mi ? mi : inp;
 }
 
+inline bool isRegister(const ExecInstruction& exec, size_t idx)
+{
+    return idx <= 0 ? (exec.flags & IF_DREG) != 0 : (exec.flags & IF_SREG) != 0;
+}
+
+
+
 Program::Program() :
     m_flags(0),
-    m_return(0)
+    m_return(0),
+    m_stdLib(0)
 {
     memset(m_regi, 0, sizeof(Registers));
+    m_stdLib = std_init();
 }
 
 Program::~Program()
@@ -54,8 +66,6 @@ Program::~Program()
 
 int Program::load(const char* fname)
 {
-
-
     BlockReader reader = BlockReader(fname);
     if (reader.eof())
     {
@@ -64,21 +74,73 @@ int Program::load(const char* fname)
     }
 
     reader.read(&m_header, sizeof(TVMHeader));
+    if (loadStringTable(reader) != PS_OK)
+    {
+        printf("failed to read string table\n");
+        return PS_ERROR;
+    }
+
+    if (loadCode(reader) != PS_OK)
+    {
+        printf("failed to read the text section\n");
+        return PS_ERROR;
+    }
+    return PS_OK;
+}
+
+
+int Program::loadStringTable(BlockReader& reader)
+{
+    reader.moveTo(m_header.str);
+    TVMSection strTab;
+    reader.read(&strTab, sizeof(TVMSection));
+
+    if (strTab.size <= 0)
+        return PS_OK;
+
+    str_t str;
+    uint32_t i;
+    size_t   tot =0;
+    for (i =0; i<strTab.size; ++i)
+    {
+        char ch = reader.next();
+
+        if (ch >= 32 && ch <= 127)
+            str.push_back(ch);
+        else if (ch == 0)
+        {
+            // if this is correctly stored
+            // there should be no duplicates
+            m_strtab[str] = tot++;
+            str.resize(0);
+        }
+    }
+    return PS_OK;
+}
+
+int Program::loadCode(BlockReader& reader)
+{
     reader.moveTo(m_header.txt);
 
     TVMSection code;
     reader.read(&code, sizeof(TVMSection));
 
-    uint8_t  ops[3] = {};
-    uint16_t sizes = 0;
+    if (code.size <= 0)
+        return PS_OK;
 
-    size_t  i = 0;
+    uint8_t  ops[3] = {};
+    uint16_t sizes  = 0;
+    uint8_t  v8;
+    uint16_t v16;
+    uint32_t v32;
+    int    a;
+    size_t i = 0;
+
+
     while (i < code.size && !reader.eof())
     {
-        reader.read(ops, 3);
-        i += 3;
-        reader.read(&sizes, 2);
-        i += 2;
+        i += reader.read(ops, 3);
+        i += reader.read(&sizes, 2);
 
         if (ops[0] >= 0 && ops[0] < OP_MAX)
         {
@@ -86,41 +148,35 @@ int Program::load(const char* fname)
             exec.op    = ops[0];
             exec.argc  = restrict8(ops[1], 0, INS_ARG);
             exec.flags = restrict8(ops[2], 0, IF_MAXF);
-            
-            int a;
-            for (a=0; a<exec.argc; ++a)
+
+            for (a = 0; a < exec.argc; ++a)
             {
                 if (sizes & SizeFlags[a][0])
                 {
-                    uint8_t v;
-                    reader.read(&v, 1);
-                    exec.argv[a] = (uint64_t)v; 
-                    i++;
+                    i += reader.read(&v8, 1);
+                    exec.argv[a] = (uint64_t)v8;
                 }
                 else if (sizes & SizeFlags[a][1])
                 {
-                    uint16_t v;
-                    reader.read(&v, 2);
-                    exec.argv[a] = (uint64_t)v;
-                    i += 2;
+                    i += reader.read(&v16, 2);
+                    exec.argv[a] = (uint64_t)v16;
                 }
                 else if (sizes & SizeFlags[a][2])
                 {
-                    uint32_t v;
-                    reader.read(&v, 4);
-                    exec.argv[a] = (uint64_t)v;
-                    i += 4;
+                    i += reader.read(&v32, 4);
+                    exec.argv[a] = (uint64_t)v32;
                 }
                 else
                 {
-                    reader.read(&exec.argv[a], 8);
-                    i += 8;
+                    i += reader.read(&exec.argv[a], 8);
                 }
 
-                // check to see if the register is still valid.
-                bool isReg = a <= 0 ? (exec.flags & IF_DREG) != 0 : (exec.flags & IF_SREG) != 0;
-                if (isReg)
+                if (exec.flags & IF_SYMA)
+                    findStatic(exec);
+
+                if (isRegister(exec, a))
                 {
+                    // check to see if the register is still valid.
                     if (!(sizes & SizeFlags[a][0]))
                     {
                         printf("error instruction size mismatch\n");
@@ -152,21 +208,47 @@ int Program::load(const char* fname)
     return PS_OK;
 }
 
+
+void Program::findStatic(ExecInstruction& ins)
+{
+    int i = 0;
+    while (m_stdLib[i].name != 0 && ins.call == nullptr)
+    {
+        StringMap::iterator it = m_strtab.find(m_stdLib[i].name);
+        if (it != m_strtab.end())
+        {
+            if (ins.argv[0] == it->second)
+                ins.call = m_stdLib[i].callback;
+        }
+        ++i;
+    }
+}
+
 int Program::launch(void)
 {
     if (m_ins.empty())
         return PS_OK; 
 
-    size_t           tinst   = m_ins.size();
+    size_t tinst = m_ins.size();
+
     ExecInstruction* basePtr = m_ins.data();
     m_stack.push(m_curinst);
-
     while (m_curinst < tinst)
     {
         ExecInstruction& inst = basePtr[m_curinst++];
-        if (OPCodeTable[inst.op] != nullptr)
-            (this->*OPCodeTable[inst.op])(inst);
+        uint8_t op = inst.op;
+        if (op >= 0 && op < OP_MAX)
+        {
+            if (OPCodeTable[op] != nullptr)
+                (this->*OPCodeTable[op])(inst);
+        }
+        else
+        {
+            printf("invalid code");
+            return -1;
+        }
     }
+
     return m_return;
 }
 
@@ -199,8 +281,16 @@ void Program::handle_OP_MOV(ExecInstruction& inst)
 
 void Program::handle_OP_CALL(ExecInstruction& inst)
 {
-    m_stack.push(m_curinst);
-    m_curinst = inst.argv[0];
+    if (inst.flags & IF_SYMA)
+    {
+        if (inst.call != nullptr)
+            inst.call(m_regi);
+    }
+    else
+    {
+        m_stack.push(m_curinst);
+        m_curinst = inst.argv[0];
+    }
 }
 
 void Program::handle_OP_INC(ExecInstruction& inst)

@@ -24,10 +24,17 @@
 
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 #define INS_ARG 3
 #define MAX_KWD 5
 #define TYPE_ID2(a, b) ((b) << 8 | (a))
+
+
+
+typedef std::string        str_t;
+typedef std::vector<str_t> strvec_t;
+
 
 typedef union Register {
     uint8_t  b[8];
@@ -68,13 +75,13 @@ enum ProgramFlags
 
 struct Token
 {
-    uint8_t     op;
-    uint8_t     reg;
-    Register    ival;
-    int32_t     type;
-    std::string value;
-    int32_t     index;
-    bool        hasComma;
+    uint8_t  op;
+    uint8_t  reg;
+    Register ival;
+    int32_t  type;
+    str_t    value;
+    int32_t  index;
+    bool     hasComma;
 };
 
 enum ParseResult
@@ -110,9 +117,9 @@ enum TokenCode
     TOK_MAX,
 };
 
-// The value here needs to start at zero 
+// The value here needs to start at zero
 // and match the method table index in the program.
-// class. The only reason is to prevent having to do 
+// class. The only reason is to prevent having to do
 // a lookup during execution.
 enum Opcode
 {
@@ -175,16 +182,20 @@ enum InstructionFlags
     IF_SREG = (1 << 2),
     IF_SLIT = (1 << 3),
     IF_ADDR = (1 << 4),
-    IF_MAXF = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR
+    IF_SYMA = (1 << 5),
+    IF_SYMU = (1 << 6),
+    IF_MAXF = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR | IF_SYMA | IF_SYMU  // 127
 };
 
 struct TVMHeader
 {
-    uint16_t code;
-    uint8_t  flags;
-    uint8_t  txt;
-    uint32_t dat;
-    uint64_t str;
+    uint16_t code;  // 2
+    uint8_t  flags; // 1
+    uint8_t  txt;   // 1  4
+    uint32_t dat;   // 4  8
+    uint64_t str;   // 8  16
+    uint64_t sym;   // 8  24
+    uint64_t pad;   // 8 32
 };
 
 struct TVMSection
@@ -192,29 +203,44 @@ struct TVMSection
     uint16_t code;
     uint16_t flags;
     uint64_t entry;
-    uint32_t pad;
+    uint32_t align;
     uint32_t size;
     uint32_t start;
-    uint64_t padding;
 };
 
 struct Instruction
 {
-    uint8_t     op;
-    uint8_t     flags;
-    uint16_t    sizes;
-    uint8_t     argc;
-    uint64_t    argv[INS_ARG];
-    uint64_t    label;
-    std::string labelName;
+    uint8_t  op;
+    uint8_t  flags;
+    uint16_t sizes;
+    uint8_t  argc;
+    uint64_t argv[INS_ARG];
+    uint64_t label;
+    uint64_t sym;
+    str_t    lname;
 };
+
+
+
+typedef uint64_t (*SymbolCallback)(Register*);
+
+struct SymbolMapping
+{
+    const char*    name;
+    SymbolCallback callback;
+};
+
+typedef SymbolMapping* (*ModuleInit)();
+
+
 
 struct ExecInstruction
 {
-    uint8_t  op;
-    uint8_t  flags;
-    uint8_t  argc;
-    uint64_t argv[INS_ARG];
+    uint8_t        op;
+    uint8_t        flags;
+    uint8_t        argc;
+    uint64_t       argv[INS_ARG];
+    SymbolCallback call;
 };
 
 #define _RELITAVE_TIME_CHECK_BEGIN                                    \

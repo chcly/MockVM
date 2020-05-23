@@ -25,14 +25,21 @@
 #include <stdint.h>
 #include <stack>
 #include <vector>
+#include <unordered_map>
 #include "BlockReader.h"
 #include "Declarations.h"
+
 
 class Program
 {
 public:
     typedef std::vector<ExecInstruction> Instructions;
     typedef Register                     Registers[10];
+
+    typedef std::unordered_map<str_t, size_t> StringMap;
+
+
+
 
     typedef void (Program::*Operation)(ExecInstruction& inst);
     typedef Operation OpCodes[OP_MAX];
@@ -44,10 +51,16 @@ private:
     uint32_t             m_flags;
     int32_t              m_return;
     uint64_t             m_curinst;
+    SymbolMapping*       m_stdLib;
+    StringMap            m_strtab;
 
     std::stack<uint64_t> m_stack;
     const static OpCodes OPCodeTable;
     const static size_t  OPCodeTableSize;
+
+    void findStatic(ExecInstruction& ins);
+
+
 
     void handle_OP_RET(ExecInstruction& inst);
     void handle_OP_MOV(ExecInstruction& inst);
@@ -70,6 +83,10 @@ private:
     void handle_OP_SHL(ExecInstruction& inst);
     void handle_OP_PRG(ExecInstruction& inst);
     void handle_OP_PRGI(ExecInstruction& inst);
+
+
+    int loadStringTable(BlockReader& reader);
+    int loadCode(BlockReader& reader);
 
 public:
     Program();

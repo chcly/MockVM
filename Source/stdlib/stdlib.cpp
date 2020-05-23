@@ -19,50 +19,34 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#ifndef _BlockReader_h_
-#define _BlockReader_h_
+#include "SymbolUtils.h"
+#include <stdio.h>
 
-#include <stdint.h>
-#include <stdlib.h>
 
-class BlockReader
+uint64_t SymbolCallback_putchar(Register* values)
 {
-private:
-    uint8_t *m_block;
-    size_t   m_fileLen;
-    size_t   m_loc;
+    int ch = values[0].b[0];
+    putchar(ch);
+    return 0;
+}
 
-public:
-    BlockReader(const char *fname);
-    BlockReader();
-    ~BlockReader();
+uint64_t SymbolCallback_getchar(Register* values)
+{
+    int ch = getchar();
+    values[0].x = ch;
+    return 0;
+}
 
-    void    open(const char *fname);
-    uint8_t next(void);
-    uint8_t current(void);
-    size_t  read(void *blk, size_t nr);
-    void    offset(int32_t nr);
-    void    moveTo(size_t loc);
 
-    const uint8_t *ptr(void) const
-    {
-        return m_block;
-    }
 
-    inline bool eof(void) const
-    {
-        return m_loc >= m_fileLen;
-    }
-
-    inline size_t tell(void) const
-    {
-        return m_loc;
-    }
-
-    inline size_t size(void) const
-    {
-        return m_fileLen;
-    }
+const SymbolMapping stdlib[] = {
+    {"putchar", SymbolCallback_putchar},
+    {"getchar", SymbolCallback_getchar},
+    {nullptr, nullptr},
 };
 
-#endif  //_BlockReader_h_
+
+SYM_EXPORT const SymbolMapping* std_init()
+{
+    return stdlib;
+}

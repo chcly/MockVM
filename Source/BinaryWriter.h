@@ -30,30 +30,41 @@
 class BinaryWriter
 {
 public:
-    typedef std::vector<Instruction>                Instructions;
-    typedef std::unordered_map<int64_t, int64_t>    IndexToPosition;
-    typedef std::unordered_map<std::string, size_t> LabelMap; 
+    typedef std::vector<Instruction>             Instructions;
+    typedef std::unordered_map<int64_t, int64_t> IndexToPosition;
+    typedef std::unordered_map<str_t, size_t>    LabelMap;
 
 private:
     void*            m_fp;
     long             m_loc;
     Instructions     m_ins;
+    size_t           m_sizeOfCode;
+    size_t           m_sizeOfData;
+    size_t           m_sizeOfSym;
+    size_t           m_sizeOfStr;
+    SymbolMapping*   m_stdlib;
     IndexToPosition  m_addrMap;
     LabelMap         m_labels;
+    LabelMap         m_strtab;
+    strvec_t         m_orderedString;
+    TVMHeader        m_header;
 
-    void write(void* v, size_t size);
-    void write8(uint8_t v);
-    void write16(uint16_t v);
-    void write32(uint32_t v);
-    void write64(uint64_t v);
+    void   write(const void* v, size_t size);
+    void   write8(uint8_t v);
+    void   write16(uint16_t v);
+    void   write32(uint32_t v);
+    void   write64(uint64_t v);
+    size_t writeDataSection(void);
+    size_t writeCodeSection(void);
+    size_t writeSymbolSection(void);
+    size_t writeStringSection(void);
 
-    size_t  computeInstructionSize(const uint16_t& sizeBits, size_t argc);
-    size_t  mapInstructions(void);
-    int64_t findLabel(const std::string& name); 
+    void   mapInstructions(void);
+    size_t calculateInstructionSize(void);
 
-    uint16_t calculateSizeFlag(const Instruction& ins);
-    size_t   getLocation(void);
-
+    int64_t        findLabel(const str_t& name);
+    SymbolMapping* findStatic(const Instruction& ins);
+    size_t         addToStringTable(const str_t& symname);
 
 public:
     BinaryWriter();
@@ -62,9 +73,12 @@ public:
     void mergeInstructions(const Instructions& insl);
     void mergeLabels(const LabelMap& map);
 
+    int resolve(strvec_t& modules);
     int open(const char* fname);
-    int writeHeader();
-    int writeSections();
+    int writeHeader(void);
+    int writeSections(void);
 };
+
+
 
 #endif  //_BinaryWriter_h_

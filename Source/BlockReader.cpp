@@ -68,11 +68,12 @@ uint8_t BlockReader::current(void)
     return 0;
 }
 
-void BlockReader::read(void *blk, size_t nr)
+size_t BlockReader::read(void *blk, size_t nr)
 {
     size_t i = 0;
     while (i < nr && i < m_fileLen)
         ((uint8_t *)blk)[i++] = next();
+    return i;
 }
 
 void BlockReader::offset(int32_t nr)

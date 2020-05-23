@@ -31,10 +31,13 @@
 
 using namespace std;
 
+typedef vector<string> strvec_t;
+
 struct ProgramInfo
 {
-    string         output;
-    vector<string> files;
+    string   output;
+    strvec_t files;
+    strvec_t modules;
 };
 
 void usage(void);
@@ -64,6 +67,10 @@ int main(int argc, char **argv)
                 if (i + 1 < argc)
                     ctx.output = (argv[++i]);
                 break;
+            case 'l':
+                if (i + 1 < argc)
+                    ctx.modules.push_back((argv[++i]));
+                break;
             default:
                 break;
             }
@@ -80,17 +87,34 @@ int main(int argc, char **argv)
     }
 
     BinaryWriter w;
+
+    // Stage 1 - compile files
     for (string file : ctx.files)
     {
         Parser p;
         if (p.parse(file.c_str()) != PS_OK)
             return PS_ERROR;
 
-        // This has not been tested on multiple files yet.
+
+        // First, merge the labels
         w.mergeLabels(p.getLabels()); 
+
+
+        // Second, merge the instructions.
+        // The labels should be stored first so instructions 
+        // with label names can be filtered in one pass.
         w.mergeInstructions(p.getInstructions());
+
+
+        // This has not been tested on multiple files yet.
+        break;
     }
 
+    // Stage 2 - resolve symbols
+    if (w.resolve(ctx.modules) != PS_OK)
+        return PS_ERROR;
+
+    // Stage 3 - write the binary
     if (w.open(ctx.output.c_str()) != PS_OK)
         return PS_ERROR;
     if (w.writeHeader()!= PS_OK)
@@ -107,4 +131,5 @@ void usage(void)
     cout << "    options:\n\n";
     cout << "        -h show this message.\n";
     cout << "        -o output file.\n";
+    cout << "        -l link library.\n";
 }

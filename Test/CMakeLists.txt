@@ -49,8 +49,11 @@ set(TestFiles
     Factorial.asm
     Compact.asm
     Label.asm
+    TestPutChar.asm
 )
+
 add_compile_tests(OutFiles ${TestFiles})
+
 
 set(SRC_ALL
     Catch2.h
@@ -66,3 +69,4 @@ include_directories(../Source ${ToyVM_BINARY_DIR})
 
 add_executable(tvmtest ${SRC_ALL})
 target_link_libraries(tvmtest libtvm)
+

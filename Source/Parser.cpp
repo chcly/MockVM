@@ -489,7 +489,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         // save this now so it can be resolved after all
         // labels have been stored
         ins.flags |= IF_ADDR;
-        ins.labelName = tok.value;
+        ins.lname = tok.value;
     }
     else
     {
@@ -523,7 +523,6 @@ int32_t Parser::handleOpCode(const Token& tok)
                 error("%s expects %i arguments.\n", kwd.word, ins.argc);
                 return PS_ERROR;
             }
-
             lastTok = {};
             if (scan(lastTok) == PS_ERROR)
                 return PS_ERROR;
@@ -588,7 +587,6 @@ const uint8_t ArgTypeStd1[3] = {AT_REGI, AT_RVAL, AT_NULL};
 const uint8_t ArgTypeStd2[3] = {AT_RVAL, AT_RVAL, AT_NULL};
 const uint8_t ArgTypeStd3[3] = {AT_RVAL, AT_NULL, AT_NULL};
 const uint8_t ArgTypeStd4[3] = {AT_REGI, AT_RVAL, AT_RVAL};
-
 const uint8_t ArgTypeReg1[3] = {AT_REGI, AT_NULL, AT_NULL};
 const uint8_t ArgTypeAdr1[3] = {AT_ADDR, AT_NULL, AT_NULL};
 const uint8_t ArgTypeNone[3] = {AT_REGI, AT_RVAL, AT_NULL};
