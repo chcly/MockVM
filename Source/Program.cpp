@@ -125,7 +125,7 @@ int Program::loadStringTable(BlockReader& reader)
 
 int Program::loadCode(BlockReader& reader)
 {
-    reader.moveTo(m_header.txt);
+    reader.moveTo(sizeof(TVMHeader));
 
     TVMSection code;
     reader.read(&code, sizeof(TVMSection));

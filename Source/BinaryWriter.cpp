@@ -341,9 +341,6 @@ int BinaryWriter::writeHeader()
 
     size_t offset = sizeof(TVMHeader);
 
-    // The text starts at the end of the file header
-    m_header.txt = (uint8_t)offset;
-
     mapInstructions();
     m_sizeOfCode = calculateInstructionSize();
     if (m_sizeOfCode !=0)
@@ -388,7 +385,7 @@ size_t BinaryWriter::writeCodeSection(void)
 {
     TVMSection sec = {};
     sec.size       = (uint32_t)m_sizeOfCode;
-    sec.start      = m_header.txt;
+    sec.start      = sizeof(TVMHeader);
     sec.entry      = findLabel("main");
     sec.align      = (uint32_t)getAlignment(m_sizeOfCode);
 

@@ -186,22 +186,20 @@ enum InstructionFlags
 
 struct TVMHeader
 {
-    uint8_t  code[2];  // 2
-    uint8_t  flags;    // 1
-    uint8_t  txt;      // 1  4
-    uint32_t dat;      // 4  8
-    uint64_t str;      // 8  16
-    uint64_t sym;      // 8  24
-    uint64_t pad;      // 8  32
+    uint8_t  code[2];
+    uint16_t flags;
+    uint32_t dat;
+    uint32_t str;
+    uint32_t sym;
 };
 
 struct TVMSection
 {
-    uint16_t flags; // 2
-    uint16_t entry; // 2 4
-    uint32_t align; // 4 8
-    uint32_t size;  // 4 12
-    uint32_t start; // 4 16
+    uint16_t flags;
+    uint16_t entry;
+    uint32_t align;
+    uint32_t size;
+    uint32_t start;
 };
 
 struct Instruction
