@@ -41,7 +41,7 @@ public:
 
 
 
-    typedef void (Program::*Operation)(ExecInstruction& inst);
+    typedef void (Program::*Operation)(const ExecInstruction& inst);
     typedef Operation OpCodes[OP_MAX];
 
 private:
@@ -62,27 +62,27 @@ private:
 
 
 
-    void handle_OP_RET(ExecInstruction& inst);
-    void handle_OP_MOV(ExecInstruction& inst);
-    void handle_OP_CALL(ExecInstruction& inst);
-    void handle_OP_INC(ExecInstruction& inst);
-    void handle_OP_DEC(ExecInstruction& inst);
-    void handle_OP_CMP(ExecInstruction& inst);
-    void handle_OP_JMP(ExecInstruction& inst);
-    void handle_OP_JEQ(ExecInstruction& inst);
-    void handle_OP_JNE(ExecInstruction& inst);
-    void handle_OP_JLE(ExecInstruction& inst);
-    void handle_OP_JGE(ExecInstruction& inst);
-    void handle_OP_JLT(ExecInstruction& inst);
-    void handle_OP_JGT(ExecInstruction& inst);
-    void handle_OP_ADD(ExecInstruction& inst);
-    void handle_OP_SUB(ExecInstruction& inst);
-    void handle_OP_MUL(ExecInstruction& inst);
-    void handle_OP_DIV(ExecInstruction& inst);
-    void handle_OP_SHR(ExecInstruction& inst);
-    void handle_OP_SHL(ExecInstruction& inst);
-    void handle_OP_PRG(ExecInstruction& inst);
-    void handle_OP_PRGI(ExecInstruction& inst);
+    void handle_OP_RET(const ExecInstruction& inst);
+    void handle_OP_MOV(const ExecInstruction& inst);
+    void handle_OP_CALL(const ExecInstruction& inst);
+    void handle_OP_INC(const ExecInstruction& inst);
+    void handle_OP_DEC(const ExecInstruction& inst);
+    void handle_OP_CMP(const ExecInstruction& inst);
+    void handle_OP_JMP(const ExecInstruction& inst);
+    void handle_OP_JEQ(const ExecInstruction& inst);
+    void handle_OP_JNE(const ExecInstruction& inst);
+    void handle_OP_JLE(const ExecInstruction& inst);
+    void handle_OP_JGE(const ExecInstruction& inst);
+    void handle_OP_JLT(const ExecInstruction& inst);
+    void handle_OP_JGT(const ExecInstruction& inst);
+    void handle_OP_ADD(const ExecInstruction& inst);
+    void handle_OP_SUB(const ExecInstruction& inst);
+    void handle_OP_MUL(const ExecInstruction& inst);
+    void handle_OP_DIV(const ExecInstruction& inst);
+    void handle_OP_SHR(const ExecInstruction& inst);
+    void handle_OP_SHL(const ExecInstruction& inst);
+    void handle_OP_PRG(const ExecInstruction& inst);
+    void handle_OP_PRGI(const ExecInstruction& inst);
 
 
     int loadStringTable(BlockReader& reader);

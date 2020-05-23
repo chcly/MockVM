@@ -23,25 +23,21 @@
 #include <stdio.h>
 
 
-uint64_t SymbolCallback_putchar(Register* values)
+void __putchar(Register* values)
 {
-    int ch = values[0].b[0];
-    putchar(ch);
-    return 0;
+    putchar(values[0].b[0]);
 }
 
-uint64_t SymbolCallback_getchar(Register* values)
+void __getchar(Register* values)
 {
-    int ch = getchar();
-    values[0].x = ch;
-    return 0;
+    values[0].b[0] = getchar();
 }
 
 
 
 const SymbolMapping stdlib[] = {
-    {"putchar", SymbolCallback_putchar},
-    {"getchar", SymbolCallback_getchar},
+    {"putchar", __putchar},
+    {"getchar", __getchar},
     {nullptr, nullptr},
 };
 

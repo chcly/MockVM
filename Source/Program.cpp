@@ -187,6 +187,11 @@ int Program::loadCode(BlockReader& reader)
                         printf("error instruction size mismatch\n");
                         return PS_ERROR;
                     }
+                    else if (exec.argv[a] > 9)
+                    {
+                        printf("error instruction size mismatch\n");
+                        return PS_ERROR;
+                    }
                 }
             }
             m_ins.push_back(exec);
@@ -236,16 +241,16 @@ int Program::launch(void)
 
     size_t tinst = m_ins.size();
 
-    ExecInstruction* basePtr = m_ins.data();
+    const ExecInstruction* basePtr = m_ins.data();
     m_stack.push(m_curinst);
     while (m_curinst < tinst)
     {
-        ExecInstruction& inst = basePtr[m_curinst++];
-        uint8_t op = inst.op;
-        if (op >= 0 && op < OP_MAX)
+        const ExecInstruction& inst = basePtr[m_curinst++];
+
+        if (inst.op >= 0 && inst.op < OP_MAX)
         {
-            if (OPCodeTable[op] != nullptr)
-                (this->*OPCodeTable[op])(inst);
+            if (OPCodeTable[inst.op] != nullptr)
+                (this->*OPCodeTable[inst.op])(inst);
         }
         else
         {
@@ -253,11 +258,10 @@ int Program::launch(void)
             return -1;
         }
     }
-
     return m_return;
 }
 
-void Program::handle_OP_RET(ExecInstruction& inst)
+void Program::handle_OP_RET(const ExecInstruction& inst)
 {
     if (!m_stack.empty())
     {
@@ -270,21 +274,18 @@ void Program::handle_OP_RET(ExecInstruction& inst)
     m_return = (int32_t)m_regi[0].x;
 }
 
-void Program::handle_OP_MOV(ExecInstruction& inst)
+void Program::handle_OP_MOV(const ExecInstruction& inst)
 {
     if (inst.argv[0] <= 9)
     {
         if (inst.flags & IF_SREG)
-        {
-            if (inst.argv[1] <= 9)
-                m_regi[inst.argv[0]].x = m_regi[inst.argv[1]].x;
-        }
+            m_regi[inst.argv[0]].x = m_regi[inst.argv[1]].x;
         else
             m_regi[inst.argv[0]].x = inst.argv[1];
     }
 }
 
-void Program::handle_OP_CALL(ExecInstruction& inst)
+void Program::handle_OP_CALL(const ExecInstruction& inst)
 {
     if (inst.flags & IF_SYMA)
     {
@@ -300,31 +301,25 @@ void Program::handle_OP_CALL(ExecInstruction& inst)
     }
 }
 
-void Program::handle_OP_INC(ExecInstruction& inst)
+void Program::handle_OP_INC(const ExecInstruction& inst)
 {
     if (inst.flags & IF_DREG)
-    {
-        if (inst.argv[0] <= 9)
-            m_regi[inst.argv[0]].x += 1;
-    }
+        m_regi[inst.argv[0]].x += 1;
 }
 
-void Program::handle_OP_DEC(ExecInstruction& inst)
+void Program::handle_OP_DEC(const ExecInstruction& inst)
 {
     if (inst.flags & IF_DREG)
-    {
-        if (inst.argv[0] <= 9)
-            m_regi[inst.argv[0]].x -= 1;
-    }
+        m_regi[inst.argv[0]].x -= 1;
 }
 
-void Program::handle_OP_CMP(ExecInstruction& inst)
+void Program::handle_OP_CMP(const ExecInstruction& inst)
 {
     uint64_t a = inst.argv[0];
     uint64_t b = inst.argv[1];
-    if (inst.flags & IF_DREG && a <= 9)
+    if (inst.flags & IF_DREG)
         a = m_regi[a].x;
-    if (inst.flags & IF_SREG && b <= 9)
+    if (inst.flags & IF_SREG)
         b = m_regi[b].x;
 
     m_flags = 0;
@@ -337,12 +332,12 @@ void Program::handle_OP_CMP(ExecInstruction& inst)
         m_flags |= PF_G;
 }
 
-void Program::handle_OP_JMP(ExecInstruction& inst)
+void Program::handle_OP_JMP(const ExecInstruction& inst)
 {
     m_curinst = inst.argv[0];
 }
 
-void Program::handle_OP_JEQ(ExecInstruction& inst)
+void Program::handle_OP_JEQ(const ExecInstruction& inst)
 {
     if (m_flags & PF_E)
     {
@@ -351,7 +346,7 @@ void Program::handle_OP_JEQ(ExecInstruction& inst)
     }
 }
 
-void Program::handle_OP_JNE(ExecInstruction& inst)
+void Program::handle_OP_JNE(const ExecInstruction& inst)
 {
     if (!(m_flags & PF_E))
     {
@@ -360,7 +355,7 @@ void Program::handle_OP_JNE(ExecInstruction& inst)
     }
 }
 
-void Program::handle_OP_JLE(ExecInstruction& inst)
+void Program::handle_OP_JLE(const ExecInstruction& inst)
 {
     if (m_flags & PF_E)
     {
@@ -374,7 +369,7 @@ void Program::handle_OP_JLE(ExecInstruction& inst)
     }
 }
 
-void Program::handle_OP_JGE(ExecInstruction& inst)
+void Program::handle_OP_JGE(const ExecInstruction& inst)
 {
     if (m_flags & PF_E)
     {
@@ -388,7 +383,7 @@ void Program::handle_OP_JGE(ExecInstruction& inst)
     }
 }
 
-void Program::handle_OP_JLT(ExecInstruction& inst)
+void Program::handle_OP_JLT(const ExecInstruction& inst)
 {
     if (m_flags & PF_L)
     {
@@ -397,7 +392,7 @@ void Program::handle_OP_JLT(ExecInstruction& inst)
     }
 }
 
-void Program::handle_OP_JGT(ExecInstruction& inst)
+void Program::handle_OP_JGT(const ExecInstruction& inst)
 {
     if (m_flags & PF_G)
     {
@@ -406,184 +401,189 @@ void Program::handle_OP_JGT(ExecInstruction& inst)
     }
 }
 
-void Program::handle_OP_ADD(ExecInstruction& inst)
+void Program::handle_OP_ADD(const ExecInstruction& inst)
 {
     const uint64_t& x0 = inst.argv[0];
-    if (x0 <= 9 && inst.flags & IF_DREG)
+    if (inst.flags & IF_DREG)
     {
         if (inst.argc > 2)
         {
             // A, B, C -> A = B + C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (b <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 b = m_regi[b].x;
-            if (c <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 c = m_regi[c].x;
-
             m_regi[x0].x = b + c;
         }
         else
         {
-            // A, B -> A += b
-            uint64_t b = inst.argv[1];
-            if (b <= 9 && inst.flags & IF_SREG)
-                b = m_regi[b].x;
-            m_regi[x0].x += b;
+            if (inst.flags & IF_SREG)
+                m_regi[x0].x += m_regi[inst.argv[1]].x;
+            else
+                m_regi[x0].x += inst.argv[1];
         }
     }
 }
 
-void Program::handle_OP_SUB(ExecInstruction& inst)
+void Program::handle_OP_SUB(const ExecInstruction& inst)
 {
     const uint64_t& x0 = inst.argv[0];
-    if (x0 <= 9 && inst.flags & IF_DREG)
+    if (inst.flags & IF_DREG)
     {
         if (inst.argc > 2)
         {
             // A, B, C -> A = B - C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (b <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 b = m_regi[b].x;
-            if (c <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 c = m_regi[c].x;
             m_regi[x0].x = b - c;
         }
         else
         {
-            // A, B -> A -= b
-            uint64_t b = inst.argv[1];
-            if (b <= 9 && inst.flags & IF_SREG)
-                b = m_regi[b].x;
-            m_regi[x0].x -= b;
+            if (inst.flags & IF_SREG)
+                m_regi[x0].x -= m_regi[inst.argv[1]].x;
+            else
+                m_regi[x0].x -= inst.argv[1];
         }
     }
 }
 
-void Program::handle_OP_MUL(ExecInstruction& inst)
+void Program::handle_OP_MUL(const ExecInstruction& inst)
 {
     const uint64_t& x0 = inst.argv[0];
-    if (x0 <= 9 && inst.flags & IF_DREG)
+    if (inst.flags & IF_DREG)
     {
         if (inst.argc > 2)
         {
             // A, B, C -> A = B * C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (b <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 b = m_regi[b].x;
-            if (c <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 c = m_regi[c].x;
             m_regi[x0].x = b * c;
         }
         else
         {
-            // A, B -> A *= b
-            uint64_t b = inst.argv[1];
-            if (b <= 9 && inst.flags & IF_SREG)
-                b = m_regi[b].x;
-            m_regi[x0].x *= b;
+            if (inst.flags & IF_SREG)
+                m_regi[x0].x *= m_regi[inst.argv[1]].x;
+            else
+                m_regi[x0].x *= inst.argv[1];
         }
     }
 }
 
-void Program::handle_OP_DIV(ExecInstruction& inst)
+void Program::handle_OP_DIV(const ExecInstruction& inst)
 {
     const uint64_t& x0 = inst.argv[0];
-    if (x0 <= 9 && inst.flags & IF_DREG)
+    if (inst.flags & IF_DREG)
     {
         if (inst.argc > 2)
         {
             // A, B, C -> A = B / C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (b <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 b = m_regi[b].x;
-            if (c <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 c = m_regi[c].x;
-
             if (c != 0)
                 m_regi[x0].x = b / c;
         }
         else
         {
-            // A, B -> A /= b
-            uint64_t b = inst.argv[1];
-            if (b <= 9 && inst.flags & IF_SREG)
-                b = m_regi[b].x;
-            if (b != 0)
-                m_regi[x0].x /= b;
+            if (inst.flags & IF_SREG)
+            {
+                if (m_regi[inst.argv[1]].x != 0)
+                    m_regi[x0].x /= m_regi[inst.argv[1]].x;
+                else
+                {
+                    // m_curinst = m_ins.size();
+                    // printf("divide by zero\n");
+                }
+            }
+            else
+            {
+                if (inst.argv[1] !=0)
+                    m_regi[x0].x /= inst.argv[1];
+                else
+                {
+                    // m_curinst = m_ins.size();
+                    // printf("divide by zero\n");
+                }
+            }
         }
     }
 }
 
-void Program::handle_OP_SHR(ExecInstruction& inst)
+void Program::handle_OP_SHR(const ExecInstruction& inst)
 {
     const uint64_t& x0 = inst.argv[0];
-    if (x0 <= 9 && inst.flags & IF_DREG)
+    if (inst.flags & IF_DREG)
     {
         if (inst.argc > 2)
         {
             // A, B, C -> A = B >> C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (b <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 b = m_regi[b].x;
-            if (c <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 c = m_regi[c].x;
-
             m_regi[x0].x = b >> c;
         }
         else
         {
-            // A, B -> A >>= b
-            uint64_t b = inst.argv[1];
-            if (b <= 9 && inst.flags & IF_SREG)
-                b = m_regi[b].x;
-            m_regi[x0].x >>= b;
+            if (inst.flags & IF_SREG)
+                m_regi[x0].x >>= m_regi[inst.argv[1]].x;
+            else
+                m_regi[x0].x >>= inst.argv[1];
         }
     }
 }
 
-void Program::handle_OP_SHL(ExecInstruction& inst)
+void Program::handle_OP_SHL(const ExecInstruction& inst)
 {
     const uint64_t& x0 = inst.argv[0];
-    if (x0 <= 9 && inst.flags & IF_DREG)
+    if (inst.flags & IF_DREG)
     {
         if (inst.argc > 2)
         {
             // A, B, C -> A = B >> C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (b <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 b = m_regi[b].x;
-            if (c <= 9 && inst.flags & IF_SREG)
+            if (inst.flags & IF_SREG)
                 c = m_regi[c].x;
-
             m_regi[x0].x = b << c;
         }
         else
         {
-            // A, B -> A <<= b
-            uint64_t b = inst.argv[1];
-            if (b <= 9 && inst.flags & IF_SREG)
-                b = m_regi[b].x;
-            m_regi[x0].x <<= b;
+            if (inst.flags & IF_SREG)
+                m_regi[x0].x <<= m_regi[inst.argv[1]].x;
+            else
+                m_regi[x0].x <<= inst.argv[1];
         }
     }
 }
 
 
-void Program::handle_OP_PRG(ExecInstruction& inst)
+void Program::handle_OP_PRG(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_DREG && inst.argv[0] <= 9)
+    if (inst.flags & IF_DREG)
         cout << (int64_t)m_regi[inst.argv[0]].x << '\n';
     else
         cout << (int64_t)inst.argv[0] << '\n';
 }
 
-void Program::handle_OP_PRGI(ExecInstruction& inst)
+void Program::handle_OP_PRGI(const ExecInstruction& inst)
 {
     int i;
     for (i = 0; i < 10; ++i)

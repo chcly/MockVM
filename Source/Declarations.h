@@ -216,7 +216,7 @@ struct Instruction
 
 
 
-typedef uint64_t (*SymbolCallback)(Register*);
+typedef void (*SymbolCallback)(Register*);
 
 struct SymbolMapping
 {
@@ -225,7 +225,6 @@ struct SymbolMapping
 };
 
 typedef SymbolMapping* (*ModuleInit)();
-
 
 
 struct ExecInstruction
