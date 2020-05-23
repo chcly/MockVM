@@ -88,7 +88,6 @@ set(TestFiles_1
     Basic/TestPutChar.asm
 )
 
-
 set(TestFiles_2
     Exec/Add1.asm
     Exec/Add2.asm
@@ -96,8 +95,14 @@ set(TestFiles_2
     Exec/Sub2.asm
 )
 
+
+#set(TestFiles_3
+#)
+
 add_compile_tests(OutFiles_1 Basic ${TestFiles_1})
-add_temp_test(OutFiles_2 Exec ${TestFiles_2})
+add_compile_tests(OutFiles_2 Exec  ${TestFiles_2})
+
+#add_temp_test(OutFiles_3 Exec ${TestFiles_3})
 
 set(SRC_ALL
     Catch2.h
@@ -106,6 +111,7 @@ set(SRC_ALL
     BlockReader.cpp
     ${OutFiles_1}
     ${OutFiles_2}
+    ${OutFiles_3}
     ${ToyVM_BINARY_DIR}/TestConfig.h
 )
 
