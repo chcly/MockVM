@@ -94,6 +94,7 @@ set(TestFiles_2
     Exec/Sub1.asm
     Exec/Sub2.asm
     Exec/Mul1.asm
+    Exec/Div1.asm
 )
 
 
