@@ -1,11 +1,11 @@
 main:
-    mov  x1, 97
+    mov  x1, 122
 beg:
-    cmp  x1, 123
-    jeq  enb
+    cmp  x1, 97
+    jlt  enb
     mov  x0, x1
     call putchar
-    add  x1, 1
+    sub  x1, x1, 1
     jmp  beg
 enb:
     mov  x0, 10
