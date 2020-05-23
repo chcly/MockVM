@@ -201,6 +201,7 @@ void BinaryWriter::mapInstructions(void)
             }
             else
             {
+
                 // It points to an unknown symbol
                 // that may reside in a shared library
                 irp->argv[0] = addToStringTable(irp->lname);
@@ -333,8 +334,10 @@ int BinaryWriter::writeHeader()
     if (!m_fp)
         return PS_ERROR;
 
-    m_header.code  = TYPE_ID2('T', 'V');
-    m_header.flags = 0;
+
+    m_header.code[0] = 'T';
+    m_header.code[1] = 'V';
+    m_header.flags   = 0;
 
     size_t offset = sizeof(TVMHeader);
 
@@ -343,24 +346,29 @@ int BinaryWriter::writeHeader()
 
     mapInstructions();
     m_sizeOfCode = calculateInstructionSize();
-    offset += sizeof(TVMSection);
-    offset += m_sizeOfCode;
-    offset += getAlignment(m_sizeOfCode);
+    if (m_sizeOfCode !=0)
+    {
+        offset += sizeof(TVMSection);
+        offset += m_sizeOfCode;
+        offset += getAlignment(m_sizeOfCode);
+    }
 
-    m_header.dat = (uint32_t)offset;
-    offset += sizeof(TVMSection);
-    offset += m_sizeOfData;
-    offset += getAlignment(m_sizeOfData);
-
-
-    // store references to modules
-    m_header.sym = offset;
-    offset += sizeof(TVMSection);
-    offset += m_sizeOfSym;
-    offset += getAlignment(m_sizeOfSym);
+    if (m_sizeOfData !=0)
+    {
+        m_header.dat = (uint32_t)offset;
+        offset += sizeof(TVMSection);
+        offset += m_sizeOfData;
+        offset += getAlignment(m_sizeOfData);
+    }
+    if (m_sizeOfSym != 0)
+    {
+        m_header.sym = offset;
+        offset += sizeof(TVMSection);
+        offset += m_sizeOfSym;
+        offset += getAlignment(m_sizeOfSym);
+    }
 
     m_header.str = offset;
-
     write(&m_header, sizeof(TVMHeader));
     return PS_OK;
 }
@@ -370,7 +378,6 @@ size_t BinaryWriter::writeDataSection(void)
 {
     TVMSection sec = {};
     sec.size       = (uint32_t)m_sizeOfData;
-    sec.code       = TYPE_ID2('D', 'S');
     sec.entry      = m_header.dat;
     sec.align      = 0;
     write(&sec, sizeof(TVMSection));
@@ -381,7 +388,6 @@ size_t BinaryWriter::writeCodeSection(void)
 {
     TVMSection sec = {};
     sec.size       = (uint32_t)m_sizeOfCode;
-    sec.code       = TYPE_ID2('C', 'S');
     sec.start      = m_header.txt;
     sec.entry      = findLabel("main");
     sec.align      = (uint32_t)getAlignment(m_sizeOfCode);
@@ -425,7 +431,6 @@ size_t BinaryWriter::writeSymbolSection(void)
 {
     TVMSection sec = {};
     sec.size       = (uint32_t)m_sizeOfSym;
-    sec.code       = TYPE_ID2('S', 'Y');
     sec.entry      = m_header.sym;
     sec.align      = getAlignment(m_sizeOfSym);
 
@@ -440,7 +445,6 @@ size_t BinaryWriter::writeStringSection(void)
 {
     TVMSection sec = {};
     sec.size       = (uint32_t)m_sizeOfStr;
-    sec.code       = TYPE_ID2('S', 'T');
     sec.entry      = m_header.str;
     sec.align      = getAlignment(m_sizeOfStr);
     write(&sec, sizeof(TVMSection));
@@ -466,21 +470,33 @@ int BinaryWriter::writeSections()
         return PS_ERROR;
 
     size_t size;
-    size = writeCodeSection();
-    if (size != m_sizeOfCode)
-        return PS_ERROR;
+    if (m_sizeOfCode !=0)
+    {
+        size = writeCodeSection();
+        if (size != m_sizeOfCode)
+            return PS_ERROR;
+    }
 
-    size = writeDataSection();
-    if (size != m_sizeOfData)
-        return PS_ERROR;
+    if (m_sizeOfData !=0)
+    {
+        size = writeDataSection();
+        if (size != m_sizeOfData)
+            return PS_ERROR;
+    }
 
-    size = writeSymbolSection();
-    if (size != m_sizeOfSym)
-        return PS_ERROR;
+    if (m_sizeOfSym != 0)
+    {
+        size = writeSymbolSection();
+        if (size != m_sizeOfSym)
+            return PS_ERROR;
+    }
 
-    size = writeStringSection();
-    if (size != m_sizeOfStr)
-        return PS_ERROR;
-
+    if (m_sizeOfStr != 0)
+    {
+        size = writeStringSection();
+        if (size != m_sizeOfStr)
+            return PS_ERROR;
+    }
+ 
     return PS_OK;
 }

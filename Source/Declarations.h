@@ -28,9 +28,6 @@
 
 #define INS_ARG 3
 #define MAX_KWD 5
-#define TYPE_ID2(a, b) ((b) << 8 | (a))
-
-
 
 typedef std::string        str_t;
 typedef std::vector<str_t> strvec_t;
@@ -189,23 +186,22 @@ enum InstructionFlags
 
 struct TVMHeader
 {
-    uint16_t code;  // 2
-    uint8_t  flags; // 1
-    uint8_t  txt;   // 1  4
-    uint32_t dat;   // 4  8
-    uint64_t str;   // 8  16
-    uint64_t sym;   // 8  24
-    uint64_t pad;   // 8 32
+    uint8_t  code[2];  // 2
+    uint8_t  flags;    // 1
+    uint8_t  txt;      // 1  4
+    uint32_t dat;      // 4  8
+    uint64_t str;      // 8  16
+    uint64_t sym;      // 8  24
+    uint64_t pad;      // 8  32
 };
 
 struct TVMSection
 {
-    uint16_t code;
-    uint16_t flags;
-    uint64_t entry;
-    uint32_t align;
-    uint32_t size;
-    uint32_t start;
+    uint16_t flags; // 2
+    uint16_t entry; // 2 4
+    uint32_t align; // 4 8
+    uint32_t size;  // 4 12
+    uint32_t start; // 4 16
 };
 
 struct Instruction
