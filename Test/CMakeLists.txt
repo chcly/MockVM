@@ -10,8 +10,8 @@ macro(add_compile_tests OUT Group)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
 
-        set(GEN_FILE     ${CMAKE_BINARY_DIR}/${Group}/${GENNAME})
-        set(GEN_FILE_ANS ${CMAKE_BINARY_DIR}/${Group}/${GENNAME}.ans)
+        set(GEN_FILE     ${CMAKE_BINARY_DIR}/${GENNAME})
+        set(GEN_FILE_ANS ${CMAKE_BINARY_DIR}/${GENNAME}.ans)
         set(GEN_FILE_EXP ${CMAKE_CURRENT_SOURCE_DIR}/${Group}/${GENNAME}.ans)
 
         list(APPEND ${OUT} ${GEN_FILE})
@@ -48,7 +48,7 @@ macro(add_temp_test OUT Group)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
 
-        set(GEN_FILE ${CMAKE_BINARY_DIR}/${Group}/${GENNAME})
+        set(GEN_FILE ${CMAKE_CURRENT_BINARY_DIR}/${GENNAME})
 
         list(APPEND ${OUT} ${GEN_FILE})
         list(APPEND ${OUT} ${ASMFILE})
