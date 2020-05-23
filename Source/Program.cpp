@@ -44,19 +44,8 @@ uint8_t restrict8(const uint8_t& inp,
     return inp > ma ? ma : inp < mi ? mi : inp;
 }
 
-bool isRegister(const ExecInstruction& exec, size_t idx)
-{
-    switch (idx)
-    {
-    case 0:
-        return (exec.flags & IF_REG0) != 0;
-    case 1:
-        return (exec.flags & IF_REG1) != 0;
-    case 2:
-        return (exec.flags & IF_REG2) != 0;
-    }
-    return false;
-}
+bool isRegister(const ExecInstruction& exec, size_t idx);
+bool testInstruction(const ExecInstruction& exec);
 
 
 Program::Program() :
@@ -198,23 +187,12 @@ int Program::loadCode(BlockReader& reader)
                         return PS_ERROR;
                     }
                 }
-
-                if (isRegister(exec, a))
-                {
-                    // check to see if the register is still valid.
-                    if (!(sizes & SizeFlags[a][0]))
-                    {
-                        printf("error instruction size mismatch\n");
-                        return PS_ERROR;
-                    }
-                    else if (exec.argv[a] > 9)
-                    {
-                        printf("error instruction size mismatch\n");
-                        return PS_ERROR;
-                    }
-                }
             }
-            m_ins.push_back(exec);
+
+            if (testInstruction(exec))
+                m_ins.push_back(exec);
+            else
+                return PS_ERROR;
         }
         else
         {
@@ -656,3 +634,139 @@ const Program::Operation Program::OPCodeTable[] = {
     &Program::handle_OP_PRG,
     &Program::handle_OP_PRGI,
 };
+
+
+
+bool isRegister(const ExecInstruction& exec, size_t idx)
+{
+    switch (idx)
+    {
+    case 0:
+        return (exec.flags & IF_REG0) != 0;
+    case 1:
+        return (exec.flags & IF_REG1) != 0;
+    case 2:
+        return (exec.flags & IF_REG2) != 0;
+    }
+    return false;
+}
+
+bool testInstruction(const ExecInstruction& exec)
+{
+    bool pass = exec.op > 0 && exec.op < OP_MAX;
+    if (!pass)
+    {
+        printf("invalid instruction\n");
+        return false;
+    }
+
+    switch (exec.op)
+    {
+    case OP_PRI:
+    case OP_RET:
+        pass = exec.argc == 0;
+        break;
+    case OP_GTO:
+    case OP_INC:
+    case OP_DEC:
+    case OP_PRG:
+    case OP_JMP:
+    case OP_JGE:
+    case OP_JLE:
+    case OP_JGT:
+    case OP_JLT:
+    case OP_JEQ:
+    case OP_JNE:
+        pass = exec.argc == 1;
+        break;
+    case OP_MOV:
+    case OP_CMP:
+        pass = exec.argc == 2;
+        break;
+    case OP_ADD:
+    case OP_SUB:
+    case OP_MUL:
+    case OP_DIV:
+    case OP_SHR:
+    case OP_SHL:
+        pass = exec.argc == 2 || exec.argc == 3;
+        break;
+    default:
+        pass = false;
+        break;
+    }
+
+    if (!pass)
+    {
+        printf("invalid argument count\n");
+        return false;
+    }
+
+
+    switch (exec.op)
+    {
+    case OP_RET:
+    case OP_PRI:
+        break;
+    case OP_JGE:
+    case OP_JLE:
+    case OP_JGT:
+    case OP_JLT:
+    case OP_JEQ:
+    case OP_JNE:
+    case OP_JMP:
+        pass = (exec.flags & IF_ADDR) != 0;
+        break;
+    case OP_GTO:
+        pass = (exec.flags & IF_ADDR|IF_SYMA) != 0;
+        break;
+    case OP_PRG:
+        if (exec.flags & IF_REG0)
+            pass = exec.argv[0] < 10;
+        break;
+    case OP_DEC:
+    case OP_INC:
+        pass = (exec.flags & IF_REG0) != 0;
+        if (pass)
+            pass = exec.argv[0] < 10;
+        break;
+    case OP_CMP:
+        if (exec.flags & IF_REG0)
+            pass = exec.argv[0] < 10;
+        if (exec.flags & IF_REG1)
+            pass = exec.argv[1] < 10;
+        break;
+    case OP_MOV:
+    case OP_ADD:
+    case OP_SUB:
+    case OP_MUL:
+    case OP_DIV:
+    case OP_SHR:
+    case OP_SHL:
+        pass = (exec.flags & IF_REG0) != 0;
+        if (pass)
+        {
+            pass = exec.argv[0] < 10;
+            if (pass)
+            {
+                if (exec.flags & IF_REG1)
+                    pass = exec.argv[1] < 10;
+            }
+            if (pass)
+            {
+                if (exec.flags & IF_REG2)
+                    pass = exec.argv[2] < 10;
+            }
+        }
+        break;
+    default:
+        pass = false;
+        break;
+    }
+    if (!pass)
+    {
+        printf("invalid instruction\n");
+        return false;
+    }
+    return true;
+}
