@@ -664,7 +664,7 @@ inline bool isDigit(uint8_t ch)
 
 inline bool isNumber(uint8_t ch)
 {
-    return ch >= '0' && ch <= '9';
+    return ch >= '0' && ch <= '9' || ch == '-';
 }
 
 inline bool isEncodedNumber(uint8_t ch)

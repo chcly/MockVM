@@ -91,6 +91,7 @@ set(TestFiles_1
 set(TestFiles_2
     Exec/Add1.asm
     Exec/Add2.asm
+    Exec/Add3.asm
     Exec/Sub1.asm
     Exec/Sub2.asm
     Exec/Mul1.asm
@@ -100,11 +101,11 @@ set(TestFiles_2
 
 #set(TestFiles_3
 #)
+#add_temp_test(OutFiles_3 Exec ${TestFiles_3})
 
 add_compile_tests(OutFiles_1 Basic ${TestFiles_1})
 add_compile_tests(OutFiles_2 Exec  ${TestFiles_2})
 
-#add_temp_test(OutFiles_3 Exec ${TestFiles_3})
 
 set(SRC_ALL
     Catch2.h
