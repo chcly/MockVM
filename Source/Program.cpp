@@ -21,13 +21,12 @@
 */
 #include "Program.h"
 #include <stdint.h>
+#include <string.h>
 #include <functional>
 #include <iomanip>
 #include <iostream>
 #include <stack>
 #include <vector>
-#include <string.h>
-
 #include "BlockReader.h"
 #include "Declarations.h"
 #include "SymbolUtils.h"
@@ -35,7 +34,6 @@
 using namespace std;
 
 SYM_EXPORT SymbolMapping* std_init();
-
 
 uint8_t restrict8(const uint8_t& inp,
                   const uint8_t& mi,
@@ -46,7 +44,6 @@ uint8_t restrict8(const uint8_t& inp,
 
 bool isRegister(const ExecInstruction& exec, size_t idx);
 bool testInstruction(const ExecInstruction& exec);
-
 
 Program::Program() :
     m_flags(0),
@@ -91,7 +88,6 @@ int Program::load(const char* fname)
     return PS_OK;
 }
 
-
 int Program::loadStringTable(BlockReader& reader)
 {
     reader.moveTo(m_header.str);
@@ -101,9 +97,9 @@ int Program::loadStringTable(BlockReader& reader)
     if (strTab.size <= 0)
         return PS_OK;
 
-    str_t str;
+    str_t    str;
     uint32_t i;
-    size_t   tot =0;
+    size_t   tot = 0;
     for (i = 0; i < strTab.size && !reader.eof(); ++i)
     {
         char ch = reader.next();
@@ -141,65 +137,56 @@ int Program::loadCode(BlockReader& reader)
     uint8_t  v8;
     uint16_t v16;
     uint32_t v32;
-    int    a;
-    size_t i = 0;
-
+    int      a;
+    size_t   i = 0;
 
     while (i < code.size && !reader.eof())
     {
         i += reader.read(ops, 3);
         i += reader.read(&sizes, 2);
 
-        if (ops[0] >= 0 && ops[0] < OP_MAX)
+        ExecInstruction exec = {};
+
+        exec.op    = ops[0];
+        exec.argc  = ops[1];
+        exec.flags = restrict8(ops[2], 0, IF_MAXF);
+
+        for (a = 0; a < exec.argc && a < INS_ARG; ++a)
         {
-            ExecInstruction exec = {};
-            exec.op    = ops[0];
-            exec.argc  = restrict8(ops[1], 0, INS_ARG);
-            exec.flags = restrict8(ops[2], 0, IF_MAXF);
-
-            for (a = 0; a < exec.argc; ++a)
+            if (sizes & SizeFlags[a][0])
             {
-                if (sizes & SizeFlags[a][0])
-                {
-                    i += reader.read(&v8, 1);
-                    exec.argv[a] = (uint64_t)v8;
-                }
-                else if (sizes & SizeFlags[a][1])
-                {
-                    i += reader.read(&v16, 2);
-                    exec.argv[a] = (uint64_t)v16;
-                }
-                else if (sizes & SizeFlags[a][2])
-                {
-                    i += reader.read(&v32, 4);
-                    exec.argv[a] = (uint64_t)v32;
-                }
-                else
-                {
-                    i += reader.read(&exec.argv[a], 8);
-                }
-
-                if (exec.flags & IF_SYMA)
-                {
-                    if (findStatic(exec) != PS_OK)
-                    {
-                        printf("failed to find symbol\n");
-                        return PS_ERROR;
-                    }
-                }
+                i += reader.read(&v8, 1);
+                exec.argv[a] = (uint64_t)v8;
+            }
+            else if (sizes & SizeFlags[a][1])
+            {
+                i += reader.read(&v16, 2);
+                exec.argv[a] = (uint64_t)v16;
+            }
+            else if (sizes & SizeFlags[a][2])
+            {
+                i += reader.read(&v32, 4);
+                exec.argv[a] = (uint64_t)v32;
+            }
+            else
+            {
+                i += reader.read(&exec.argv[a], 8);
             }
 
-            if (testInstruction(exec))
-                m_ins.push_back(exec);
-            else
-                return PS_ERROR;
+            if (exec.flags & IF_SYMA)
+            {
+                if (findStatic(exec) != PS_OK)
+                {
+                    printf("failed to find symbol\n");
+                    return PS_ERROR;
+                }
+            }
         }
+
+        if (testInstruction(exec))
+            m_ins.push_back(exec);
         else
-        {
-            // assert that the code falls in a valid range.
-            printf("error invalid opcode %i\n", ops[0]);
             return PS_ERROR;
-        }
     }
 
     // assert the calculated size with the reported size
@@ -215,7 +202,6 @@ int Program::loadCode(BlockReader& reader)
 
     return PS_OK;
 }
-
 
 int Program::findStatic(ExecInstruction& ins)
 {
@@ -237,7 +223,7 @@ int Program::findStatic(ExecInstruction& ins)
 int Program::launch(void)
 {
     if (m_ins.empty())
-        return PS_OK; 
+        return PS_OK;
 
     size_t tinst = m_ins.size();
 
@@ -322,7 +308,7 @@ void Program::handle_OP_CMP(const ExecInstruction& inst)
     if (inst.flags & IF_REG1)
         b = m_regi[b].x;
 
-    m_flags = 0;
+    m_flags   = 0;
     int64_t r = (int64_t)a - (int64_t)b;
     if (r == 0)
         m_flags |= PF_E;
@@ -348,7 +334,7 @@ void Program::handle_OP_JEQ(const ExecInstruction& inst)
 
 void Program::handle_OP_JNE(const ExecInstruction& inst)
 {
-    if ((m_flags & PF_E)==0)
+    if ((m_flags & PF_E) == 0)
     {
         m_flags &= ~PF_E;
         m_curinst = inst.argv[0];
@@ -512,7 +498,7 @@ void Program::handle_OP_DIV(const ExecInstruction& inst)
             }
             else
             {
-                if (inst.argv[1] !=0)
+                if (inst.argv[1] != 0)
                     m_regi[x0].x /= inst.argv[1];
                 else
                 {
@@ -577,7 +563,6 @@ void Program::handle_OP_SHL(const ExecInstruction& inst)
     }
 }
 
-
 void Program::handle_OP_PRG(const ExecInstruction& inst)
 {
     if (inst.flags & IF_REG0)
@@ -635,8 +620,6 @@ const Program::Operation Program::OPCodeTable[] = {
     &Program::handle_OP_PRGI,
 };
 
-
-
 bool isRegister(const ExecInstruction& exec, size_t idx)
 {
     switch (idx)
@@ -656,7 +639,7 @@ bool testInstruction(const ExecInstruction& exec)
     bool pass = exec.op > 0 && exec.op < OP_MAX;
     if (!pass)
     {
-        printf("invalid instruction\n");
+        printf("instruction boundary exceeded\n");
         return false;
     }
 
@@ -702,7 +685,6 @@ bool testInstruction(const ExecInstruction& exec)
         return false;
     }
 
-
     switch (exec.op)
     {
     case OP_RET:
@@ -718,7 +700,7 @@ bool testInstruction(const ExecInstruction& exec)
         pass = (exec.flags & IF_ADDR) != 0;
         break;
     case OP_GTO:
-        pass = (exec.flags & IF_ADDR|IF_SYMA) != 0;
+        pass = (exec.flags & IF_ADDR | IF_SYMA) != 0;
         break;
     case OP_PRG:
         if (exec.flags & IF_REG0)
