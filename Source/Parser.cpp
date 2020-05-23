@@ -454,7 +454,18 @@ int32_t Parser::handleArgument(Instruction&      ins,
             return PS_ERROR;
         }
         ins.argv[idx] = tok.reg;
-        ins.flags |= idx <= 0 ? (int)IF_DREG : (int)IF_SREG;
+        switch (idx)
+        {
+        case 0:
+            ins.flags |= IF_REG0;
+            break;
+        case 1:
+            ins.flags |= IF_REG1;
+            break;
+        case 2:
+            ins.flags |= IF_REG2;
+            break;
+        }
     }
     else if (kwd.argv[idx] == AT_SVAL)
     {
@@ -464,19 +475,28 @@ int32_t Parser::handleArgument(Instruction&      ins,
             return PS_ERROR;
         }
         ins.argv[idx] = tok.ival.x;
-        ins.flags |= idx <= 0 ? (int)IF_DLIT : (int)IF_SLIT;
     }
     else if (kwd.argv[idx] == AT_RVAL)
     {
         if (tok.type == TOK_DIGIT)
         {
             ins.argv[idx] = tok.ival.x;
-            ins.flags |= idx <= 0 ? (int)IF_DLIT : (int)IF_SLIT;
         }
         else if (tok.type == TOK_REGISTER)
         {
             ins.argv[idx] = tok.reg;
-            ins.flags |= idx <= 0 ? (int)IF_DREG : (int)IF_SREG;
+            switch (idx)
+            {
+            case 0:
+                ins.flags |= IF_REG0;
+                break;
+            case 1:
+                ins.flags |= IF_REG1;
+                break;
+            case 2:
+                ins.flags |= IF_REG2;
+                break;
+            }
         }
         else
         {

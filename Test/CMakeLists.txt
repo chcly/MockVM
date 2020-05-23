@@ -91,6 +91,7 @@ set(TestFiles_1
 
 set(TestFiles_2
     Exec/Add1.asm
+    Exec/Add2.asm
 )
 
 add_compile_tests(OutFiles_1 Basic ${TestFiles_1})

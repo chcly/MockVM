@@ -174,14 +174,13 @@ enum SectionCodes
 
 enum InstructionFlags
 {
-    IF_DREG = (1 << 0),
-    IF_DLIT = (1 << 1),
-    IF_SREG = (1 << 2),
-    IF_SLIT = (1 << 3),
-    IF_ADDR = (1 << 4),
-    IF_SYMA = (1 << 5),
-    IF_SYMU = (1 << 6),
-    IF_MAXF = IF_DREG | IF_DLIT | IF_SREG | IF_SLIT | IF_ADDR | IF_SYMA | IF_SYMU  // 127
+    IF_REG0 = 0x01,
+    IF_REG1 = 0x02,
+    IF_REG2 = 0x04,
+    IF_ADDR = 0x08,
+    IF_SYMA = 0x10,
+    IF_SYMU = 0x20,
+    IF_MAXF = 0x40,
 };
 
 struct TVMHeader

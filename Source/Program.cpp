@@ -44,11 +44,19 @@ uint8_t restrict8(const uint8_t& inp,
     return inp > ma ? ma : inp < mi ? mi : inp;
 }
 
-inline bool isRegister(const ExecInstruction& exec, size_t idx)
+bool isRegister(const ExecInstruction& exec, size_t idx)
 {
-    return idx <= 0 ? (exec.flags & IF_DREG) != 0 : (exec.flags & IF_SREG) != 0;
+    switch (idx)
+    {
+    case 0:
+        return (exec.flags & IF_REG0) != 0;
+    case 1:
+        return (exec.flags & IF_REG1) != 0;
+    case 2:
+        return (exec.flags & IF_REG2) != 0;
+    }
+    return false;
 }
-
 
 
 Program::Program() :
@@ -276,9 +284,9 @@ void Program::handle_OP_RET(const ExecInstruction& inst)
 
 void Program::handle_OP_MOV(const ExecInstruction& inst)
 {
-    if (inst.argv[0] <= 9)
+    if (inst.flags & IF_REG0)
     {
-        if (inst.flags & IF_SREG)
+        if (inst.flags & IF_REG1)
             m_regi[inst.argv[0]].x = m_regi[inst.argv[1]].x;
         else
             m_regi[inst.argv[0]].x = inst.argv[1];
@@ -303,13 +311,13 @@ void Program::handle_OP_CALL(const ExecInstruction& inst)
 
 void Program::handle_OP_INC(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
         m_regi[inst.argv[0]].x += 1;
 }
 
 void Program::handle_OP_DEC(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
         m_regi[inst.argv[0]].x -= 1;
 }
 
@@ -317,9 +325,9 @@ void Program::handle_OP_CMP(const ExecInstruction& inst)
 {
     uint64_t a = inst.argv[0];
     uint64_t b = inst.argv[1];
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
         a = m_regi[a].x;
-    if (inst.flags & IF_SREG)
+    if (inst.flags & IF_REG1)
         b = m_regi[b].x;
 
     m_flags = 0;
@@ -403,23 +411,24 @@ void Program::handle_OP_JGT(const ExecInstruction& inst)
 
 void Program::handle_OP_ADD(const ExecInstruction& inst)
 {
-    const uint64_t& x0 = inst.argv[0];
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
     {
+        const uint64_t& x0 = inst.argv[0];
+
         if (inst.argc > 2)
         {
             // A, B, C -> A = B + C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
             m_regi[x0].x = b + c;
         }
         else
         {
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 m_regi[x0].x += m_regi[inst.argv[1]].x;
             else
                 m_regi[x0].x += inst.argv[1];
@@ -429,23 +438,23 @@ void Program::handle_OP_ADD(const ExecInstruction& inst)
 
 void Program::handle_OP_SUB(const ExecInstruction& inst)
 {
-    const uint64_t& x0 = inst.argv[0];
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
     {
+        const uint64_t& x0 = inst.argv[0];
         if (inst.argc > 2)
         {
             // A, B, C -> A = B - C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
             m_regi[x0].x = b - c;
         }
         else
         {
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 m_regi[x0].x -= m_regi[inst.argv[1]].x;
             else
                 m_regi[x0].x -= inst.argv[1];
@@ -455,23 +464,23 @@ void Program::handle_OP_SUB(const ExecInstruction& inst)
 
 void Program::handle_OP_MUL(const ExecInstruction& inst)
 {
-    const uint64_t& x0 = inst.argv[0];
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
     {
+        const uint64_t& x0 = inst.argv[0];
         if (inst.argc > 2)
         {
             // A, B, C -> A = B * C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
             m_regi[x0].x = b * c;
         }
         else
         {
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 m_regi[x0].x *= m_regi[inst.argv[1]].x;
             else
                 m_regi[x0].x *= inst.argv[1];
@@ -481,24 +490,25 @@ void Program::handle_OP_MUL(const ExecInstruction& inst)
 
 void Program::handle_OP_DIV(const ExecInstruction& inst)
 {
-    const uint64_t& x0 = inst.argv[0];
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
     {
+        const uint64_t& x0 = inst.argv[0];
+
         if (inst.argc > 2)
         {
             // A, B, C -> A = B / C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
             if (c != 0)
                 m_regi[x0].x = b / c;
         }
         else
         {
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
             {
                 if (m_regi[inst.argv[1]].x != 0)
                     m_regi[x0].x /= m_regi[inst.argv[1]].x;
@@ -524,23 +534,24 @@ void Program::handle_OP_DIV(const ExecInstruction& inst)
 
 void Program::handle_OP_SHR(const ExecInstruction& inst)
 {
-    const uint64_t& x0 = inst.argv[0];
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
     {
+        const uint64_t& x0 = inst.argv[0];
+
         if (inst.argc > 2)
         {
             // A, B, C -> A = B >> C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
             m_regi[x0].x = b >> c;
         }
         else
         {
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 m_regi[x0].x >>= m_regi[inst.argv[1]].x;
             else
                 m_regi[x0].x >>= inst.argv[1];
@@ -550,23 +561,23 @@ void Program::handle_OP_SHR(const ExecInstruction& inst)
 
 void Program::handle_OP_SHL(const ExecInstruction& inst)
 {
-    const uint64_t& x0 = inst.argv[0];
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
     {
+        const uint64_t& x0 = inst.argv[0];
         if (inst.argc > 2)
         {
             // A, B, C -> A = B >> C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
             m_regi[x0].x = b << c;
         }
         else
         {
-            if (inst.flags & IF_SREG)
+            if (inst.flags & IF_REG1)
                 m_regi[x0].x <<= m_regi[inst.argv[1]].x;
             else
                 m_regi[x0].x <<= inst.argv[1];
@@ -577,7 +588,7 @@ void Program::handle_OP_SHL(const ExecInstruction& inst)
 
 void Program::handle_OP_PRG(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_DREG)
+    if (inst.flags & IF_REG0)
         cout << (int64_t)m_regi[inst.argv[0]].x << '\n';
     else
         cout << (int64_t)inst.argv[0] << '\n';
