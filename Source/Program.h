@@ -58,7 +58,7 @@ private:
     const static OpCodes OPCodeTable;
     const static size_t  OPCodeTableSize;
 
-    void findStatic(ExecInstruction& ins);
+    int findStatic(ExecInstruction& ins);
 
 
 

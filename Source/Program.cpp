@@ -88,6 +88,12 @@ int Program::load(const char* fname)
         return PS_ERROR;
     }
 
+    if (m_header.code[0] != 'T' || m_header.code[1] != 'V')
+    {
+        printf("Invalid file type\n");
+        return PS_ERROR;
+    }
+
     if (loadCode(reader) != PS_OK)
     {
         printf("failed to read the text section\n");
@@ -185,7 +191,13 @@ int Program::loadCode(BlockReader& reader)
                 }
 
                 if (exec.flags & IF_SYMA)
-                    findStatic(exec);
+                {
+                    if (findStatic(exec) != PS_OK)
+                    {
+                        printf("failed to find symbol\n");
+                        return PS_ERROR;
+                    }
+                }
 
                 if (isRegister(exec, a))
                 {
@@ -227,7 +239,7 @@ int Program::loadCode(BlockReader& reader)
 }
 
 
-void Program::findStatic(ExecInstruction& ins)
+int Program::findStatic(ExecInstruction& ins)
 {
     int i = 0;
     while (m_stdLib[i].name != 0 && ins.call == nullptr)
@@ -240,6 +252,8 @@ void Program::findStatic(ExecInstruction& ins)
         }
         ++i;
     }
+
+    return ins.call != nullptr ? PS_OK : PS_ERROR;
 }
 
 int Program::launch(void)
