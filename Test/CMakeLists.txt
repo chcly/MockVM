@@ -1,6 +1,7 @@
 
 
-macro(add_compile_tests OUT)
+macro(add_compile_tests OUT Group)
+    
     # Tests to make sure that everything 
     # compiles and executes
 
@@ -8,16 +9,18 @@ macro(add_compile_tests OUT)
         get_filename_component(ASMFILE ${it}      ABSOLUTE)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
-        
+
         set(GEN_FILE     ${CMAKE_BINARY_DIR}/${GENNAME})
         set(GEN_FILE_ANS ${CMAKE_BINARY_DIR}/${GENNAME}.ans)
         set(GEN_FILE_EXP ${CMAKE_CURRENT_SOURCE_DIR}/${GENNAME}.ans)
 
         list(APPEND ${OUT} ${GEN_FILE})
         list(APPEND ${OUT} ${ASMFILE})
+        list(APPEND ${OUT} ${GEN_FILE_EXP})
 
-        source_group("Assembly" FILES ${ASMFILE})
-        source_group("Generated" FILES ${GEN_FILE})
+        source_group("Assembly\\${Group}"  FILES ${ASMFILE})
+        source_group("Generated\\${Group}" FILES ${GEN_FILE})
+        source_group("Expected\\${Group}"  FILES ${GEN_FILE_EXP})
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
@@ -32,35 +35,74 @@ macro(add_compile_tests OUT)
 
     endforeach(it)
 
-
 endmacro(add_compile_tests)
 
 
-set(TestFiles
-    CRLF.asm
-    CR.asm
-    LF.asm
-    Keywords.asm
-    Comment.asm
-    ParseArg.asm
-    ForLoop.asm
-    PrintRegister.asm
-    IfElse.asm
-    Factorial.asm
-    Compact.asm
-    Label.asm
-    TestPutChar.asm
+macro(add_temp_test OUT Group)
+    
+    # Tests to make sure that everything 
+    # compiles and executes
+
+    foreach (it ${ARGN})
+        get_filename_component(ASMFILE ${it}      ABSOLUTE)
+        get_filename_component(GENNAME ${ASMFILE} NAME_WE)
+        get_filename_component(ASMNAME ${it}      NAME)
+
+        set(GEN_FILE ${CMAKE_BINARY_DIR}/${GENNAME})
+
+        list(APPEND ${OUT} ${GEN_FILE})
+        list(APPEND ${OUT} ${ASMFILE})
+
+        source_group("Assembly\\${Group}"  FILES ${ASMFILE})
+        source_group("Generated\\${Group}" FILES ${GEN_FILE})
+
+        add_custom_command(
+            OUTPUT ${GEN_FILE}
+            COMMAND tcom -o ${GEN_FILE} ${ASMFILE}
+            COMMAND tvm ${GEN_FILE} -t
+            MAIN_DEPENDENCY ${ASMFILE}
+            DEPENDS tcom tvm
+            COMMENT "${ASMNAME}"
+        )
+    endforeach(it)
+
+endmacro(add_temp_test)
+
+
+
+
+
+set(TestFiles_1
+    Basic/CRLF.asm
+    Basic/CR.asm
+    Basic/LF.asm
+    Basic/Keywords.asm
+    Basic/Comment.asm
+    Basic/ParseArg.asm
+    Basic/ForLoop.asm
+    Basic/PrintRegister.asm
+    Basic/IfElse.asm
+    Basic/Factorial.asm
+    Basic/Compact.asm
+    Basic/Label.asm
+    Basic/TestPutChar.asm
 )
 
-add_compile_tests(OutFiles ${TestFiles})
 
+set(TestFiles_2
+    Basic/TestPutChar.asm
+)
+
+add_compile_tests(OutFiles_1 Basic ${TestFiles_1})
+add_temp_test(OutFiles_2 Temp ${TestFiles_2})
 
 set(SRC_ALL
     Catch2.h
     catch/catch.hpp
     Main.cpp
     BlockReader.cpp
-    ${OutFiles}
+    ${OutFiles_1}
+    ${OutFiles_2}
     ${ToyVM_BINARY_DIR}/TestConfig.h
 )
 

@@ -348,7 +348,7 @@ void Program::handle_OP_JEQ(const ExecInstruction& inst)
 
 void Program::handle_OP_JNE(const ExecInstruction& inst)
 {
-    if (!(m_flags & PF_E))
+    if ((m_flags & PF_E)==0)
     {
         m_flags &= ~PF_E;
         m_curinst = inst.argv[0];
