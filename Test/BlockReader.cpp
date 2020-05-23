@@ -22,7 +22,7 @@
 #include "Catch2.h"
 #include "BlockReader.h"
 
-const std::string KeywordsFile = std::string(TestDirectory) + "/Keywords.asm";
+const std::string KeywordsFile = std::string(TestDirectory) + "/Basic/Keywords.asm";
 
 TEST_CASE("BlockReader1")
 {
