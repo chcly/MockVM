@@ -48,7 +48,8 @@ Parser::Parser() :
     m_lineNo(1),
     m_labels(),
     m_instructions(),
-    m_fname()
+    m_fname(),
+    m_disableErrorFormat(false)
 {
 }
 
@@ -279,7 +280,7 @@ int32_t Parser::handleDigitState(Token& tok)
         bool convert = ch == '0';
         bool b2 = false, b16 = false;
 
-        while (isEncodedNumber(ch) && !m_reader.eof())
+        while (isEncodedNumber(ch))
         {
             if (b2 && ch != '1' && ch != '0' && ch != 'b')
             {
@@ -298,7 +299,6 @@ int32_t Parser::handleDigitState(Token& tok)
                     b2 = true;
             }
         }
-
         if (!b16 && !b2)
             convert = false;
 
@@ -450,7 +450,8 @@ int32_t Parser::handleArgument(Instruction&      ins,
     {
         if (tok.type != TOK_REGISTER)
         {
-            error("expected operand %i for %s, to be a register\n", idx, kwd.word);
+            error("expected operand %i for %s, to be a register\n", idx + 1, kwd.word);
+            error("found type %i\n", tok.type);
             return PS_ERROR;
         }
         ins.argv[idx] = tok.reg;
@@ -471,7 +472,8 @@ int32_t Parser::handleArgument(Instruction&      ins,
     {
         if (tok.type != TOK_DIGIT)
         {
-            error("expected operand %i for %s, to be a value\n", idx, kwd.word);
+            error("expected operand %i for %s, to be a value\n", idx + 1, kwd.word);
+            error("found type %i\n", tok.type);
             return PS_ERROR;
         }
         ins.argv[idx] = tok.ival.x;
@@ -500,7 +502,8 @@ int32_t Parser::handleArgument(Instruction&      ins,
         }
         else
         {
-            error("expected operand %i for %s, to be a register or a value\n",  idx, kwd.word);
+            error("expected operand %i for %s, to be a register or a value\n", idx + 1, kwd.word);
+            error("found type %i\n", tok.type);
             return PS_ERROR;
         }
     }
@@ -514,6 +517,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
     else
     {
         error("unknown operand type for %s\n", kwd.word);
+        error("found type %i\n", tok.type);
         return PS_ERROR;
     }
 
@@ -561,6 +565,13 @@ int32_t Parser::handleOpCode(const Token& tok)
                     }
                 }
             }
+        }
+
+
+        if (lastTok.hasComma)
+        {
+            error("too many arguments supplied to %s\n", kwd.word);
+            return PS_ERROR;
         }
 
         m_instructions.push_back(ins);
@@ -684,7 +695,7 @@ inline bool isNewLine(uint8_t ch)
 
 inline bool isTerminator(uint8_t ch)
 {
-    return isWhiteSpace(ch) || ch == ',' || isNewLine(ch);
+    return isWhiteSpace(ch) || ch == ',' || isNewLine(ch) || ch == 0;
 }
 
 void Parser::error(const char* fmt, ...)
@@ -709,11 +720,22 @@ void Parser::error(const char* fmt, ...)
                 s2 = std::vsnprintf(buffer, (size_t)s1 + 1, fmt, l1);
                 va_end(l1);
                 
-                fprintf(stdout, 
-                    "%s(%i): error : %s", 
-                    m_fname.c_str(), 
-                    m_lineNo, buffer);
-                
+                if (!m_disableErrorFormat)
+                {
+                    fprintf(stdout,
+                            "%s(%i): error : %s",
+                            m_fname.c_str(),
+                            m_lineNo,
+                            buffer);
+                }
+                else
+                {
+                    fprintf(stdout,
+                            "(%i): error : %s",
+                            m_lineNo,
+                            buffer);
+                }
+
                 free(buffer);
             }
         }

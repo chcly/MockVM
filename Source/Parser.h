@@ -46,6 +46,7 @@ private:
     LabelMap     m_labels;
     Instructions m_instructions;
     std::string  m_fname;
+    bool         m_disableErrorFormat;
 
 public:
     Parser();
@@ -61,6 +62,11 @@ public:
     inline const LabelMap& getLabels(void)
     {
         return m_labels;
+    }
+
+    inline void disableErrorFormat(bool v)
+    {
+        m_disableErrorFormat = v;
     }
 
 private:

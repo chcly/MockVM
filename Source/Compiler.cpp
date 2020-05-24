@@ -38,6 +38,7 @@ struct ProgramInfo
     string   output;
     strvec_t files;
     strvec_t modules;
+    bool     disableErrorFmt;
 };
 
 void usage(void);
@@ -71,6 +72,9 @@ int main(int argc, char **argv)
                 if (i + 1 < argc)
                     ctx.modules.push_back((argv[++i]));
                 break;
+            case 'd':
+                ctx.disableErrorFmt = true;
+                break;
             default:
                 break;
             }
@@ -87,14 +91,14 @@ int main(int argc, char **argv)
     }
 
     BinaryWriter w;
-
-    // Stage 1 - compile files
     for (string file : ctx.files)
     {
         Parser p;
+        if (ctx.disableErrorFmt)
+            p.disableErrorFormat(true);
+
         if (p.parse(file.c_str()) != PS_OK)
             return PS_ERROR;
-
 
         // First, merge the labels
         w.mergeLabels(p.getLabels()); 
@@ -110,14 +114,11 @@ int main(int argc, char **argv)
         break;
     }
 
-    // Stage 2 - resolve symbols
     if (w.resolve(ctx.modules) != PS_OK)
         return PS_ERROR;
-
-    // Stage 3 - write the binary
     if (w.open(ctx.output.c_str()) != PS_OK)
         return PS_ERROR;
-    if (w.writeHeader()!= PS_OK)
+    if (w.writeHeader() != PS_OK)
         return PS_ERROR;
     if (w.writeSections() != PS_OK)
         return PS_ERROR;
@@ -132,4 +133,5 @@ void usage(void)
     cout << "        -h show this message.\n";
     cout << "        -o output file.\n";
     cout << "        -l link library.\n";
+    cout << "        -d disable full path when reporting errors.\n";
 }
