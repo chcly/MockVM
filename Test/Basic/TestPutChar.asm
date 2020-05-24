@@ -1,8 +1,8 @@
 main:
-    mov x0, 32
+    mov x0, ' '
 top:
-    cmp x0, 127
-    jeq done
+    cmp x0, '~'
+    jgt done
     call putchar
     inc x0
     jmp top

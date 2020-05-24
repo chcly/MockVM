@@ -164,7 +164,7 @@ int32_t Parser::handleInitialState(Token& tok)
         m_reader.offset(-1);
         m_state = ST_ID;
     }
-    else if (isDigit(ch) || ch == '-')
+    else if (isDigit(ch) || ch == '-' || ch == '\'')
     {
         m_reader.offset(-1);
         m_state = ST_DIGIT;
@@ -315,6 +315,60 @@ int32_t Parser::handleDigitState(Token& tok)
             tok.value.clear();
             return ST_MAX;
         }
+        else
+        {
+            error("Invalid termination.\n");
+            return PS_ERROR;
+        }
+    }
+    else if (ch == '\'')
+    {
+        char v, n;
+        ch = m_reader.next();
+        v  = ch;
+
+        n = m_reader.next();
+        if (ch =='\\')
+        {
+            switch (n)
+            {
+            case 'n':
+                v = '\n';
+                break;
+            case 't':
+                v = '\t';
+                break;
+            case 'r':
+                v = '\r';
+                break;
+            case '\'':
+                v = '\'';
+                break;
+            case '\\':
+                v = '\\';
+                break;
+            default:
+                error("escape sequence '%c' not handled.\n", n);
+                return PS_ERROR;
+            }
+
+            n = m_reader.next();
+        }
+        
+        if (n != '\'')
+        {
+            error("invalid character.\n");
+            return PS_ERROR;
+        }
+
+        ch = m_reader.next();
+        prepNextCall(tok, ch);
+
+        m_state  = ST_INITIAL;
+        tok.type = TOK_DIGIT;
+        tok.ival.x = (int)v;
+        tok.value.clear();
+        return ST_MAX;
     }
     return ST_CONTINUE;
 }
