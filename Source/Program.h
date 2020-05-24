@@ -32,27 +32,25 @@
 class Program
 {
 public:
-    typedef std::vector<ExecInstruction> Instructions;
-    typedef Register                     Registers[10];
-
-    typedef std::unordered_map<str_t, size_t> StringMap;
+    typedef Register Registers[10];
 
     typedef void (Program::*Operation)(const ExecInstruction& inst);
-    typedef Operation OpCodes[OP_MAX];
+    typedef Operation InstructionTable[OP_MAX];
 
 private:
-    Instructions   m_ins;
-    TVMHeader      m_header;
-    Registers      m_regi;
-    uint32_t       m_flags;
-    int32_t        m_return;
-    uint64_t       m_curinst;
-    SymbolMapping* m_stdLib;
-    StringMap      m_strtab;
 
-    std::stack<uint64_t> m_stack;
-    const static OpCodes OPCodeTable;
-    const static size_t  OPCodeTableSize;
+    ExecInstructions m_ins;
+    TVMHeader        m_header;
+    Registers        m_regi;
+    uint32_t         m_flags;
+    int32_t          m_return;
+    uint64_t         m_curinst;
+    SymbolTable*     m_stdLib;
+    LabelMap         m_strtab;
+    Stack            m_stack;
+
+    const static InstructionTable OPCodeTable;
+    const static size_t           OPCodeTableSize;
 
     int findStatic(ExecInstruction& ins);
 

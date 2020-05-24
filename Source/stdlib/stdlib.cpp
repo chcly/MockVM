@@ -32,13 +32,13 @@ void __getchar(Register* values)
     values[0].b[0] = getchar();
 }
 
-const SymbolMapping stdlib[] = {
+const SymbolTable stdlib[] = {
     {"putchar", __putchar},
     {"getchar", __getchar},
     {nullptr, nullptr},
 };
 
-SYM_EXPORT const SymbolMapping* std_init()
+SYM_EXPORT const SymbolTable* std_init()
 {
     return stdlib;
 }

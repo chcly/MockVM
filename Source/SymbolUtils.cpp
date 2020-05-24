@@ -27,7 +27,7 @@
 #ifdef _WIN32
 #include <windows.h>
 
-LibHandle LoadSymbolLibrary(const char* libname)
+LibHandle LoadSharedLibrary(const char* libname)
 {
     HMODULE lib = LoadLibrary(libname);
     if (!lib)
@@ -38,7 +38,7 @@ LibHandle LoadSymbolLibrary(const char* libname)
     return (LibHandle)lib;
 }
 
-void UnloadSymbolLibrary(LibHandle handle)
+void UnloadSharedLibrary(LibHandle handle)
 {
     if (handle)
         FreeLibrary((HMODULE)handle);
@@ -55,7 +55,7 @@ LibSymbol GetSymbolAddress(LibHandle handle, const char* symname)
 #else
 
 #include <dlfcn.h>
-LibHandle LoadSymbolLibrary(const char* libname)
+LibHandle LoadSharedLibrary(const char* libname)
 {
     str_t modname = libname;
     modname       = "lib" + modname + ".so";
@@ -73,7 +73,7 @@ LibHandle LoadSymbolLibrary(const char* libname)
     return lib;
 }
 
-void UnloadSymbolLibrary(LibHandle handle)
+void UnloadSharedLibrary(LibHandle handle)
 {
     if (handle)
         dlclose((void*)handle);

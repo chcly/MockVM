@@ -49,8 +49,8 @@
 typedef void* LibHandle;
 typedef void* LibSymbol;
 
-extern LibHandle LoadSymbolLibrary(const char* libname);
-extern void      UnloadSymbolLibrary(LibHandle handle);
+extern LibHandle LoadSharedLibrary(const char* libname);
+extern void      UnloadSharedLibrary(LibHandle handle);
 extern LibSymbol GetSymbolAddress(LibHandle handle, const char* symname);
 
 #endif  //_SymbolUtils_h_

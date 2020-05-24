@@ -26,12 +26,10 @@
 #include "BinaryWriter.h"
 #include <stdio.h>
 #include <iostream>
-#include <limits>
 #include "SymbolUtils.h"
 
-SYM_EXPORT SymbolMapping* std_init();
+SYM_EXPORT SymbolTable* std_init();
 
-using namespace std;
 
 inline uint16_t getAlignment(size_t al)
 {
@@ -70,17 +68,23 @@ void BinaryWriter::mergeInstructions(const Instructions& insl)
         m_ins.push_back(ins);
 }
 
-void BinaryWriter::mergeLabels(const LabelMap& map)
+int BinaryWriter::mergeLabels(const LabelMap& map)
 {
+    int status = PS_OK;
     LabelMap::const_iterator it = map.begin();
-    while (it != map.end())
+    while (it != map.end() && status == PS_OK)
     {
         if (m_labels.find(it->first) != m_labels.end())
-            cout << "Duplicate label " << it->first << '\n';
+        {
+            printf("duplicate label '%s'\n", it->first.c_str());
+            status = PS_ERROR;
+        }
         else
             m_labels[it->first] = it->second;
+ 
         ++it;
     }
+    return status;
 }
 
 void BinaryWriter::write(const void* v, size_t size)
@@ -117,7 +121,7 @@ int BinaryWriter::open(const char* fname)
     m_fp = fopen(fname, "wb");
     if (!m_fp)
     {
-        printf("Failed to open '%s' for writing.\n", fname);
+        printf("failed to open '%s' for writing.\n", fname);
         return PS_ERROR;
     }
     return PS_OK;
@@ -139,16 +143,16 @@ size_t BinaryWriter::addToStringTable(const str_t& symname)
     return size;
 }
 
-void BinaryWriter::mapInstructions(void)
+int BinaryWriter::mapInstructions(void)
 {
     uint64_t label  = PS_UNDEFINED;
     int64_t  insp   = 0;
     int64_t  lookup = 0;
+    int      status = PS_OK;
 
     using InstPtr = std::vector<Instruction*>;
 
     InstPtr symbols;
-
     m_addrMap.clear();
 
     Instructions::iterator it = m_ins.begin();
@@ -188,7 +192,7 @@ void BinaryWriter::mapInstructions(void)
         }
         else
         {
-            SymbolMapping* map = findStatic(*irp);
+            SymbolTable* map = findStatic(*irp);
             if (map != nullptr)
             {
                 // It points to a known symbol
@@ -198,12 +202,26 @@ void BinaryWriter::mapInstructions(void)
             else
             {
                 // It points to an unknown symbol
-                // that may reside in a shared library
-                irp->argv[0] = addToStringTable(irp->lname);
-                irp->flags |= IF_SYMU;
+                // that may reside in a shared library.
+
+                SymbolLookup::iterator it = m_symbols.find(irp->lname);
+                if (it != m_symbols.end())
+                {
+                    if (m_linkedLibraries.find(it->second) == m_linkedLibraries.end())
+                        m_linkedLibraries.insert(it->second);
+
+                    irp->argv[0] = addToStringTable(irp->lname);
+                    irp->flags |= IF_SYMU;
+                }
+                else
+                {
+                    printf("failed to resolve function %s\n", irp->lname.c_str());
+                    status = PS_ERROR;
+                }
             }
         }
     }
+    return status;
 }
 
 size_t BinaryWriter::calculateInstructionSize(void)
@@ -211,12 +229,8 @@ size_t BinaryWriter::calculateInstructionSize(void)
     size_t i;
     size_t size = 0;
 
-    using lim8  = std::numeric_limits<uint8_t>;
-    using lim16 = std::numeric_limits<uint16_t>;
-    using lim32 = std::numeric_limits<uint32_t>;
-
-    Instructions::iterator it = m_ins.begin();
-    while (it != m_ins.end())
+    Instructions::iterator it = m_ins.begin(), endp = m_ins.end();
+    while (it != endp)
     {
         Instruction& ins = (*it++);
         ins.sizes        = 0;
@@ -224,17 +238,17 @@ size_t BinaryWriter::calculateInstructionSize(void)
         size += 5;  // op, nr, flags, sizes
         for (i = 0; i < ins.argc; ++i)
         {
-            if (ins.argv[i] < lim8().max())
+            if (ins.argv[i] < 0xFF)
             {
                 ins.sizes |= SizeFlags[i][0];
                 size += 1;
             }
-            else if (ins.argv[i] < lim16().max())
+            else if (ins.argv[i] < 0xFFFF)
             {
                 ins.sizes |= SizeFlags[i][1];
                 size += 2;
             }
-            else if (ins.argv[i] < lim32().max())
+            else if (ins.argv[i] < 0xFFFFFFFF)
             {
                 ins.sizes |= SizeFlags[i][2];
                 size += 4;
@@ -263,59 +277,84 @@ size_t BinaryWriter::findLabel(const str_t& name)
     return -1;
 }
 
-int BinaryWriter::resolve(strvec_t& modules)
+
+int BinaryWriter::loadSharedLibrary(const str_t& lib)
 {
     int status = PS_OK;
 
-    strvec_t::iterator it = modules.begin();
-    while (it != modules.end() && status == PS_OK)
+    LibHandle shlib = LoadSharedLibrary(lib.c_str());
+    if (shlib != nullptr)
     {
-        const str_t& mod = (*it++);
+        str_t lookup = lib + "_init";
 
-        LibHandle lib = LoadSymbolLibrary(mod.c_str());
-        if (lib != nullptr)
+        LibSymbol sym = GetSymbolAddress(shlib, lookup.c_str());
+        if (sym != nullptr)
         {
-            str_t     lookup = mod + "_init";
-            LibSymbol sym    = GetSymbolAddress(lib, lookup.c_str());
-            if (sym != nullptr)
-            {
-                SymbolMapping* avail = ((ModuleInit)sym)();
-                if (avail != nullptr)
-                {
-                    // search symbols from the shared library
-                }
-            }
-            else
-            {
-                printf("failed to find symbol %s\n", lookup.c_str());
-                status = PS_ERROR;
-            }
+            SymbolTable* avail = ((ModuleInit)sym)();
 
-            UnloadSymbolLibrary(lib);
+            int i = 0;
+            while (avail != nullptr && avail[i].name != nullptr && status == PS_OK)
+            {
+                const str_t str = avail[i].name;
+                SymbolLookup::iterator it = m_symbols.find(str); 
+                if (it == m_symbols.end())
+                {
+                    m_symbols[str] = lib;
+                }
+                else
+                {
+                    printf("duplicate symbol %s found in library %s\n",
+                           str.c_str(),
+                           lib.c_str());
+
+                    printf("first seen in %s\n", it->second.c_str());
+                    status = PS_ERROR;
+                }
+                ++i;
+            }
         }
         else
         {
-            printf("failed to find library %s\n", mod.c_str());
+            printf("failed to find function %s\n", lookup.c_str());
             status = PS_ERROR;
         }
+        UnloadSharedLibrary(shlib);
+    }
+    else
+    {
+        printf("failed to find library %s\n", lib.c_str());
+        status = PS_ERROR;
     }
     return status;
 }
 
-SymbolMapping* BinaryWriter::findStatic(const Instruction& ins)
+
+int BinaryWriter::resolve(strvec_t& modules)
 {
-    SymbolMapping* val = nullptr;
+    int status = PS_OK;
+    strvec_t::iterator it = modules.begin();
+    while (it != modules.end() && status == PS_OK)
+    {
+        const str_t& mod = (*it++);
+        status = loadSharedLibrary(mod);
+    }
+    return status;
+}
+
+SymbolTable* BinaryWriter::findStatic(const Instruction& ins)
+{
+    SymbolTable* sym = nullptr;
     if (m_stdlib)
     {
         int i = 0;
-        while (m_stdlib[i].name != nullptr && !val)
+        while (m_stdlib[i].name && sym == nullptr)
         {
-            SymbolMapping* symbol = &m_stdlib[i++];
-            if (ins.lname == symbol->name)
-                val = symbol;
+            if (ins.lname == m_stdlib[i].name)
+                sym = &m_stdlib[i];
+            ++i;
         }
     }
-    return val;
+    return sym;
 }
 
 int BinaryWriter::writeHeader()
@@ -328,8 +367,12 @@ int BinaryWriter::writeHeader()
     m_header.flags   = 0;
 
     size_t offset = sizeof(TVMHeader);
+    if (mapInstructions() != PS_OK)
+    {
+        printf("failed to find one or more required functions\n");
+        return PS_ERROR;
+    }
 
-    mapInstructions();
     m_sizeOfCode = calculateInstructionSize();
     if (m_sizeOfCode == 0)
     {
@@ -348,6 +391,7 @@ int BinaryWriter::writeHeader()
         offset += m_sizeOfData;
         offset += getAlignment(m_sizeOfData);
     }
+
     if (m_sizeOfSym != 0)
     {
         m_header.sym = (uint32_t)offset;
@@ -356,7 +400,11 @@ int BinaryWriter::writeHeader()
         offset += getAlignment(m_sizeOfSym);
     }
 
-    m_header.str = (uint32_t)offset;
+
+    if (m_sizeOfStr != 0)
+        m_header.str = (uint32_t)offset;
+
+
     write(&m_header, sizeof(TVMHeader));
     return PS_OK;
 }
@@ -456,6 +504,7 @@ int BinaryWriter::writeSections()
         return PS_ERROR;
 
     size_t size;
+
     if (m_sizeOfCode != 0)
     {
         size = writeCodeSection();
@@ -482,7 +531,7 @@ int BinaryWriter::writeSections()
         size = writeStringSection();
         if (size != m_sizeOfStr)
             return PS_ERROR;
-    }
 
+    }
     return PS_OK;
 }

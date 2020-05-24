@@ -33,7 +33,7 @@
 
 using namespace std;
 
-SYM_EXPORT SymbolMapping* std_init();
+SYM_EXPORT SymbolTable* std_init();
 
 
 
@@ -60,10 +60,13 @@ int Program::load(const char* fname)
     }
 
     reader.read(&m_header, sizeof(TVMHeader));
-    if (loadStringTable(reader) != PS_OK)
+    if (m_header.str != 0)
     {
-        printf("failed to read string table\n");
-        return PS_ERROR;
+        if (loadStringTable(reader) != PS_OK)
+        {
+            printf("failed to read string table\n");
+            return PS_ERROR;
+        }
     }
 
     if (m_header.code[0] != 'T' || m_header.code[1] != 'V')
@@ -72,11 +75,21 @@ int Program::load(const char* fname)
         return PS_ERROR;
     }
 
-    if (loadCode(reader) != PS_OK)
+    if (m_header.code != 0)
     {
-        printf("failed to read the text section\n");
+        if (loadCode(reader) != PS_OK)
+        {
+            printf("failed to read the text section\n");
+            return PS_ERROR;
+        }
+    }
+    else
+    {
+        printf("no code found in the file\n");
         return PS_ERROR;
     }
+
+
     return PS_OK;
 }
 
@@ -90,15 +103,21 @@ int Program::loadStringTable(BlockReader& reader)
         return PS_OK;
 
     str_t    str;
-    uint32_t i;
+    uint32_t i, st = PS_OK;
     size_t   tot = 0;
+
     for (i = 0; i < strTab.size && !reader.eof(); ++i)
     {
         char ch = reader.next();
-
         if (ch >= 32 && ch <= 127)
             str.push_back(ch);
-        else if (ch == 0)
+        else if (ch != 0)
+        {
+            printf("unknown character %c in the string table\n", ch);
+            st = PS_ERROR;
+            i  = strTab.size;
+        }
+        else 
         {
             // if this is correctly stored
             // there should be no duplicates
@@ -111,7 +130,8 @@ int Program::loadStringTable(BlockReader& reader)
             }
         }
     }
-    return PS_OK;
+
+    return st;
 }
 
 int Program::loadCode(BlockReader& reader)
@@ -207,7 +227,8 @@ int Program::findStatic(ExecInstruction& ins)
         }
         ++i;
     }
-    return ins.call != nullptr ? PS_OK : PS_ERROR;
+
+    return ins.call != nullptr ? (int)PS_OK : (int)PS_ERROR;
 }
 
 int Program::launch(void)

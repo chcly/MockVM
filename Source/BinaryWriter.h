@@ -22,18 +22,10 @@
 #ifndef _BinaryWriter_h_
 #define _BinaryWriter_h_
 
-#include <stdint.h>
-#include <unordered_map>
-#include <vector>
 #include "Declarations.h"
 
 class BinaryWriter
 {
-public:
-    typedef std::vector<Instruction>           Instructions;
-    typedef std::unordered_map<size_t, size_t> IndexToPosition;
-    typedef std::unordered_map<str_t, size_t>  LabelMap;
-
 private:
     void*           m_fp;
     long            m_loc;
@@ -42,12 +34,15 @@ private:
     size_t          m_sizeOfData;
     size_t          m_sizeOfSym;
     size_t          m_sizeOfStr;
-    SymbolMapping*  m_stdlib;
+    SymbolTable*    m_stdlib;
     IndexToPosition m_addrMap;
     LabelMap        m_labels;
     LabelMap        m_strtab;
     strvec_t        m_orderedString;
+    strset_t        m_linkedLibraries;
+    SymbolLookup    m_symbols;
     TVMHeader       m_header;
+
 
     void   write(const void* v, size_t size);
     void   write8(uint8_t v);
@@ -59,20 +54,22 @@ private:
     size_t writeSymbolSection(void);
     size_t writeStringSection(void);
 
-    void   mapInstructions(void);
-    size_t calculateInstructionSize(void);
+    int          mapInstructions(void);
+    size_t       calculateInstructionSize(void);
+    size_t       findLabel(const str_t& name);
+    SymbolTable* findStatic(const Instruction& ins);
+    size_t       addToStringTable(const str_t& symname);
+    int          loadSharedLibrary(const str_t& lib);
 
-    size_t         findLabel(const str_t& name);
-    SymbolMapping* findStatic(const Instruction& ins);
-    size_t         addToStringTable(const str_t& symname);
+
 
 public:
     BinaryWriter();
     ~BinaryWriter();
 
     void mergeInstructions(const Instructions& insl);
-    void mergeLabels(const LabelMap& map);
 
+    int mergeLabels(const LabelMap& map);
     int resolve(strvec_t& modules);
     int open(const char* fname);
     int writeHeader(void);

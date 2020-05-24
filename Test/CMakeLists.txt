@@ -1,5 +1,6 @@
 macro(add_compile_tests OUT Group)
     foreach (it ${ARGN})
+
         get_filename_component(ASMFILE ${it}      ABSOLUTE)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
@@ -8,23 +9,37 @@ macro(add_compile_tests OUT Group)
         set(GEN_FILE_ANS ${CMAKE_BINARY_DIR}/${GENNAME}.ans)
         set(GEN_FILE_EXP ${CMAKE_CURRENT_SOURCE_DIR}/${Group}/${GENNAME}.ans)
 
+
         list(APPEND ${OUT} ${GEN_FILE})
         list(APPEND ${OUT} ${ASMFILE})
         list(APPEND ${OUT} ${GEN_FILE_EXP})
+        list(APPEND ${OUT} ${GEN_FILE_ANS})
 
-        source_group("Assembly\\${Group}"  FILES ${ASMFILE})
-        source_group("Generated\\${Group}" FILES ${GEN_FILE})
-        source_group("Expected\\${Group}"  FILES ${GEN_FILE_EXP})
+        set_source_files_properties(${GEN_FILE_ANS} GENERATED)
+        source_group("Test\\${Group}\\Assembly"    FILES ${ASMFILE})
+        source_group("Test\\${Group}\\Generated"   FILES ${GEN_FILE})
+        source_group("Result\\${Group}\\Expected"  FILES ${GEN_FILE_EXP})
+        source_group("Result\\${Group}\\Actual"    FILES ${GEN_FILE_ANS})
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
             COMMAND tcom -o ${GEN_FILE} ${ASMFILE}
-            COMMAND tvm ${GEN_FILE} > ${GEN_FILE_ANS} &&
-                    ${CMAKE_COMMAND} -E compare_files --ignore-eol ${GEN_FILE_ANS} ${GEN_FILE_EXP} 
+            COMMAND tvm ${GEN_FILE} > ${GEN_FILE_ANS}
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm
             COMMENT "${ASMNAME}"
+            VERBATIM
         )
+
+        add_custom_command(
+            OUTPUT ${GEN_FILE}.txt
+            COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${GEN_FILE}.txt
+            MAIN_DEPENDENCY ${GEN_FILE_ANS}
+            VERBATIM
+            COMMENT ""
+        )
+
+
     endforeach(it)
 endmacro(add_compile_tests)
 
@@ -68,10 +83,14 @@ macro(add_test_dump_err OUT Group)
         list(APPEND ${OUT} ${GEN_FILE_ANS})
         list(APPEND ${OUT} ${ASMFILE})
         list(APPEND ${OUT} ${GEN_FILE_EXP})
-        
-        source_group("Assembly\\${Group}"  FILES ${ASMFILE})
-        source_group("Generated\\${Group}" FILES ${GEN_FILE_ANS})
-        source_group("Expected\\${Group}"  FILES ${GEN_FILE_EXP})
+        list(APPEND ${OUT} ${GEN_FILE_ANS})
+        set_source_files_properties(${GEN_FILE_ANS} GENERATED)
+
+        source_group("Test\\${Group}\\Assembly"    FILES ${ASMFILE})
+        source_group("Test\\${Group}\\Generated"   FILES ${GEN_FILE})
+        source_group("Result\\${Group}\\Expected"  FILES ${GEN_FILE_EXP})
+        source_group("Result\\${Group}\\Actual"    FILES ${GEN_FILE_ANS})
+
 
         add_custom_command(
             OUTPUT ${GEN_FILE_ANS}

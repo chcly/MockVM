@@ -25,12 +25,16 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <stack>
+#include <set>
+#include <unordered_map>
 
 #define INS_ARG 3
 #define MAX_KWD 5
 
 typedef std::string        str_t;
 typedef std::vector<str_t> strvec_t;
+typedef std::set<str_t>    strset_t;
 
 typedef union Register {
     uint8_t  b[8];
@@ -208,24 +212,36 @@ struct Instruction
     str_t    lname;
 };
 
-typedef void (*SymbolCallback)(Register*);
+typedef void (*Symbol)(Register*);
 
-struct SymbolMapping
+struct SymbolTable
 {
-    const char*    name;
-    SymbolCallback callback;
+    const char* name;
+    Symbol      callback;
 };
 
-typedef SymbolMapping* (*ModuleInit)();
+typedef SymbolTable* (*ModuleInit)();
 
 struct ExecInstruction
 {
-    uint8_t        op;
-    uint8_t        flags;
-    uint8_t        argc;
-    uint64_t       argv[INS_ARG];
-    SymbolCallback call;
+    uint8_t  op;
+    uint8_t  flags;
+    uint8_t  argc;
+    uint64_t argv[INS_ARG];
+    Symbol   call;
 };
+
+
+using Instructions     = std::vector<Instruction>;
+using IndexToPosition  = std::unordered_map<size_t, size_t>;
+using LabelMap         = std::unordered_map<str_t, size_t>;
+using SymbolMap        = std::unordered_map<str_t, Symbol>;
+using SymbolLookup     = std::unordered_map<str_t, str_t>;
+using DynamicLib       = std::vector<void*>;
+using StringMap        = std::unordered_map<str_t, size_t>;
+using ExecInstructions = std::vector<ExecInstruction>;
+using Stack            = std::stack<uint64_t>;
+
 
 #define _RELITAVE_TIME_CHECK_BEGIN                                    \
     {                                                                 \

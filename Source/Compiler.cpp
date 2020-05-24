@@ -99,12 +99,9 @@ int main(int argc, char **argv)
         if (p.parse(file.c_str()) != PS_OK)
             return PS_ERROR;
 
-        // First, merge the labels
-        w.mergeLabels(p.getLabels());
+        if (w.mergeLabels(p.getLabels()) != PS_OK)
+            return PS_ERROR;
 
-        // Second, merge the instructions.
-        // The labels should be stored first so instructions
-        // with label names can be filtered in one pass.
         w.mergeInstructions(p.getInstructions());
 
         // This has not been tested on multiple files yet.

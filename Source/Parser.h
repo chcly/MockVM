@@ -22,17 +22,12 @@
 #ifndef _Parser_h_
 #define _Parser_h_
 
-#include <unordered_map>
-#include <vector>
 #include "BlockReader.h"
 #include "Declarations.h"
 
 class Parser
 {
 public:
-    typedef std::unordered_map<std::string, size_t> LabelMap;
-    typedef std::vector<Instruction>                Instructions;
-
     const static KeywordMap KeywordTable[];
     const static size_t     KeywordTableSize;
 
@@ -44,9 +39,8 @@ private:
     int32_t      m_lineNo;
     LabelMap     m_labels;
     Instructions m_instructions;
-    std::string  m_fname;
+    str_t        m_fname;
     bool         m_disableErrorFormat;
-
 public:
     Parser();
     ~Parser();
