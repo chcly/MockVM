@@ -34,9 +34,9 @@ SYM_EXPORT SymbolMapping* std_init();
 
 using namespace std;
 
-inline uint32_t getAlignment(size_t al)
+inline uint16_t getAlignment(size_t al)
 {
-    uint32_t rem = (al % 16);
+    uint16_t rem = (al % 16);
     if (rem > 0)
         return (16 - rem);
     return 0;
@@ -184,7 +184,7 @@ void BinaryWriter::mapInstructions(void)
         // modify the first argument so that it points
         // to the correct instruction index.
         lookup = findLabel(irp->lname); 
-        if (lookup != PS_UNDEFINED)
+        if (lookup != -1)
         {
             // It points to a local label
             irp->argv[0] = lookup;
@@ -255,7 +255,7 @@ size_t BinaryWriter::calculateInstructionSize(void)
 }
 
 
-int64_t BinaryWriter::findLabel(const str_t& name)
+size_t BinaryWriter::findLabel(const str_t& name)
 {
     if (!name.empty())
     {
@@ -267,8 +267,7 @@ int64_t BinaryWriter::findLabel(const str_t& name)
                 return fidx->second;
         }
     }
-
-    return PS_UNDEFINED;
+    return -1;
 }
 
 int BinaryWriter::resolve(strvec_t& modules)
@@ -385,16 +384,16 @@ size_t BinaryWriter::writeCodeSection(void)
 {
     TVMSection sec = {};
     sec.size       = (uint32_t)m_sizeOfCode;
-    sec.start      = sizeof(TVMHeader);
-    sec.entry      = findLabel("main");
-    sec.align      = (uint32_t)getAlignment(m_sizeOfCode);
+    sec.start      = (uint32_t)sizeof(TVMHeader);
+    sec.align      = getAlignment(m_sizeOfCode);
 
-    if (sec.entry == PS_UNDEFINED)
+    size_t entry = findLabel("main");
+    if (entry == -1)
     {
         printf("failed to find main entry point.\n");
         return PS_ERROR;
     }
-
+    sec.entry = (uint32_t)entry;
     write(&sec, sizeof(TVMSection));
 
     for (Instruction ins : m_ins)

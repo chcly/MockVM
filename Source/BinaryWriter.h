@@ -31,7 +31,7 @@ class BinaryWriter
 {
 public:
     typedef std::vector<Instruction>             Instructions;
-    typedef std::unordered_map<int64_t, int64_t> IndexToPosition;
+    typedef std::unordered_map<size_t, size_t>   IndexToPosition;
     typedef std::unordered_map<str_t, size_t>    LabelMap;
 
 private:
@@ -62,7 +62,7 @@ private:
     void   mapInstructions(void);
     size_t calculateInstructionSize(void);
 
-    int64_t        findLabel(const str_t& name);
+    size_t         findLabel(const str_t& name);
     SymbolMapping* findStatic(const Instruction& ins);
     size_t         addToStringTable(const str_t& symname);
 

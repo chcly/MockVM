@@ -4,7 +4,6 @@ main:
     prg x1
     jeq L1
     jmp fail
-
 L1:
     add x1, 1
     prg x1
@@ -17,7 +16,6 @@ L2:
     cmp x1, -11
     jeq L3
     jmp fail
-
 L3:
     sub x1, -2
     prg x1

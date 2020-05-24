@@ -195,9 +195,9 @@ struct TVMHeader
 struct TVMSection
 {
     uint16_t flags;
-    uint16_t entry;
-    uint32_t align;
-    uint32_t size;
+    uint16_t align;
+    uint32_t entry;
+    uint32_t size; 
     uint32_t start;
 };
 
