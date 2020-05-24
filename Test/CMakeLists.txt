@@ -132,6 +132,7 @@ set(TestFiles_2
 set(TestFiles_3
     Errors/Err1.asm
     Errors/Err2.asm
+    Errors/Err3.asm
 )
 
 
