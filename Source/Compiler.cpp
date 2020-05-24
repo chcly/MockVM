@@ -24,10 +24,10 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include "BlockReader.h"
 #include "BinaryWriter.h"
-#include "Parser.h"
+#include "BlockReader.h"
 #include "Declarations.h"
+#include "Parser.h"
 
 using namespace std;
 
@@ -43,7 +43,6 @@ struct ProgramInfo
 
 void usage(void);
 
-
 int main(int argc, char **argv)
 {
     if (argc <= 1)
@@ -53,12 +52,12 @@ int main(int argc, char **argv)
     }
 
     ProgramInfo ctx = {};
-    int    i;
+    int         i;
     for (i = 1; i < argc; ++i)
     {
         if (argv[i][0] == '-')
         {
-            switch(argv[i][1])
+            switch (argv[i][1])
             {
             case 'h':
                 usage();
@@ -101,14 +100,12 @@ int main(int argc, char **argv)
             return PS_ERROR;
 
         // First, merge the labels
-        w.mergeLabels(p.getLabels()); 
-
+        w.mergeLabels(p.getLabels());
 
         // Second, merge the instructions.
-        // The labels should be stored first so instructions 
+        // The labels should be stored first so instructions
         // with label names can be filtered in one pass.
         w.mergeInstructions(p.getInstructions());
-
 
         // This has not been tested on multiple files yet.
         break;
@@ -124,7 +121,6 @@ int main(int argc, char **argv)
         return PS_ERROR;
     return 0;
 }
-
 
 void usage(void)
 {

@@ -32,14 +32,12 @@
 typedef std::string        str_t;
 typedef std::vector<str_t> strvec_t;
 
-
 typedef union Register {
     uint8_t  b[8];
     uint16_t w[4];
     uint32_t l[2];
     uint64_t x;
 } Register;
-
 
 enum RegisterArg
 {
@@ -60,15 +58,12 @@ const uint16_t SizeFlags[3][3] = {
     {A2_1, A2_2, A2_4},
 };
 
-
 enum ProgramFlags
 {
     PF_E = 1 << 0,
     PF_G = 1 << 1,
     PF_L = 1 << 2,
 };
-
-
 
 struct Token
 {
@@ -162,7 +157,7 @@ struct KeywordMap
     Keyword        word;
     uint8_t        op;
     uint8_t        narg;
-    const uint8_t *argv;
+    const uint8_t* argv;
 };
 
 enum SectionCodes
@@ -197,7 +192,7 @@ struct TVMSection
     uint16_t flags;
     uint16_t align;
     uint32_t entry;
-    uint32_t size; 
+    uint32_t size;
     uint32_t start;
 };
 
@@ -213,8 +208,6 @@ struct Instruction
     str_t    lname;
 };
 
-
-
 typedef void (*SymbolCallback)(Register*);
 
 struct SymbolMapping
@@ -224,7 +217,6 @@ struct SymbolMapping
 };
 
 typedef SymbolMapping* (*ModuleInit)();
-
 
 struct ExecInstruction
 {
@@ -238,9 +230,10 @@ struct ExecInstruction
 #define _RELITAVE_TIME_CHECK_BEGIN                                    \
     {                                                                 \
         chrono::high_resolution_clock::time_point begintick, endtick; \
-        begintick = chrono::high_resolution_clock().now();
-
+        begintick = chrono::high_resolution_clock().now();            \
+        {
 #define _RELITAVE_TIME_CHECK_END                                      \
+    }                                                                 \
     endtick = chrono::high_resolution_clock().now();                  \
     cout << __FUNCTION__ << " exec("                                  \
          << fixed << setprecision(6)                                  \

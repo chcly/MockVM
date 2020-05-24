@@ -25,8 +25,8 @@
 
 #include "BlockReader.h"
 #include <stdio.h>
-#include <algorithm>
 #include <string.h>
+#include <algorithm>
 #include <cassert>
 
 BlockReader::BlockReader(const char *fname) :
@@ -86,7 +86,7 @@ void BlockReader::offset(int32_t nr)
     if (lo < 0)
         lo = 0;
     if (lo > m_fileLen)
-        lo = m_fileLen - 1;
+        lo = ((int32_t)m_fileLen) - 1;
     m_loc = lo;
 }
 
@@ -95,7 +95,6 @@ void BlockReader::moveTo(size_t loc)
     if (loc < m_fileLen)
         m_loc = loc;
 }
-
 
 void BlockReader::open(const char *fname)
 {
@@ -111,7 +110,7 @@ void BlockReader::open(const char *fname)
                 delete[] m_block;
 
             m_block = new uint8_t[m_fileLen + 1];
-            fread(m_block, 1, m_fileLen,  fp);
+            fread(m_block, 1, m_fileLen, fp);
             m_block[m_fileLen] = 0;
 
             fclose(fp);

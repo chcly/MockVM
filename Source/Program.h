@@ -24,11 +24,10 @@
 
 #include <stdint.h>
 #include <stack>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 #include "BlockReader.h"
 #include "Declarations.h"
-
 
 class Program
 {
@@ -38,29 +37,24 @@ public:
 
     typedef std::unordered_map<str_t, size_t> StringMap;
 
-
-
-
     typedef void (Program::*Operation)(const ExecInstruction& inst);
     typedef Operation OpCodes[OP_MAX];
 
 private:
-    Instructions         m_ins;
-    TVMHeader            m_header;
-    Registers            m_regi;
-    uint32_t             m_flags;
-    int32_t              m_return;
-    uint64_t             m_curinst;
-    SymbolMapping*       m_stdLib;
-    StringMap            m_strtab;
+    Instructions   m_ins;
+    TVMHeader      m_header;
+    Registers      m_regi;
+    uint32_t       m_flags;
+    int32_t        m_return;
+    uint64_t       m_curinst;
+    SymbolMapping* m_stdLib;
+    StringMap      m_strtab;
 
     std::stack<uint64_t> m_stack;
     const static OpCodes OPCodeTable;
     const static size_t  OPCodeTableSize;
 
     int findStatic(ExecInstruction& ins);
-
-
 
     void handle_OP_RET(const ExecInstruction& inst);
     void handle_OP_MOV(const ExecInstruction& inst);
@@ -84,9 +78,9 @@ private:
     void handle_OP_PRG(const ExecInstruction& inst);
     void handle_OP_PRGI(const ExecInstruction& inst);
 
-
-    int loadStringTable(BlockReader& reader);
-    int loadCode(BlockReader& reader);
+    int  loadStringTable(BlockReader& reader);
+    int  loadCode(BlockReader& reader);
+    bool testInstruction(const ExecInstruction& exec);
 
 public:
     Program();

@@ -19,9 +19,8 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#include "SymbolUtils.h"
 #include <stdio.h>
-
+#include "SymbolUtils.h"
 
 void __putchar(Register* values)
 {
@@ -33,14 +32,11 @@ void __getchar(Register* values)
     values[0].b[0] = getchar();
 }
 
-
-
 const SymbolMapping stdlib[] = {
     {"putchar", __putchar},
     {"getchar", __getchar},
     {nullptr, nullptr},
 };
-
 
 SYM_EXPORT const SymbolMapping* std_init()
 {

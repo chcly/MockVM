@@ -23,31 +23,31 @@
 #define _BinaryWriter_h_
 
 #include <stdint.h>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 #include "Declarations.h"
 
 class BinaryWriter
 {
 public:
-    typedef std::vector<Instruction>             Instructions;
-    typedef std::unordered_map<size_t, size_t>   IndexToPosition;
-    typedef std::unordered_map<str_t, size_t>    LabelMap;
+    typedef std::vector<Instruction>           Instructions;
+    typedef std::unordered_map<size_t, size_t> IndexToPosition;
+    typedef std::unordered_map<str_t, size_t>  LabelMap;
 
 private:
-    void*            m_fp;
-    long             m_loc;
-    Instructions     m_ins;
-    size_t           m_sizeOfCode;
-    size_t           m_sizeOfData;
-    size_t           m_sizeOfSym;
-    size_t           m_sizeOfStr;
-    SymbolMapping*   m_stdlib;
-    IndexToPosition  m_addrMap;
-    LabelMap         m_labels;
-    LabelMap         m_strtab;
-    strvec_t         m_orderedString;
-    TVMHeader        m_header;
+    void*           m_fp;
+    long            m_loc;
+    Instructions    m_ins;
+    size_t          m_sizeOfCode;
+    size_t          m_sizeOfData;
+    size_t          m_sizeOfSym;
+    size_t          m_sizeOfStr;
+    SymbolMapping*  m_stdlib;
+    IndexToPosition m_addrMap;
+    LabelMap        m_labels;
+    LabelMap        m_strtab;
+    strvec_t        m_orderedString;
+    TVMHeader       m_header;
 
     void   write(const void* v, size_t size);
     void   write8(uint8_t v);
@@ -78,7 +78,5 @@ public:
     int writeHeader(void);
     int writeSections(void);
 };
-
-
 
 #endif  //_BinaryWriter_h_

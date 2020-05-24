@@ -30,19 +30,6 @@ using namespace std;
 const uint8_t    nullarg[3]  = {0xFF, 0xFF, 0xFF};
 const KeywordMap NullKeyword = {{'\0'}, 0xFF, 0, nullarg};
 
-inline bool isWhiteSpace(uint8_t ch);
-inline bool isAlphaL(uint8_t ch);
-inline bool isAlphaU(uint8_t ch);
-inline bool isAlpha(uint8_t ch);
-inline bool isDigit(uint8_t ch);
-inline bool isNumber(uint8_t ch);
-inline bool isEncodedNumber(uint8_t ch);
-inline bool isAlphaNumeric(uint8_t ch);
-inline bool isNewLine(uint8_t ch);
-inline bool isTerminator(uint8_t ch);
-void        getTokenName(str_t& name, int tok);
-
-
 Parser::Parser() :
     m_state(0),
     m_section(-1),
@@ -384,13 +371,11 @@ void Parser::countNewLine(uint8_t ch)
         m_lineNo++;
 }
 
-
-
 void Parser::prepNextCall(Token& tok, uint8_t ch)
 {
-    // trim any white space and 
+    // trim any white space and
     // if there is a comma, flag the token
-    // indicating there is another argument 
+    // indicating there is another argument
     // that comes next
     if (isWhiteSpace(ch))
     {
@@ -403,7 +388,6 @@ void Parser::prepNextCall(Token& tok, uint8_t ch)
     else if (ch == ',')
         tok.hasComma = true;
 }
-
 
 uint8_t Parser::eatWhiteSpace(uint8_t ch)
 {
@@ -535,13 +519,13 @@ int32_t Parser::handleOpCode(const Token& tok)
     if (kwd.op != PS_UNDEFINED)
     {
         Instruction ins = {};
-        ins.op    = kwd.op;
-        ins.argc  = kwd.narg;
-        ins.label = m_label;
+        ins.op          = kwd.op;
+        ins.argc        = kwd.narg;
+        ins.label       = m_label;
 
         Token lastTok = {};
-        int arg = 0;
-        int maxArg = ins.argc;
+        int   arg     = 0;
+        int   maxArg  = ins.argc;
 
         for (arg = 0; arg < maxArg; ++arg)
         {
@@ -558,7 +542,7 @@ int32_t Parser::handleOpCode(const Token& tok)
             if (handleArgument(ins, kwd, lastTok, arg) == PS_ERROR)
                 return PS_ERROR;
 
-            if (kwd.argv[INS_ARG-1] != AT_NULL)
+            if (kwd.argv[INS_ARG - 1] != AT_NULL)
             {
                 if (lastTok.hasComma && (arg + 1) == ins.argc)
                 {
@@ -570,7 +554,6 @@ int32_t Parser::handleOpCode(const Token& tok)
                 }
             }
         }
-
 
         if (lastTok.hasComma)
         {
@@ -617,6 +600,140 @@ const KeywordMap& Parser::getKeyword(const int32_t& val)
     return NullKeyword;
 }
 
+bool Parser::isWhiteSpace(uint8_t ch)
+{
+    return ch == ' ' || ch == '\t';
+}
+
+bool Parser::isAlphaL(uint8_t ch)
+{
+    return ch >= 'a' && ch <= 'z';
+}
+
+bool Parser::isAlphaU(uint8_t ch)
+{
+    return ch >= 'A' && ch <= 'Z';
+}
+
+bool Parser::isAlpha(uint8_t ch)
+{
+    return isAlphaL(ch) || isAlphaU(ch) || ch == '_';
+}
+
+bool Parser::isDigit(uint8_t ch)
+{
+    return ch >= '0' && ch <= '9';
+}
+
+bool Parser::isNumber(uint8_t ch)
+{
+    return ch >= '0' && ch <= '9' || ch == '-';
+}
+
+bool Parser::isEncodedNumber(uint8_t ch)
+{
+    return isNumber(ch) || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <= 'F' || ch == 'x';
+}
+
+bool Parser::isAlphaNumeric(uint8_t ch)
+{
+    return isAlpha(ch) || isDigit(ch);
+}
+
+bool Parser::isNewLine(uint8_t ch)
+{
+    return ch == '\r' || ch == '\n';
+}
+
+bool Parser::isTerminator(uint8_t ch)
+{
+    return isWhiteSpace(ch) || ch == ',' || isNewLine(ch) || ch == 0;
+}
+
+void Parser::errorTokenType(int tok)
+{
+    str_t str;
+    getTokenName(str, tok);
+    error("found type '%s' instead\n", str.c_str());
+}
+
+void Parser::errorArgType(int idx, int tok, const char* inst)
+{
+    error("expected operand %i for %s, to be a register\n", idx + 1, inst);
+    errorTokenType(tok);
+}
+
+void Parser::getTokenName(str_t& name, int tok)
+{
+    switch (tok)
+    {
+    case TOK_OPCODE:
+        name = "instruction";
+        break;
+    case TOK_REGISTER:
+        name = "register";
+        break;
+    case TOK_IDENTIFIER:
+        name = "identifier";
+        break;
+    case TOK_DIGIT:
+        name = "value";
+        break;
+    case TOK_LABEL:
+        name = "label";
+        break;
+    case TOK_SECTION:
+        name = "section";
+        break;
+    default:
+        name = "undefined";
+        break;
+    }
+}
+
+void Parser::error(const char* fmt, ...)
+{
+    if (fmt != nullptr)
+    {
+        va_list l1;
+        int     s1, s2;
+
+        char* buffer = nullptr;
+
+        va_start(l1, fmt);
+        s1 = std::vsnprintf(buffer, 0, fmt, l1);
+        va_end(l1);
+
+        if (s1 > 0)
+        {
+            buffer = (char*)malloc((size_t)s1 + 1);
+            if (buffer)
+            {
+                va_start(l1, fmt);
+                s2 = std::vsnprintf(buffer, (size_t)s1 + 1, fmt, l1);
+                va_end(l1);
+
+                if (!m_disableErrorFormat)
+                {
+                    fprintf(stdout,
+                            "%s(%i): error : %s",
+                            m_fname.c_str(),
+                            m_lineNo,
+                            buffer);
+                }
+                else
+                {
+                    fprintf(stdout,
+                            "(%i): error : %s",
+                            m_lineNo,
+                            buffer);
+                }
+
+                free(buffer);
+            }
+        }
+    }
+}
 
 const uint8_t ArgTypeStd1[3] = {AT_REGI, AT_RVAL, AT_NULL};
 const uint8_t ArgTypeStd2[3] = {AT_RVAL, AT_RVAL, AT_NULL};
@@ -651,139 +768,3 @@ const KeywordMap Parser::KeywordTable[] = {
 };
 
 const size_t Parser::KeywordTableSize = sizeof(Parser::KeywordTable) / sizeof(KeywordMap);
-
-inline bool isWhiteSpace(uint8_t ch)
-{
-    return ch == ' ' || ch == '\t';
-}
-
-inline bool isAlphaL(uint8_t ch)
-{
-    return ch >= 'a' && ch <= 'z';
-}
-
-inline bool isAlphaU(uint8_t ch)
-{
-    return ch >= 'A' && ch <= 'Z';
-}
-
-inline bool isAlpha(uint8_t ch)
-{
-    return isAlphaL(ch) || isAlphaU(ch) || ch == '_';
-}
-
-inline bool isDigit(uint8_t ch)
-{
-    return ch >= '0' && ch <= '9';
-}
-
-inline bool isNumber(uint8_t ch)
-{
-    return ch >= '0' && ch <= '9' || ch == '-';
-}
-
-inline bool isEncodedNumber(uint8_t ch)
-{
-    return isNumber(ch) || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <= 'F' || ch == 'x';
-}
-
-inline bool isAlphaNumeric(uint8_t ch)
-{
-    return isAlpha(ch) || isDigit(ch);
-}
-
-inline bool isNewLine(uint8_t ch)
-{
-    return ch == '\r' || ch == '\n';
-}
-
-inline bool isTerminator(uint8_t ch)
-{
-    return isWhiteSpace(ch) || ch == ',' || isNewLine(ch) || ch == 0;
-}
-
-void Parser::errorTokenType(int tok)
-{
-    str_t str;
-    getTokenName(str, tok);
-    error("found type '%s' instead\n", str.c_str());
-}
-
-void Parser::errorArgType(int idx, int tok, const char* inst)
-{
-    error("expected operand %i for %s, to be a register\n", idx + 1, inst);
-    errorTokenType(tok);
-}
-
-
-void getTokenName(str_t & name, int tok)
-{
-    switch (tok)
-    {
-    case TOK_OPCODE:
-        name = "instruction";
-        break;
-    case TOK_REGISTER:
-        name = "register";
-        break;
-    case TOK_IDENTIFIER:
-        name = "identifier";
-        break;
-    case TOK_DIGIT:
-        name = "value";
-        break;
-    case TOK_LABEL:
-        name = "label";
-        break;
-    case TOK_SECTION:
-        name = "section";
-        break;
-    default:
-        name = "undefined";
-        break;
-   }
-}
-
-void Parser::error(const char* fmt, ...)
-{
-    if (fmt != nullptr)
-    {
-        va_list l1;
-        int     s1, s2;
-
-        char* buffer = nullptr;
-
-        va_start(l1, fmt);
-        s1 = std::vsnprintf(buffer, 0, fmt, l1);
-        va_end(l1);
-
-        if (s1 > 0)
-        {
-            buffer = (char*)malloc((size_t)s1 + 1);
-            if (buffer)
-            {
-                va_start(l1, fmt);
-                s2 = std::vsnprintf(buffer, (size_t)s1 + 1, fmt, l1);
-                va_end(l1);
-                
-                if (!m_disableErrorFormat)
-                {
-                    fprintf(stdout,
-                            "%s(%i): error : %s",
-                            m_fname.c_str(),
-                            m_lineNo,
-                            buffer);
-                }
-                else
-                {
-                    fprintf(stdout,
-                            "(%i): error : %s",
-                            m_lineNo,
-                            buffer);
-                }
-
-                free(buffer);
-            }
-        }
-    }
-}

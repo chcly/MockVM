@@ -35,15 +35,7 @@ using namespace std;
 
 SYM_EXPORT SymbolMapping* std_init();
 
-uint8_t restrict8(const uint8_t& inp,
-                  const uint8_t& mi,
-                  const uint8_t& ma)
-{
-    return inp > ma ? ma : inp < mi ? mi : inp;
-}
 
-bool isRegister(const ExecInstruction& exec, size_t idx);
-bool testInstruction(const ExecInstruction& exec);
 
 Program::Program() :
     m_flags(0),
@@ -149,7 +141,7 @@ int Program::loadCode(BlockReader& reader)
 
         exec.op    = ops[0];
         exec.argc  = ops[1];
-        exec.flags = restrict8(ops[2], 0, IF_MAXF);
+        exec.flags = ops[2];
 
         for (a = 0; a < exec.argc && a < INS_ARG; ++a)
         {
@@ -195,7 +187,6 @@ int Program::loadCode(BlockReader& reader)
         printf("misaligned instructions\n");
         return PS_ERROR;
     }
-
     m_curinst = 0;
     if (code.entry < m_ins.size())
         m_curinst = code.entry;
@@ -216,7 +207,6 @@ int Program::findStatic(ExecInstruction& ins)
         }
         ++i;
     }
-
     return ins.call != nullptr ? PS_OK : PS_ERROR;
 }
 
@@ -254,7 +244,6 @@ void Program::handle_OP_RET(const ExecInstruction& inst)
         m_curinst = m_stack.top();
         m_stack.pop();
     }
-
     if (m_stack.empty())
         m_curinst = m_ins.size() + 1;
     m_return = (int32_t)m_regi[0].x;
@@ -595,46 +584,8 @@ void Program::handle_OP_PRGI(const ExecInstruction& inst)
     }
 }
 
-const Program::Operation Program::OPCodeTable[] = {
-    nullptr,
-    &Program::handle_OP_RET,
-    &Program::handle_OP_MOV,
-    &Program::handle_OP_CALL,
-    &Program::handle_OP_INC,
-    &Program::handle_OP_DEC,
-    &Program::handle_OP_CMP,
-    &Program::handle_OP_JMP,
-    &Program::handle_OP_JEQ,
-    &Program::handle_OP_JNE,
-    &Program::handle_OP_JLT,
-    &Program::handle_OP_JGT,
-    &Program::handle_OP_JLE,
-    &Program::handle_OP_JGE,
-    &Program::handle_OP_ADD,
-    &Program::handle_OP_SUB,
-    &Program::handle_OP_MUL,
-    &Program::handle_OP_DIV,
-    &Program::handle_OP_SHR,
-    &Program::handle_OP_SHL,
-    &Program::handle_OP_PRG,
-    &Program::handle_OP_PRGI,
-};
 
-bool isRegister(const ExecInstruction& exec, size_t idx)
-{
-    switch (idx)
-    {
-    case 0:
-        return (exec.flags & IF_REG0) != 0;
-    case 1:
-        return (exec.flags & IF_REG1) != 0;
-    case 2:
-        return (exec.flags & IF_REG2) != 0;
-    }
-    return false;
-}
-
-bool testInstruction(const ExecInstruction& exec)
+bool Program::testInstruction(const ExecInstruction& exec)
 {
     bool pass = exec.op > 0 && exec.op < OP_MAX;
     if (!pass)
@@ -752,3 +703,28 @@ bool testInstruction(const ExecInstruction& exec)
     }
     return true;
 }
+
+const Program::Operation Program::OPCodeTable[] = {
+    nullptr,
+    &Program::handle_OP_RET,
+    &Program::handle_OP_MOV,
+    &Program::handle_OP_CALL,
+    &Program::handle_OP_INC,
+    &Program::handle_OP_DEC,
+    &Program::handle_OP_CMP,
+    &Program::handle_OP_JMP,
+    &Program::handle_OP_JEQ,
+    &Program::handle_OP_JNE,
+    &Program::handle_OP_JLT,
+    &Program::handle_OP_JGT,
+    &Program::handle_OP_JLE,
+    &Program::handle_OP_JGE,
+    &Program::handle_OP_ADD,
+    &Program::handle_OP_SUB,
+    &Program::handle_OP_MUL,
+    &Program::handle_OP_DIV,
+    &Program::handle_OP_SHR,
+    &Program::handle_OP_SHL,
+    &Program::handle_OP_PRG,
+    &Program::handle_OP_PRGI,
+};

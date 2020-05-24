@@ -24,13 +24,12 @@
 #endif
 
 #include "BinaryWriter.h"
-#include "SymbolUtils.h"
 #include <stdio.h>
 #include <iostream>
 #include <limits>
+#include "SymbolUtils.h"
 
 SYM_EXPORT SymbolMapping* std_init();
-
 
 using namespace std;
 
@@ -41,7 +40,6 @@ inline uint16_t getAlignment(size_t al)
         return (16 - rem);
     return 0;
 }
-
 
 BinaryWriter::BinaryWriter() :
     m_fp(0),
@@ -58,7 +56,6 @@ BinaryWriter::BinaryWriter() :
 {
     m_stdlib = std_init();
 }
-
 
 BinaryWriter::~BinaryWriter()
 {
@@ -132,11 +129,10 @@ size_t BinaryWriter::addToStringTable(const str_t& symname)
     if (it != m_strtab.end())
         return it->second;
 
-
     m_sizeOfStr += symname.size();
     m_sizeOfStr += 1;
 
-    size_t size = m_strtab.size();
+    size_t size       = m_strtab.size();
     m_strtab[symname] = size;
 
     m_orderedString.push_back(symname);
@@ -145,9 +141,9 @@ size_t BinaryWriter::addToStringTable(const str_t& symname)
 
 void BinaryWriter::mapInstructions(void)
 {
-    uint64_t label = PS_UNDEFINED;
-    int64_t  insp  = 0;
-    int64_t lookup = 0;
+    uint64_t label  = PS_UNDEFINED;
+    int64_t  insp   = 0;
+    int64_t  lookup = 0;
 
     using InstPtr = std::vector<Instruction*>;
 
@@ -168,7 +164,7 @@ void BinaryWriter::mapInstructions(void)
             m_addrMap[label] = insp;
         }
 
-        // store it so it can be resolved 
+        // store it so it can be resolved
         // after all labels have been indexed
         if (!ins.lname.empty())
             symbols.push_back(&ins);
@@ -180,10 +176,10 @@ void BinaryWriter::mapInstructions(void)
     while (symit != symbols.end())
     {
         Instruction* irp = (*symit++);
-        
+
         // modify the first argument so that it points
         // to the correct instruction index.
-        lookup = findLabel(irp->lname); 
+        lookup = findLabel(irp->lname);
         if (lookup != -1)
         {
             // It points to a local label
@@ -201,16 +197,14 @@ void BinaryWriter::mapInstructions(void)
             }
             else
             {
-
                 // It points to an unknown symbol
                 // that may reside in a shared library
                 irp->argv[0] = addToStringTable(irp->lname);
-                irp->flags |= IF_SYMU;  
+                irp->flags |= IF_SYMU;
             }
         }
     }
 }
-
 
 size_t BinaryWriter::calculateInstructionSize(void)
 {
@@ -225,7 +219,7 @@ size_t BinaryWriter::calculateInstructionSize(void)
     while (it != m_ins.end())
     {
         Instruction& ins = (*it++);
-        ins.sizes = 0;
+        ins.sizes        = 0;
 
         size += 5;  // op, nr, flags, sizes
         for (i = 0; i < ins.argc; ++i)
@@ -254,7 +248,6 @@ size_t BinaryWriter::calculateInstructionSize(void)
     return size;
 }
 
-
 size_t BinaryWriter::findLabel(const str_t& name)
 {
     if (!name.empty())
@@ -282,8 +275,8 @@ int BinaryWriter::resolve(strvec_t& modules)
         LibHandle lib = LoadSymbolLibrary(mod.c_str());
         if (lib != nullptr)
         {
-            str_t lookup = mod + "_init";
-            LibSymbol sym = GetSymbolAddress(lib, lookup.c_str());
+            str_t     lookup = mod + "_init";
+            LibSymbol sym    = GetSymbolAddress(lib, lookup.c_str());
             if (sym != nullptr)
             {
                 SymbolMapping* avail = ((ModuleInit)sym)();
@@ -309,7 +302,6 @@ int BinaryWriter::resolve(strvec_t& modules)
     return status;
 }
 
-
 SymbolMapping* BinaryWriter::findStatic(const Instruction& ins)
 {
     SymbolMapping* val = nullptr;
@@ -326,13 +318,10 @@ SymbolMapping* BinaryWriter::findStatic(const Instruction& ins)
     return val;
 }
 
-
-
 int BinaryWriter::writeHeader()
 {
     if (!m_fp)
         return PS_ERROR;
-
 
     m_header.code[0] = 'T';
     m_header.code[1] = 'V';
@@ -342,14 +331,17 @@ int BinaryWriter::writeHeader()
 
     mapInstructions();
     m_sizeOfCode = calculateInstructionSize();
-    if (m_sizeOfCode !=0)
+    if (m_sizeOfCode == 0)
     {
-        offset += sizeof(TVMSection);
-        offset += m_sizeOfCode;
-        offset += getAlignment(m_sizeOfCode);
+        printf("nothing to write\n");
+        return PS_ERROR;
     }
 
-    if (m_sizeOfData !=0)
+    offset += sizeof(TVMSection);
+    offset += m_sizeOfCode;
+    offset += getAlignment(m_sizeOfCode);
+
+    if (m_sizeOfData != 0)
     {
         m_header.dat = (uint32_t)offset;
         offset += sizeof(TVMSection);
@@ -358,17 +350,16 @@ int BinaryWriter::writeHeader()
     }
     if (m_sizeOfSym != 0)
     {
-        m_header.sym = offset;
+        m_header.sym = (uint32_t)offset;
         offset += sizeof(TVMSection);
         offset += m_sizeOfSym;
         offset += getAlignment(m_sizeOfSym);
     }
 
-    m_header.str = offset;
+    m_header.str = (uint32_t)offset;
     write(&m_header, sizeof(TVMHeader));
     return PS_OK;
 }
-
 
 size_t BinaryWriter::writeDataSection(void)
 {
@@ -459,21 +450,20 @@ size_t BinaryWriter::writeStringSection(void)
     return m_sizeOfStr;
 }
 
-
 int BinaryWriter::writeSections()
 {
     if (!m_fp)
         return PS_ERROR;
 
     size_t size;
-    if (m_sizeOfCode !=0)
+    if (m_sizeOfCode != 0)
     {
         size = writeCodeSection();
         if (size != m_sizeOfCode)
             return PS_ERROR;
     }
 
-    if (m_sizeOfData !=0)
+    if (m_sizeOfData != 0)
     {
         size = writeDataSection();
         if (size != m_sizeOfData)
@@ -493,6 +483,6 @@ int BinaryWriter::writeSections()
         if (size != m_sizeOfStr)
             return PS_ERROR;
     }
- 
+
     return PS_OK;
 }

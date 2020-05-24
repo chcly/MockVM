@@ -22,7 +22,6 @@
 #ifndef _Parser_h_
 #define _Parser_h_
 
-
 #include <unordered_map>
 #include <vector>
 #include "BlockReader.h"
@@ -97,6 +96,18 @@ private:
                            const int32_t     idx);
 
     void prepNextCall(Token& tok, uint8_t ch);
+
+    bool isWhiteSpace(uint8_t ch);
+    bool isAlphaL(uint8_t ch);
+    bool isAlphaU(uint8_t ch);
+    bool isAlpha(uint8_t ch);
+    bool isDigit(uint8_t ch);
+    bool isNumber(uint8_t ch);
+    bool isEncodedNumber(uint8_t ch);
+    bool isAlphaNumeric(uint8_t ch);
+    bool isNewLine(uint8_t ch);
+    bool isTerminator(uint8_t ch);
+    void getTokenName(str_t& name, int tok);
 };
 
 #endif  //_Parser_h_

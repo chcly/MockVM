@@ -27,7 +27,6 @@
 #ifdef _WIN32
 #include <windows.h>
 
-
 LibHandle LoadSymbolLibrary(const char* libname)
 {
     HMODULE lib = LoadLibrary(libname);
@@ -56,13 +55,10 @@ LibSymbol GetSymbolAddress(LibHandle handle, const char* symname)
 #else
 
 #include <dlfcn.h>
-
 LibHandle LoadSymbolLibrary(const char* libname)
 {
-    // This will need search paths to find the .so
     str_t modname = libname;
     modname       = "lib" + modname + ".so";
-
     LibHandle lib = (LibHandle)dlopen(modname.c_str(), RTLD_LAZY);
     if (!lib)
     {
@@ -89,5 +85,4 @@ LibSymbol GetSymbolAddress(LibHandle handle, const char* symname)
         return dlsym((void*)handle, symname);
     return nullptr;
 }
-
 #endif
