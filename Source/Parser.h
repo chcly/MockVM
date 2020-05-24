@@ -84,6 +84,8 @@ private:
 
     int32_t scan(Token& tok);
     void    error(const char* fmt, ...);
+    void    errorTokenType(int tok);
+    void    errorArgType(int idx, int tok, const char* inst);
 
     int32_t           getSection(const std::string& val);
     int32_t           getKeywordIndex(const uint8_t& val);

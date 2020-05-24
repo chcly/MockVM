@@ -40,6 +40,8 @@ inline bool isEncodedNumber(uint8_t ch);
 inline bool isAlphaNumeric(uint8_t ch);
 inline bool isNewLine(uint8_t ch);
 inline bool isTerminator(uint8_t ch);
+void        getTokenName(str_t& name, int tok);
+
 
 Parser::Parser() :
     m_state(0),
@@ -87,7 +89,11 @@ int32_t Parser::parse(const char* fname)
                 return PS_OK;
             default:
                 if (sr != PS_ERROR)
-                    error("token %i parsed out of context\n", sr);
+                {
+                    str_t tok;
+                    getTokenName(tok, sr);
+                    error("token %s parsed outside of any known context\n", tok.c_str(), sr);
+                }
                 rc = PS_ERROR;
                 break;
             }
@@ -450,10 +456,10 @@ int32_t Parser::handleArgument(Instruction&      ins,
     {
         if (tok.type != TOK_REGISTER)
         {
-            error("expected operand %i for %s, to be a register\n", idx + 1, kwd.word);
-            error("found type %i\n", tok.type);
+            errorArgType(idx, tok.type, kwd.word);
             return PS_ERROR;
         }
+
         ins.argv[idx] = tok.reg;
         switch (idx)
         {
@@ -472,8 +478,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
     {
         if (tok.type != TOK_DIGIT)
         {
-            error("expected operand %i for %s, to be a value\n", idx + 1, kwd.word);
-            error("found type %i\n", tok.type);
+            errorArgType(idx, tok.type, kwd.word);
             return PS_ERROR;
         }
         ins.argv[idx] = tok.ival.x;
@@ -502,8 +507,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         }
         else
         {
-            error("expected operand %i for %s, to be a register or a value\n", idx + 1, kwd.word);
-            error("found type %i\n", tok.type);
+            errorArgType(idx, tok.type, kwd.word);
             return PS_ERROR;
         }
     }
@@ -517,7 +521,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
     else
     {
         error("unknown operand type for %s\n", kwd.word);
-        error("found type %i\n", tok.type);
+        errorTokenType(tok.type);
         return PS_ERROR;
     }
 
@@ -696,6 +700,48 @@ inline bool isNewLine(uint8_t ch)
 inline bool isTerminator(uint8_t ch)
 {
     return isWhiteSpace(ch) || ch == ',' || isNewLine(ch) || ch == 0;
+}
+
+void Parser::errorTokenType(int tok)
+{
+    str_t str;
+    getTokenName(str, tok);
+    error("found type '%s' instead\n", str.c_str());
+}
+
+void Parser::errorArgType(int idx, int tok, const char* inst)
+{
+    error("expected operand %i for %s, to be a register\n", idx + 1, inst);
+    errorTokenType(tok);
+}
+
+
+void getTokenName(str_t & name, int tok)
+{
+    switch (tok)
+    {
+    case TOK_OPCODE:
+        name = "instruction";
+        break;
+    case TOK_REGISTER:
+        name = "register";
+        break;
+    case TOK_IDENTIFIER:
+        name = "identifier";
+        break;
+    case TOK_DIGIT:
+        name = "value";
+        break;
+    case TOK_LABEL:
+        name = "label";
+        break;
+    case TOK_SECTION:
+        name = "section";
+        break;
+    default:
+        name = "undefined";
+        break;
+   }
 }
 
 void Parser::error(const char* fmt, ...)
