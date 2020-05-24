@@ -26,6 +26,8 @@
 #include <sstream>
 #include <vector>
 #include "Program.h"
+#include "SymbolUtils.h"
+
 
 using namespace std;
 
@@ -37,6 +39,8 @@ struct ProgramInfo
     string file;
 };
 
+
+
 int main(int argc, char **argv)
 {
     if (argc <= 1)
@@ -44,6 +48,7 @@ int main(int argc, char **argv)
         usage();
         return 0;
     }
+
 
     ProgramInfo ctx = {};
     int         i;
@@ -70,6 +75,9 @@ int main(int argc, char **argv)
         cout << "no input file\n";
         return 0;
     }
+
+
+
 
     Program prog;
     if (prog.load(ctx.file.c_str()) != PS_OK)

@@ -20,19 +20,33 @@
 -------------------------------------------------------------------------------
 */
 #include "SymbolUtils.h"
-#include "Declarations.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include "Declarations.h"
 
 #ifdef _WIN32
 #include <windows.h>
 
 LibHandle LoadSharedLibrary(const char* libname)
 {
-    HMODULE lib = LoadLibrary(libname);
+    str_t absPath;
+    FindExecutableDirectory(absPath);
+
+    if (absPath.empty())
+    {
+        // FindExecutableDirectory reports an error
+        return nullptr;
+    }
+
+    // modules are stored in tvm_dir / lib for now.
+    absPath += "/lib/";
+    absPath += libname;
+    absPath += ".dll";
+
+    HMODULE lib = LoadLibrary(absPath.c_str());
     if (!lib)
     {
-        printf("Failed to load %s\n", libname);
+        printf("failed to find '%s'\n", absPath.c_str());
         return nullptr;
     }
     return (LibHandle)lib;
@@ -51,24 +65,61 @@ LibSymbol GetSymbolAddress(LibHandle handle, const char* symname)
     return nullptr;
 }
 
+void FindExecutableDirectory(str_t& dest)
+{
+    dest.clear();
+    HMODULE mod = GetModuleHandle(NULL);
+    if (mod)
+    {
+        char  buf[270];
+        DWORD sz = GetModuleFileName(mod, buf, 270);
+        if (sz < 270)
+        {
+            buf[sz] = 0;
+            dest    = str_t(buf, sz);
+
+            size_t pos = dest.find_last_of('\\');
+            if (pos != str_t::npos)
+                dest = dest.substr(0, pos);
+        }
+        else
+        {
+            printf("failed to get the executable path.\n");
+        }
+    }
+    else
+    {
+        printf("failed to get the module handle.\n");
+    }
+}
 
 #else
 
 #include <dlfcn.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 LibHandle LoadSharedLibrary(const char* libname)
 {
-    str_t modname = libname;
-    modname       = "lib" + modname + ".so";
-    LibHandle lib = (LibHandle)dlopen(modname.c_str(), RTLD_LAZY);
+    str_t absPath;
+    FindExecutableDirectory(absPath);
+
+    if (absPath.empty())
+    {
+        // FindExecutableDirectory reports an error
+        return nullptr;
+    }
+
+    // modules are stored in tvm_dir / lib for now.
+    absPath += "/lib/lib";
+    absPath += libname;
+    absPath += ".so";
+
+    LibHandle lib = (LibHandle)dlopen(absPath.c_str(), RTLD_LAZY);
     if (!lib)
     {
-        modname = "./" + modname;
-        lib = (LibHandle)dlopen(modname.c_str(), RTLD_LAZY);
-        if (!lib)
-        {
-            printf("Failed to load %s\n", modname.c_str());
-            return nullptr;
-        }
+        printf("failed to find '%s'\n", absPath.c_str());
+        return nullptr;
     }
     return lib;
 }
@@ -85,4 +136,25 @@ LibSymbol GetSymbolAddress(LibHandle handle, const char* symname)
         return dlsym((void*)handle, symname);
     return nullptr;
 }
+
+void FindExecutableDirectory(str_t& dest)
+{
+    dest.clear();
+    char    buf[270];
+    ssize_t sz = readlink("/proc/self/exe", buf, 270);
+    if (sz > 0 && sz < 270)
+    {
+        buf[sz] = 0;
+        dest    = str_t(buf, sz);
+
+        size_t pos = dest.find_last_of('/');
+        if (pos != str_t::npos)
+            dest = dest.substr(0, pos);
+    }
+    else
+    {
+        printf("failed to get the executable path.\n");
+    }
+}
+
 #endif

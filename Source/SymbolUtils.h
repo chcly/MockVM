@@ -52,5 +52,7 @@ typedef void* LibSymbol;
 extern LibHandle LoadSharedLibrary(const char* libname);
 extern void      UnloadSharedLibrary(LibHandle handle);
 extern LibSymbol GetSymbolAddress(LibHandle handle, const char* symname);
+extern void      FindExecutableDirectory(str_t& dest);
+
 
 #endif  //_SymbolUtils_h_

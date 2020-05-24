@@ -193,6 +193,11 @@ int Program::loadCode(BlockReader& reader)
                     return PS_ERROR;
                 }
             }
+            else if (exec.flags & IF_SYMU)
+            {
+                printf("failed to find symbol\n");
+                return PS_ERROR;
+            }
         }
 
         if (testInstruction(exec))
@@ -217,7 +222,7 @@ int Program::loadCode(BlockReader& reader)
 int Program::findStatic(ExecInstruction& ins)
 {
     int i = 0;
-    while (m_stdLib[i].name != 0 && ins.call == nullptr)
+    while (m_stdLib != nullptr && m_stdLib[i].name != 0 && ins.call == nullptr)
     {
         StringMap::iterator it = m_strtab.find(m_stdLib[i].name);
         if (it != m_strtab.end())

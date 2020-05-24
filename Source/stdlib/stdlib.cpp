@@ -30,15 +30,28 @@ void __putchar(Register* values)
 void __getchar(Register* values)
 {
     values[0].b[0] = getchar();
+
+}
+
+void __helloworld(Register* values)
+{
+    printf("helloworld\n");
+    values[0].x = 123;
 }
 
 const SymbolTable stdlib[] = {
     {"putchar", __putchar},
     {"getchar", __getchar},
+    {"helloworld", __helloworld},
     {nullptr, nullptr},
 };
 
 SYM_EXPORT const SymbolTable* std_init()
+{
+    return stdlib;
+}
+
+SYM_EXPORT const SymbolTable* libstd_init()
 {
     return stdlib;
 }
