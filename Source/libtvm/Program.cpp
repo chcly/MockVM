@@ -391,8 +391,12 @@ Register* Program::clone(void)
 
 void Program::release(Register* reg)
 {
-    memcpy(m_regi, reg, sizeof(Register) * 10);
-    delete[] reg;
+    if (m_regi)
+    {
+        const size_t RegiLen = sizeof(Register) * 10;
+        memcpy(m_regi, reg, RegiLen);
+        delete[] reg;
+    }
 }
 
 void Program::handle_OP_RET(const ExecInstruction& inst)
@@ -426,16 +430,9 @@ void Program::handle_OP_CALL(const ExecInstruction& inst)
     {
         if (inst.call != nullptr)
         {
-            try
-            {
-                Register* cl = clone();
-                inst.call((tvmregister_t)cl);
-                release(cl);
-            }
-            catch (...)
-            {
-                printf("call threw an exception\n");
-            }
+            Register* cl = clone();
+            inst.call((tvmregister_t)cl);
+            release(cl);
         }
     }
     else
