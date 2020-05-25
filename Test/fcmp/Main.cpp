@@ -1,0 +1,98 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <string.h>
+
+char *GetFilteredBuffer(const char *fname, size_t& len)
+{
+    FILE *fp = fopen(fname, "rb");
+    if (!fp)
+        return NULL;
+
+    fseek(fp, 0L, SEEK_END);
+    len = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    char *bufA = new char[len + 1];
+    char *bufB = new char[len + 1];
+    fread(bufB, 1, len, fp);
+    fclose(fp);
+
+    size_t i, j=0;
+    for (i=0; i<len; ++i)
+    {
+        char ch = bufB[i];
+        if (ch != '\r' && ch != '\n')
+            bufA[j++] = bufB[i];
+        bufA[j] = 0;
+    }
+
+    if (j == 0)
+    {
+        delete[] bufA;
+        delete[] bufB;
+        bufA = NULL;
+    }
+    else
+    {
+        delete[] bufB;
+    }
+    len = j;
+    return bufA;
+}
+
+
+
+int main(int argc, char **argv)
+{
+    if (argc < 3)
+    {
+        printf("Usage: fcmp file1 file2\n");
+        return 1;
+    }
+    size_t a, b;
+    char *fileA = GetFilteredBuffer(argv[1], a);
+    char *fileB = GetFilteredBuffer(argv[2], b);
+
+    int rc = 0;
+    if (a != b)
+    {
+        printf("\tNEQ\n");
+        rc = 1;
+        goto done;
+    }
+
+    if (fileA == NULL && fileB == NULL)
+    {
+        printf("\tEQ\n");
+        goto done;
+    }
+    else if (fileA != NULL && fileB == NULL)
+    {
+        printf("\tNEQ\n");
+        rc = 1;
+        goto done;
+    }
+    else if (fileA == NULL && fileB != NULL)
+    {
+        printf("\tNEQ\n");
+        rc = 1;
+        goto done;
+    }
+    else
+    {
+        if (memcmp(fileA, fileB, a) == 0)
+        {
+            printf("\tEQ\n");
+            goto done;
+        }
+    }
+
+    rc = 1;
+    printf("\tNEQ\n");
+
+done:
+    delete[] fileA;
+    delete[] fileB;
+    return rc;
+}
+

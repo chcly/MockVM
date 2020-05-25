@@ -17,8 +17,10 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 # ------------------------------------------------------------------------------
+subdirs(fcmp)
 set(tcom ${ToyVM_BIN_DIR}/tcom)
 set(tvm  ${ToyVM_BIN_DIR}/tvm)
+set(fcmp  ${ToyVM_BIN_DIR}/fcmp)
 
 macro(add_compile_tests OUT Group)
     foreach (it IN ITEMS ${ARGN})
@@ -46,15 +48,16 @@ macro(add_compile_tests OUT Group)
             COMMAND ${tcom} -l std -o ${GEN_FILE} ${ASMFILE}
             COMMAND ${tvm} ${GEN_FILE} > ${GEN_FILE_ANS}
             MAIN_DEPENDENCY ${ASMFILE}
-            DEPENDS tcom tvm
+            DEPENDS tcom tvm fcmp std
             COMMENT "${ASMNAME}"
             VERBATIM
         )
 
         add_custom_command(
             OUTPUT ${GEN_FILE}.txt
-            COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${GEN_FILE}.txt
             MAIN_DEPENDENCY ${GEN_FILE_ANS}
+            COMMAND ${fcmp} ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${GEN_FILE}.txt
+            DEPENDS tcom tvm fcmp std
             VERBATIM
             COMMENT ""
         )
@@ -82,7 +85,7 @@ macro(add_temp_test OUT Group)
             COMMAND ${tcom}  -l std  -d -o ${GEN_FILE} ${ASMFILE} 
             COMMAND ${tvm} ${GEN_FILE} -t
             MAIN_DEPENDENCY ${ASMFILE}
-            DEPENDS tcom tvm
+            DEPENDS tcom tvm fcmp std
             COMMENT "${ASMNAME}"
         )
     endforeach(it)
@@ -109,13 +112,12 @@ macro(add_test_dump_err OUT Group)
         source_group("Result\\${Group}\\Expected"  FILES ${GEN_FILE_EXP})
         source_group("Result\\${Group}\\Actual"    FILES ${GEN_FILE_ANS})
 
-
         add_custom_command(
             OUTPUT ${GEN_FILE_ANS}
-            COMMAND ${tcom}  -l std  -d -o ${GEN_FILE} ${ASMFILE} > ${GEN_FILE_ANS}  ||
-                    ${CMAKE_COMMAND} -E compare_files --ignore-eol ${GEN_FILE_ANS} ${GEN_FILE_EXP}
+            COMMAND ${tcom} -d -o ${GEN_FILE} ${ASMFILE} > ${GEN_FILE_ANS}  ||
+                    ${fcmp} ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${GEN_FILE}.txt
             MAIN_DEPENDENCY ${ASMFILE}
-            DEPENDS tcom tvm
+            DEPENDS tcom tvm fcmp std
             COMMENT "${ASMNAME}"
         )
     endforeach(it)
