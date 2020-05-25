@@ -113,7 +113,6 @@ int Program::loadStringTable(BlockReader& reader)
     str_t    str;
     uint32_t i, st = PS_OK;
     size_t   tot = 0;
-
     for (i = 0; i < strTab.size && !reader.eof(); ++i)
     {
         char ch = reader.next();
@@ -127,19 +126,33 @@ int Program::loadStringTable(BlockReader& reader)
         }
         else
         {
-            // if this is correctly stored
-            // there should be no duplicates
-            if (str.empty())
-                i = strTab.size;
+            if (!str.empty())
+            {
+                if (m_strtab.find(str) != m_strtab.end())
+                {
+                    printf("duplicate string found in the table %s\n", 
+                        str.c_str());
+                    st = PS_ERROR;
+                    i  = strTab.size;
+                }
+                else
+                {
+                    m_strtab[str] = tot++;
+                    m_strtablist.push_back(str);
+                    str.resize(0);
+                }
+            }
             else
             {
-                m_strtab[str] = tot++;
-                m_strtablist.push_back(str);
-                str.resize(0);
+                // force an early exit even if
+                // the whole string table has 
+                // not been read.
+                if (i + 1 != strTab.size)
+                    st = PS_ERROR;
+                i = strTab.size;
             }
         }
     }
-
     return st;
 }
 
@@ -163,21 +176,15 @@ int Program::loadSymbolTable(BlockReader& reader)
             str.push_back(ch);
         else if (ch != 0)
         {
-            printf("unknown character %c in the string table\n", ch);
+            printf("unknown character %c in the symbol table\n", ch);
             st = PS_ERROR;
             i  = symtab.size;
         }
         else
         {
-            // if this is correctly stored
-            // there should be no duplicates
-
-            if (str.empty())
-                i = symtab.size;
-            else
+            if (!str.empty())
             {
                 LibHandle lib = nullptr;
-
                 if (IsModulePresent(str, m_modpath))
                 {
                     lib = LoadSharedLibrary(str, m_modpath);
@@ -195,16 +202,23 @@ int Program::loadSymbolTable(BlockReader& reader)
                 }
                 str.resize(0);
             }
+            else
+            {
+                // force an early exit even if
+                // the whole string table has
+                // not been read.
+                if (i + 1 != symtab.size)
+                    st = PS_ERROR;
+                i = symtab.size;
+            }
         }
     }
-
     return st;
 }
 
 int Program::loadCode(BlockReader& reader)
 {
     reader.moveTo(sizeof(TVMHeader));
-
     TVMSection code;
     reader.read(&code, sizeof(TVMSection));
 
@@ -218,7 +232,6 @@ int Program::loadCode(BlockReader& reader)
     uint32_t v32;
     int      a;
     size_t   i = 0;
-
     while (i < code.size && !reader.eof())
     {
         i += reader.read(ops, 3);
@@ -269,7 +282,6 @@ int Program::loadCode(BlockReader& reader)
                 }
             }
         }
-
         if (testInstruction(exec))
             m_ins.push_back(exec);
         else
@@ -282,6 +294,7 @@ int Program::loadCode(BlockReader& reader)
         printf("misaligned instructions\n");
         return PS_ERROR;
     }
+
     m_curinst = 0;
     if (code.entry < m_ins.size())
         m_curinst = code.entry;
