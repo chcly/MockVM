@@ -21,7 +21,7 @@ set(tcom ${ToyVM_BIN_DIR}/tcom)
 set(tvm  ${ToyVM_BIN_DIR}/tvm)
 
 macro(add_compile_tests OUT Group)
-    foreach (it ${ARGN})
+    foreach (it IN ITEMS ${ARGN})
         get_filename_component(ASMFILE ${it}      ABSOLUTE)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
@@ -63,7 +63,7 @@ endmacro(add_compile_tests)
 
 
 macro(add_temp_test OUT Group)
-    foreach (it ${ARGN})
+    foreach (it IN ITEMS ${ARGN})
         get_filename_component(ASMFILE ${it}      ABSOLUTE)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
@@ -90,7 +90,7 @@ endmacro(add_temp_test)
 
 
 macro(add_test_dump_err OUT Group)
-    foreach (it ${ARGN})
+    foreach (it IN ITEMS ${ARGN})
         get_filename_component(ASMFILE ${it}      ABSOLUTE)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
@@ -136,6 +136,7 @@ set(TestFiles_1
     Basic/Label.asm
     Basic/TestPutChar.asm
     Basic/Bug1.asm
+
 )
 
 set(TestFiles_2
@@ -146,6 +147,7 @@ set(TestFiles_2
     Exec/Sub2.asm
     Exec/Mul1.asm
     Exec/Div1.asm
+
 )
 
 set(TestFiles_3
@@ -153,6 +155,7 @@ set(TestFiles_3
     Errors/Err2.asm
     Errors/Err3.asm
     Errors/Err4.asm
+
 )
 
 add_compile_tests(OutFiles_1 Basic  ${TestFiles_1})
