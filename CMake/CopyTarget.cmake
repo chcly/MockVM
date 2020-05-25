@@ -24,7 +24,7 @@ endmacro(copy_target)
 
 macro(copy_install_target TARNAME)
 
-    if (ToyVM_INSTALL_PATH)
+    if (NOT ${ToyVM_INSTALL_PATH} STREQUAL "")
         if (NOT ${ARGN} STREQUAL "")
             add_custom_command(TARGET ${TARNAME} 
                                POST_BUILD

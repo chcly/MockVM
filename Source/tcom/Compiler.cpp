@@ -73,6 +73,10 @@ int main(int argc, char **argv)
                 if (i + 1 < argc)
                     ctx.modules.push_back((argv[++i]));
                 break;
+            case 'm':
+                DisplayModulePath();
+                return 0;
+                break;
             case 'd':
                 ctx.disableErrorFmt = true;
                 break;
@@ -131,4 +135,6 @@ void usage(void)
     cout << "        -o output file.\n";
     cout << "        -l link library.\n";
     cout << "        -d disable full path when reporting errors.\n";
+    cout << "        -m print the module path and exit.\n";
+    cout << "\n";
 }

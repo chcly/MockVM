@@ -22,4 +22,5 @@ include_directories(../libtvm)
 add_executable(tvm  VM.cpp)
 target_link_libraries(tvm libtvm)
 copy_target(tvm ${ToyVM_BIN_DIR})
+copy_install_target(tvm)
 

@@ -65,11 +65,10 @@ void FindExecutableDirectory(str_t& dest)
     {
         char  buf[270];
         DWORD sz = GetModuleFileName(mod, buf, 270);
-        if (sz < 270)
+        if (sz > 0 && sz < 270)
         {
             buf[sz] = 0;
             dest    = str_t(buf, sz);
-
             size_t pos = dest.find_last_of('\\');
             if (pos != str_t::npos)
                 dest = dest.substr(0, pos);
@@ -150,16 +149,29 @@ bool IsModulePresent(const str_t& modname, const str_t& moddir)
 
 void MakeModulePath(str_t& absPath, const str_t& modname, const str_t& moddir)
 {
+    // Maintain control of the loaded module by allowing only absolute 
+    // paths to be specified. It's ether where it should be or not found at all. 
     absPath.clear();
 
     absPath += moddir;
 #ifdef _WIN32
-    absPath += "\\lib\\lib";
+    absPath += "\\lib\\";
     absPath += modname;
     absPath += ".dll";
 #else
-    absPath += "/lib/liblib";
+    absPath += "/lib/lib";
     absPath += modname;
     absPath += ".so";
+#endif
+}
+
+void DisplayModulePath(void)
+{
+    str_t path;
+    FindExecutableDirectory(path);
+#if _WIN32
+    puts((path+"\\lib").c_str());
+#else
+    puts((path + "/lib").c_str());
 #endif
 }

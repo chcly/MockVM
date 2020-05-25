@@ -39,6 +39,7 @@ extern void      UnloadSharedLibrary(LibHandle handle);
 extern LibSymbol GetSymbolAddress(LibHandle handle, const str_t& symname);
 extern void      FindExecutableDirectory(str_t& dest);
 extern bool      IsModulePresent(const str_t& modname, const str_t& moddir);
+extern void      DisplayModulePath(void);
 
 
 #endif  //_SymbolUtils_h_

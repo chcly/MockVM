@@ -23,4 +23,6 @@ include_directories(../libtvm)
 add_executable(tcom  Compiler.cpp)
 target_link_libraries(tcom libtvm)
 copy_target(tcom ${ToyVM_BIN_DIR})
+copy_install_target(tcom)
+
 

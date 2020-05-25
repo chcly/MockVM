@@ -58,6 +58,11 @@ int main(int argc, char **argv)
             char ch = argv[i][1];
             if (ch == 't')
                 ctx.time = true;
+            else if (ch == 'm')
+            {
+                DisplayModulePath();
+                return 0;
+            }
             else if (ch == 'h')
             {
                 usage();
@@ -98,6 +103,8 @@ void usage(void)
 {
     cout << "tvm <options> <program_path>\n\n";
     cout << "    options:\n\n";
-    cout << "        -h display this message\n";
-    cout << "        -t display execution time\n";
+    cout << "        -h display this message.\n";
+    cout << "        -t display execution time.\n";
+    cout << "        -m print the module path and exit.\n";
+    cout << "\n";
 }

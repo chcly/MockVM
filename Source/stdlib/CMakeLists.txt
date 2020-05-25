@@ -19,8 +19,8 @@
 # ------------------------------------------------------------------------------
 
 include_directories(../libtvm)
-add_library(libstd SHARED stdlib.cpp)
+add_library(std SHARED stdlib.cpp)
 
-target_link_libraries(libstd  libtvm)
-copy_target(libstd  ${ToyVM_LIB_DIR})
-copy_install_target(libstd  lib)
+target_link_libraries(std  libtvm)
+copy_target(std  ${ToyVM_LIB_DIR})
+copy_install_target(std  lib)
