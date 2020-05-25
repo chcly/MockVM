@@ -42,6 +42,7 @@ private:
     strset_t        m_linkedLibraries;
     SymbolLookup    m_symbols;
     TVMHeader       m_header;
+    str_t           m_modpath;
 
 
     void   write(const void* v, size_t size);
@@ -49,22 +50,23 @@ private:
     void   write16(uint16_t v);
     void   write32(uint32_t v);
     void   write64(uint64_t v);
+
     size_t writeDataSection(void);
     size_t writeCodeSection(void);
     size_t writeSymbolSection(void);
     size_t writeStringSection(void);
+    int    mapInstructions(void);
+    size_t calculateInstructionSize(void);
 
-    int          mapInstructions(void);
-    size_t       calculateInstructionSize(void);
-    size_t       findLabel(const str_t& name);
+    size_t findLabel(const str_t& name);
+    size_t addToStringTable(const str_t& symname);
+    size_t addLinkedSymbol(const str_t& symname, const str_t& libname);
+    int    loadSharedLibrary(const str_t& lib);
+
     SymbolTable* findStatic(const Instruction& ins);
-    size_t       addToStringTable(const str_t& symname);
-    int          loadSharedLibrary(const str_t& lib);
-
-
 
 public:
-    BinaryWriter();
+    BinaryWriter(const str_t& modpath);
     ~BinaryWriter();
 
     void mergeInstructions(const Instructions& insl);

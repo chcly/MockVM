@@ -1,3 +1,23 @@
+# -----------------------------------------------------------------------------
+#   Copyright (c) 2020 Charles Carley.
+#
+#   This software is provided 'as-is', without any express or implied
+# warranty. In no event will the authors be held liable for any damages
+# arising from the use of this software.
+#
+#   Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
+# freely, subject to the following restrictions:
+#
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
+#    in a product, an acknowledgment in the product documentation would be
+#    appreciated but is not required.
+# 2. Altered source versions must be plainly marked as such, and must not be
+#    misrepresented as being the original software.
+# 3. This notice may not be removed or altered from any source distribution.
+# ------------------------------------------------------------------------------
+
 
 set(CommonSource
     BlockReader.cpp
@@ -22,49 +42,24 @@ set(CommonHeader
 
 add_library(libtvm  ${CommonSource} ${CommonHeader})
 
+
+
 if (NOT WIN32)
     target_link_libraries(libtvm dl)
 endif()
 
 add_executable(tcom  Compiler.cpp)
 target_link_libraries(tcom libtvm)
+copy_target(tcom ${ToyVM_BIN_DIR})
+
 
 add_executable(tvm  VM.cpp)
 target_link_libraries(tvm libtvm)
+copy_target(tvm ${ToyVM_BIN_DIR})
 
 subdirs(stdlib)
-target_link_libraries(libtvm std)
 
 
-
-if (NOT INSTALL_PATH STREQUAL "")
-    message(STATUS "INSTALL ==> ${INSTALL_PATH}")
-    add_custom_command(TARGET tcom 
-                       POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:tcom> 
-                       "${INSTALL_PATH}/$<TARGET_FILE_BASE_NAME:tcom>$<TARGET_FILE_SUFFIX:tcom>"
-                       )
-
-    add_custom_command(TARGET tvm 
-                       POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:tvm> 
-                       "${INSTALL_PATH}/$<TARGET_FILE_BASE_NAME:tvm>$<TARGET_FILE_SUFFIX:tvm>"
-                       )
-
-endif()
-
-
-
-add_custom_command(TARGET tcom 
-                    POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:tcom> 
-                    "${BIN_DIR}/$<TARGET_FILE_BASE_NAME:tcom>$<TARGET_FILE_SUFFIX:tcom>"
-                    )
-
-
-add_custom_command(TARGET tvm 
-                    POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:tvm> 
-                    "${BIN_DIR}/$<TARGET_FILE_BASE_NAME:tvm>$<TARGET_FILE_SUFFIX:tvm>"
-                    )
+copy_install_target(tcom)
+copy_install_target(tvm)
 

@@ -28,8 +28,6 @@
 #include <iostream>
 #include "SymbolUtils.h"
 
-SYM_EXPORT SymbolTable* std_init();
-
 
 inline uint16_t getAlignment(size_t al)
 {
@@ -39,7 +37,7 @@ inline uint16_t getAlignment(size_t al)
     return 0;
 }
 
-BinaryWriter::BinaryWriter() :
+BinaryWriter::BinaryWriter(const str_t &modpath) :
     m_fp(0),
     m_loc(0),
     m_ins(),
@@ -50,9 +48,11 @@ BinaryWriter::BinaryWriter() :
     m_stdlib(),
     m_addrMap(),
     m_labels(),
-    m_header({})
+    m_header({}),
+    m_modpath(modpath)
+
 {
-    m_stdlib = std_init();
+    m_stdlib = nullptr;
 }
 
 BinaryWriter::~BinaryWriter()
@@ -143,6 +143,17 @@ size_t BinaryWriter::addToStringTable(const str_t& symname)
     return size;
 }
 
+size_t BinaryWriter::addLinkedSymbol(const str_t& symname, const str_t& libname)
+{
+    if (m_linkedLibraries.find(libname) == m_linkedLibraries.end())
+    {
+        m_linkedLibraries.insert(libname);
+        m_sizeOfSym += libname.size();
+        m_sizeOfSym += 1;
+    }
+    return addToStringTable(symname);
+}
+
 int BinaryWriter::mapInstructions(void)
 {
     uint64_t label  = PS_UNDEFINED;
@@ -207,10 +218,7 @@ int BinaryWriter::mapInstructions(void)
                 SymbolLookup::iterator it = m_symbols.find(irp->lname);
                 if (it != m_symbols.end())
                 {
-                    if (m_linkedLibraries.find(it->second) == m_linkedLibraries.end())
-                        m_linkedLibraries.insert(it->second);
-
-                    irp->argv[0] = addToStringTable(irp->lname);
+                    irp->argv[0] = addLinkedSymbol(irp->lname, it->second);
                     irp->flags |= IF_SYMU;
                 }
                 else
@@ -277,12 +285,11 @@ size_t BinaryWriter::findLabel(const str_t& name)
     return -1;
 }
 
-
 int BinaryWriter::loadSharedLibrary(const str_t& lib)
 {
     int status = PS_OK;
 
-    LibHandle shlib = LoadSharedLibrary(lib.c_str());
+    LibHandle shlib = LoadSharedLibrary(lib, m_modpath);
     if (shlib != nullptr)
     {
         str_t lookup = lib + "_init";
@@ -298,9 +305,7 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
                 const str_t str = avail[i].name;
                 SymbolLookup::iterator it = m_symbols.find(str); 
                 if (it == m_symbols.end())
-                {
                     m_symbols[str] = lib;
-                }
                 else
                 {
                     printf("duplicate symbol %s found in library %s\n",
@@ -327,7 +332,6 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
     }
     return status;
 }
-
 
 int BinaryWriter::resolve(strvec_t& modules)
 {
@@ -470,6 +474,16 @@ size_t BinaryWriter::writeSymbolSection(void)
     sec.align      = getAlignment(m_sizeOfSym);
 
     write(&sec, sizeof(TVMSection));
+
+    strset_t::iterator it = m_linkedLibraries.begin();
+    while (it != m_linkedLibraries.end())
+    {
+        const str_t& str = (*it++);
+        write(str.c_str(), str.size());
+        write8(0);
+    }
+
+
     int pb = sec.align;
     while (pb--)
         write8(0);
@@ -504,7 +518,6 @@ int BinaryWriter::writeSections()
         return PS_ERROR;
 
     size_t size;
-
     if (m_sizeOfCode != 0)
     {
         size = writeCodeSection();

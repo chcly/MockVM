@@ -28,6 +28,7 @@
 #include "BlockReader.h"
 #include "Declarations.h"
 #include "Parser.h"
+#include "SymbolUtils.h"
 
 using namespace std;
 
@@ -39,6 +40,7 @@ struct ProgramInfo
     strvec_t files;
     strvec_t modules;
     bool     disableErrorFmt;
+    string   modulePath;
 };
 
 void usage(void);
@@ -89,7 +91,9 @@ int main(int argc, char **argv)
         return PS_ERROR;
     }
 
-    BinaryWriter w;
+    FindExecutableDirectory(ctx.modulePath);
+
+    BinaryWriter w(ctx.modulePath);
     for (string file : ctx.files)
     {
         Parser p;

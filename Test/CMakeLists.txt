@@ -1,3 +1,7 @@
+set(tcom ${ToyVM_BIN_DIR}/tcom)
+set(tvm  ${ToyVM_BIN_DIR}/tvm)
+
+
 macro(add_compile_tests OUT Group)
     foreach (it ${ARGN})
 
@@ -23,8 +27,8 @@ macro(add_compile_tests OUT Group)
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
-            COMMAND tcom -o ${GEN_FILE} ${ASMFILE}
-            COMMAND tvm ${GEN_FILE} > ${GEN_FILE_ANS}
+            COMMAND ${tcom} -l std -o ${GEN_FILE} ${ASMFILE}
+            COMMAND ${tvm} ${GEN_FILE} > ${GEN_FILE_ANS}
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm
             COMMENT "${ASMNAME}"
@@ -61,8 +65,8 @@ macro(add_temp_test OUT Group)
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
-            COMMAND tcom -d -o ${GEN_FILE} ${ASMFILE} 
-            COMMAND tvm ${GEN_FILE} -t
+            COMMAND ${tcom} -d -l std -o ${GEN_FILE} ${ASMFILE} 
+            COMMAND ${tvm} ${GEN_FILE} -t
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm
             COMMENT "${ASMNAME}"
@@ -94,7 +98,7 @@ macro(add_test_dump_err OUT Group)
 
         add_custom_command(
             OUTPUT ${GEN_FILE_ANS}
-            COMMAND tcom -d -o ${GEN_FILE} ${ASMFILE} > ${GEN_FILE_ANS}  ||
+            COMMAND ${tcom} -d -l std -o ${GEN_FILE} ${ASMFILE} > ${GEN_FILE_ANS}  ||
                     ${CMAKE_COMMAND} -E compare_files --ignore-eol ${GEN_FILE_ANS} ${GEN_FILE_EXP}
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm

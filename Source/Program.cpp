@@ -33,21 +33,21 @@
 
 using namespace std;
 
-SYM_EXPORT SymbolTable* std_init();
-
-
-
-Program::Program() :
+Program::Program(const str_t& modpath) :
     m_flags(0),
     m_return(0),
-    m_stdLib(0)
+    m_stdLib(0),
+    m_modpath(modpath)
 {
     memset(m_regi, 0, sizeof(Registers));
-    m_stdLib = std_init();
+    m_stdLib = nullptr;
 }
 
 Program::~Program()
 {
+    DynamicLib::iterator it = m_dynlib.begin();
+    while (it != m_dynlib.end())
+        UnloadSharedLibrary(*it++);
 }
 
 int Program::load(const char* fname)
@@ -60,6 +60,12 @@ int Program::load(const char* fname)
     }
 
     reader.read(&m_header, sizeof(TVMHeader));
+    if (m_header.code[0] != 'T' || m_header.code[1] != 'V')
+    {
+        printf("Invalid file type\n");
+        return PS_ERROR;
+    }
+
     if (m_header.str != 0)
     {
         if (loadStringTable(reader) != PS_OK)
@@ -69,10 +75,13 @@ int Program::load(const char* fname)
         }
     }
 
-    if (m_header.code[0] != 'T' || m_header.code[1] != 'V')
+    if (m_header.sym != 0)
     {
-        printf("Invalid file type\n");
-        return PS_ERROR;
+        if (loadSymbolTable(reader) != PS_OK)
+        {
+            printf("failed to read symbol table\n");
+            return PS_ERROR;
+        }
     }
 
     if (m_header.code != 0)
@@ -88,7 +97,6 @@ int Program::load(const char* fname)
         printf("no code found in the file\n");
         return PS_ERROR;
     }
-
 
     return PS_OK;
 }
@@ -117,7 +125,7 @@ int Program::loadStringTable(BlockReader& reader)
             st = PS_ERROR;
             i  = strTab.size;
         }
-        else 
+        else
         {
             // if this is correctly stored
             // there should be no duplicates
@@ -126,6 +134,65 @@ int Program::loadStringTable(BlockReader& reader)
             else
             {
                 m_strtab[str] = tot++;
+                m_strtablist.push_back(str);
+                str.resize(0);
+            }
+        }
+    }
+
+    return st;
+}
+
+int Program::loadSymbolTable(BlockReader& reader)
+{
+    reader.moveTo(m_header.sym);
+    TVMSection symtab;
+    reader.read(&symtab, sizeof(TVMSection));
+
+    if (symtab.size <= 0)
+        return PS_OK;
+
+    str_t    str;
+    uint32_t i, st = PS_OK;
+    size_t   tot = 0;
+
+    for (i = 0; i < symtab.size && !reader.eof(); ++i)
+    {
+        char ch = reader.next();
+        if (ch >= 32 && ch <= 127)
+            str.push_back(ch);
+        else if (ch != 0)
+        {
+            printf("unknown character %c in the string table\n", ch);
+            st = PS_ERROR;
+            i  = symtab.size;
+        }
+        else
+        {
+            // if this is correctly stored
+            // there should be no duplicates
+
+            if (str.empty())
+                i = symtab.size;
+            else
+            {
+                LibHandle lib = nullptr;
+
+                if (IsModulePresent(str, m_modpath))
+                {
+                    lib = LoadSharedLibrary(str, m_modpath);
+                    if (lib != nullptr)
+                        m_dynlib.push_back(lib);
+                }
+
+                if (!lib)
+                {
+                    printf("failed to find lib%s in %s\n",
+                           str.c_str(),
+                           m_modpath.c_str());
+                    st = PS_ERROR;
+                    i  = symtab.size;
+                }
                 str.resize(0);
             }
         }
@@ -195,8 +262,11 @@ int Program::loadCode(BlockReader& reader)
             }
             else if (exec.flags & IF_SYMU)
             {
-                printf("failed to find symbol\n");
-                return PS_ERROR;
+                if (findDynamic(exec) != PS_OK)
+                {
+                    printf("failed to find symbol\n");
+                    return PS_ERROR;
+                }
             }
         }
 
@@ -231,6 +301,41 @@ int Program::findStatic(ExecInstruction& ins)
                 ins.call = m_stdLib[i].callback;
         }
         ++i;
+    }
+
+    return ins.call != nullptr ? (int)PS_OK : (int)PS_ERROR;
+}
+
+int Program::findDynamic(ExecInstruction& ins)
+{
+    if (ins.argv[0] < m_strtablist.size())
+    {
+        str_t name = m_strtablist.at(ins.argv[0]), look;
+        look       = "__" + name;
+
+        SymbolMap::iterator it = m_symbols.find(name);
+        if (it != m_symbols.end())
+        {
+            ins.call = it->second;
+        }
+        else
+        {
+            Symbol search = nullptr;
+
+            DynamicLib::iterator it = m_dynlib.begin();
+            while (it != m_dynlib.end() && search == nullptr)
+            {
+                LibHandle lib = (*it++);
+                LibSymbol sym = GetSymbolAddress(lib, look.c_str());
+
+                if (sym != nullptr)
+                {
+                    search          = (Symbol)sym;
+                    m_symbols[name] = search;
+                }
+            }
+            ins.call = search;
+        }
     }
 
     return ins.call != nullptr ? (int)PS_OK : (int)PS_ERROR;
@@ -294,7 +399,10 @@ void Program::handle_OP_CALL(const ExecInstruction& inst)
             inst.call(m_regi);
     }
     else if (inst.flags & IF_SYMU)
-        m_curinst = m_ins.size();
+    {
+        if (inst.call != nullptr)
+            inst.call(m_regi);
+    }
     else
     {
         m_stack.push(m_curinst);
@@ -580,10 +688,11 @@ void Program::handle_OP_SHL(const ExecInstruction& inst)
 
 void Program::handle_OP_PRG(const ExecInstruction& inst)
 {
+    // ios::sync_with_stdio(false);
     if (inst.flags & IF_REG0)
-        cout << (int64_t)m_regi[inst.argv[0]].x << '\n';
+        cout << (int64_t)m_regi[inst.argv[0]].x << std::endl;
     else
-        cout << (int64_t)inst.argv[0] << '\n';
+        cout << (int64_t)inst.argv[0] << std::endl;
 }
 
 void Program::handle_OP_PRGI(const ExecInstruction& inst)
@@ -609,7 +718,6 @@ void Program::handle_OP_PRGI(const ExecInstruction& inst)
         cout << '\n';
     }
 }
-
 
 bool Program::testInstruction(const ExecInstruction& exec)
 {

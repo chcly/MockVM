@@ -22,18 +22,19 @@
 #include <stdio.h>
 #include "SymbolUtils.h"
 
-void __putchar(Register* values)
+SYM_EXPORT void __putchar(Register* values)
 {
     putchar(values[0].b[0]);
+    fflush(stdout);
 }
 
-void __getchar(Register* values)
+SYM_EXPORT void __getchar(Register* values)
 {
     values[0].b[0] = getchar();
 
 }
 
-void __helloworld(Register* values)
+SYM_EXPORT void __helloworld(Register* values)
 {
     printf("helloworld\n");
     values[0].x = 123;

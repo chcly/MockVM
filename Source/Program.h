@@ -47,12 +47,17 @@ private:
     uint64_t         m_curinst;
     SymbolTable*     m_stdLib;
     LabelMap         m_strtab;
+    strvec_t         m_strtablist;
     Stack            m_stack;
+    str_t            m_modpath;
+    DynamicLib       m_dynlib;
+    SymbolMap        m_symbols;
 
     const static InstructionTable OPCodeTable;
     const static size_t           OPCodeTableSize;
 
     int findStatic(ExecInstruction& ins);
+    int findDynamic(ExecInstruction& ins);
 
     void handle_OP_RET(const ExecInstruction& inst);
     void handle_OP_MOV(const ExecInstruction& inst);
@@ -76,12 +81,14 @@ private:
     void handle_OP_PRG(const ExecInstruction& inst);
     void handle_OP_PRGI(const ExecInstruction& inst);
 
-    int  loadStringTable(BlockReader& reader);
+    int loadStringTable(BlockReader& reader);
+    int loadSymbolTable(BlockReader& reader);
+
     int  loadCode(BlockReader& reader);
     bool testInstruction(const ExecInstruction& exec);
 
 public:
-    Program();
+    Program(const str_t& modpath);
     ~Program();
 
     int load(const char* fname);

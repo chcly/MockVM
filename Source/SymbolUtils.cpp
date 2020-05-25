@@ -23,25 +23,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Declarations.h"
+#include <sys/stat.h>
+
+void MakeModulePath(str_t& absPath, const str_t& modname, const str_t& moddir);
+
 
 #ifdef _WIN32
 #include <windows.h>
 
-LibHandle LoadSharedLibrary(const char* libname)
+
+LibHandle LoadSharedLibrary(const str_t& modname, const str_t& moddir)
 {
     str_t absPath;
-    FindExecutableDirectory(absPath);
-
-    if (absPath.empty())
-    {
-        // FindExecutableDirectory reports an error
-        return nullptr;
-    }
-
-    // modules are stored in tvm_dir / lib for now.
-    absPath += "/lib/";
-    absPath += libname;
-    absPath += ".dll";
+    MakeModulePath(absPath, modname, moddir);
 
     HMODULE lib = LoadLibrary(absPath.c_str());
     if (!lib)
@@ -58,10 +52,10 @@ void UnloadSharedLibrary(LibHandle handle)
         FreeLibrary((HMODULE)handle);
 }
 
-LibSymbol GetSymbolAddress(LibHandle handle, const char* symname)
+LibSymbol GetSymbolAddress(LibHandle handle, const str_t& symname)
 {
     if (handle)
-        return GetProcAddress((HMODULE)handle, symname);
+        return GetProcAddress((HMODULE)handle, symname.c_str());
     return nullptr;
 }
 
@@ -99,21 +93,10 @@ void FindExecutableDirectory(str_t& dest)
 #include <sys/types.h>
 #include <unistd.h>
 
-LibHandle LoadSharedLibrary(const char* libname)
+LibHandle LoadSharedLibrary(const str_t& modname, const str_t& moddir)
 {
     str_t absPath;
-    FindExecutableDirectory(absPath);
-
-    if (absPath.empty())
-    {
-        // FindExecutableDirectory reports an error
-        return nullptr;
-    }
-
-    // modules are stored in tvm_dir / lib for now.
-    absPath += "/lib/lib";
-    absPath += libname;
-    absPath += ".so";
+    MakeModulePath(absPath, modname, moddir);
 
     LibHandle lib = (LibHandle)dlopen(absPath.c_str(), RTLD_LAZY);
     if (!lib)
@@ -130,10 +113,10 @@ void UnloadSharedLibrary(LibHandle handle)
         dlclose((void*)handle);
 }
 
-LibSymbol GetSymbolAddress(LibHandle handle, const char* symname)
+LibSymbol GetSymbolAddress(LibHandle handle, const str_t& symname)
 {
     if (handle)
-        return dlsym((void*)handle, symname);
+        return dlsym((void*)handle, symname.c_str());
     return nullptr;
 }
 
@@ -156,5 +139,30 @@ void FindExecutableDirectory(str_t& dest)
         printf("failed to get the executable path.\n");
     }
 }
-
 #endif
+
+
+bool IsModulePresent(const str_t& modname, const str_t& moddir)
+{
+    str_t absPath;
+    MakeModulePath(absPath, modname, moddir);
+
+    struct stat _st;
+    return stat(absPath.c_str(), &_st) == 0;
+}
+
+void MakeModulePath(str_t& absPath, const str_t& modname, const str_t& moddir)
+{
+    absPath.clear();
+
+    absPath += moddir;
+#ifdef _WIN32
+    absPath += "\\lib\\lib";
+    absPath += modname;
+    absPath += ".dll";
+#else
+    absPath += "/lib/liblib";
+    absPath += modname;
+    absPath += ".so";
+#endif
+}

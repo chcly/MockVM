@@ -37,9 +37,8 @@ struct ProgramInfo
 {
     bool   time;
     string file;
+    string modulePath;
 };
-
-
 
 int main(int argc, char **argv)
 {
@@ -48,7 +47,6 @@ int main(int argc, char **argv)
         usage();
         return 0;
     }
-
 
     ProgramInfo ctx = {};
     int         i;
@@ -69,6 +67,8 @@ int main(int argc, char **argv)
         }
     }
 
+
+
     if (ctx.file.empty())
     {
         usage();
@@ -76,10 +76,9 @@ int main(int argc, char **argv)
         return 0;
     }
 
+    FindExecutableDirectory(ctx.modulePath);
 
-
-
-    Program prog;
+    Program prog(ctx.modulePath);
     if (prog.load(ctx.file.c_str()) != PS_OK)
     {
         printf("failed to load %s\n", ctx.file.c_str());
