@@ -393,12 +393,7 @@ void Program::handle_OP_MOV(const ExecInstruction& inst)
 
 void Program::handle_OP_CALL(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_SYMA)
-    {
-        if (inst.call != nullptr)
-            inst.call(m_regi);
-    }
-    else if (inst.flags & IF_SYMU)
+    if (inst.flags & IF_SYMA | IF_SYMU)
     {
         if (inst.call != nullptr)
             inst.call(m_regi);
@@ -688,7 +683,6 @@ void Program::handle_OP_SHL(const ExecInstruction& inst)
 
 void Program::handle_OP_PRG(const ExecInstruction& inst)
 {
-    // ios::sync_with_stdio(false);
     if (inst.flags & IF_REG0)
         cout << (int64_t)m_regi[inst.argv[0]].x << std::endl;
     else

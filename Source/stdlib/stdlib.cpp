@@ -51,8 +51,3 @@ SYM_EXPORT const SymbolTable* std_init()
 {
     return stdlib;
 }
-
-SYM_EXPORT const SymbolTable* libstd_init()
-{
-    return stdlib;
-}
