@@ -48,7 +48,7 @@ private:
     SymbolTable*     m_stdLib;
     LabelMap         m_strtab;
     strvec_t         m_strtablist;
-    Stack            m_stack;
+    Stack            m_callStack;
     str_t            m_modpath;
     DynamicLib       m_dynlib;
     SymbolMap        m_symbols;
@@ -81,9 +81,8 @@ private:
     void handle_OP_PRG(const ExecInstruction& inst);
     void handle_OP_PRGI(const ExecInstruction& inst);
 
-    int loadStringTable(BlockReader& reader);
-    int loadSymbolTable(BlockReader& reader);
-
+    int  loadStringTable(BlockReader& reader);
+    int  loadSymbolTable(BlockReader& reader);
     int  loadCode(BlockReader& reader);
     bool testInstruction(const ExecInstruction& exec);
 

@@ -121,6 +121,7 @@ set(TestFiles_1
     Basic/Compact.asm
     Basic/Label.asm
     Basic/TestPutChar.asm
+    Basic/Bug1.asm
 )
 
 set(TestFiles_2
@@ -139,6 +140,10 @@ set(TestFiles_3
     Errors/Err3.asm
 )
 
+set(TestFiles_4
+)
+
+#add_compile_tests(OutFiles_4 Bugs   ${TestFiles_4})
 add_compile_tests(OutFiles_1 Basic  ${TestFiles_1})
 add_compile_tests(OutFiles_2 Exec   ${TestFiles_2})
 add_test_dump_err(OutFiles_3 Errors ${TestFiles_3})
@@ -153,6 +158,7 @@ set(SRC_ALL
     ${OutFiles_1}
     ${OutFiles_2}
     ${OutFiles_3}
+    ${OutFiles_4}
     ${ToyVM_BINARY_DIR}/TestConfig.h
 )
 

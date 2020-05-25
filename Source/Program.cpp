@@ -302,10 +302,11 @@ int Program::loadCode(BlockReader& reader)
     return PS_OK;
 }
 
+
 int Program::findStatic(ExecInstruction& ins)
 {
     int i = 0;
-    while (m_stdLib != nullptr && m_stdLib[i].name != 0 && ins.call == nullptr)
+    while (m_stdLib != nullptr && m_stdLib[i].name != nullptr && ins.call == nullptr)
     {
         StringMap::iterator it = m_strtab.find(m_stdLib[i].name);
         if (it != m_strtab.end())
@@ -315,7 +316,6 @@ int Program::findStatic(ExecInstruction& ins)
         }
         ++i;
     }
-
     return ins.call != nullptr ? (int)PS_OK : (int)PS_ERROR;
 }
 
@@ -324,14 +324,12 @@ int Program::findDynamic(ExecInstruction& ins)
     if (ins.argv[0] < m_strtablist.size())
     {
         str_t name = m_strtablist.at(ins.argv[0]), look;
-        look       = "__" + name;
+        
+        // This needs to change... 
+        look = "__" + name;
 
         SymbolMap::iterator it = m_symbols.find(name);
-        if (it != m_symbols.end())
-        {
-            ins.call = it->second;
-        }
-        else
+        if (it == m_symbols.end())
         {
             Symbol search = nullptr;
 
@@ -349,6 +347,8 @@ int Program::findDynamic(ExecInstruction& ins)
             }
             ins.call = search;
         }
+        else
+            ins.call = it->second;
     }
 
     return ins.call != nullptr ? (int)PS_OK : (int)PS_ERROR;
@@ -362,11 +362,12 @@ int Program::launch(void)
     size_t tinst = m_ins.size();
 
     const ExecInstruction* basePtr = m_ins.data();
-    m_stack.push(m_curinst);
+
+    m_callStack.push(m_curinst);
+
     while (m_curinst < tinst)
     {
         const ExecInstruction& inst = basePtr[m_curinst++];
-
         if (inst.op >= 0 && inst.op < OP_MAX)
         {
             if (OPCodeTable[inst.op] != nullptr)
@@ -383,13 +384,15 @@ int Program::launch(void)
 
 void Program::handle_OP_RET(const ExecInstruction& inst)
 {
-    if (!m_stack.empty())
+    if (!m_callStack.empty())
     {
-        m_curinst = m_stack.top();
-        m_stack.pop();
+        m_curinst = m_callStack.top();
+        m_callStack.pop();
     }
-    if (m_stack.empty())
-        m_curinst = m_ins.size() + 1;
+
+    if (m_callStack.empty())
+        m_curinst = m_ins.size();
+
     m_return = (int32_t)m_regi[0].x;
 }
 
@@ -413,7 +416,7 @@ void Program::handle_OP_CALL(const ExecInstruction& inst)
     }
     else
     {
-        m_stack.push(m_curinst);
+        m_callStack.push(m_curinst);
         m_curinst = inst.argv[0];
     }
 }

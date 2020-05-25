@@ -31,14 +31,23 @@ SYM_EXPORT void __putchar(Register* values)
 SYM_EXPORT void __getchar(Register* values)
 {
     values[0].b[0] = getchar();
+}
 
+SYM_EXPORT void __change_cur_inst(Register* values)
+{
+    char*     cp = ((char*)&values[0].x) + 80;
+    uint64_t* ip = (uint64_t*)cp;
+    ++ip;
+    *ip = 4;
 }
 
 const SymbolTable stdlib[] = {
     {"putchar", __putchar},
     {"getchar", __getchar},
+    {"change_cur_inst", __change_cur_inst},
     {nullptr, nullptr},
 };
+
 
 SYM_EXPORT const SymbolTable* std_init()
 {
