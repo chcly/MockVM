@@ -24,6 +24,7 @@ set(CommonSource
     Parser.cpp
     BlockReader.cpp
     Program.cpp
+    SharedLib.cpp
     SymbolUtils.cpp
 )
 
@@ -35,6 +36,7 @@ set(CommonHeader
     Declarations.h
     BlockReader.h
     Program.h
+    SharedLib.h
     SymbolUtils.h
 )
 

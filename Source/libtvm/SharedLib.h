@@ -19,41 +19,33 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#include <stdio.h>
-#include "SharedLib.h"
-#include "SymbolUtils.h"
+#ifndef _SharedLib_h_
+#define _SharedLib_h_
 
-
-
-SYM_EXPORT void __putchar(tvmregister_t regi)
-{
-    uint8_t ch = prog_get_register8(regi, 0);
-    if (ch)
+#ifdef __cplusplus
+#define BEGIN_C \
+    extern "C"  \
     {
-        putchar(ch);
-        fflush(stdout);
-    }
-}
+#define END_C }
+#else
+#define BEGIN_C
+#define END_C
+#endif
+BEGIN_C;
 
-SYM_EXPORT void __getchar(tvmregister_t regi)
-{
-    prog_set_register8(regi, 0, getchar());
-}
+#include <stdint.h>
 
+typedef struct _register* tvmregister_t;
 
-SYM_EXPORT void __change_cur_inst(tvmregister_t regi)
-{
-}
+uint8_t  prog_get_register8(tvmregister_t regi, uint8_t reg);
+uint16_t prog_get_register16(tvmregister_t regi, uint8_t reg);
+uint32_t prog_get_register32(tvmregister_t regi, uint8_t reg);
+uint64_t prog_get_register64(tvmregister_t regi, uint8_t reg);
 
-const SymbolTable stdlib[] = {
-    {"putchar", __putchar},
-    {"getchar", __getchar},
-    {"change_cur_inst", __change_cur_inst},
-    {nullptr, nullptr},
-};
+void prog_set_register8(tvmregister_t regi, uint8_t reg, uint8_t v);
+void prog_set_register16(tvmregister_t regi, uint8_t reg, uint16_t v);
+void prog_set_register32(tvmregister_t regi, uint8_t reg, uint32_t v);
+void prog_set_register64(tvmregister_t regi, uint8_t reg, uint64_t v);
 
-
-SYM_EXPORT const SymbolTable* std_init()
-{
-    return stdlib;
-}
+END_C;
+#endif  //_SharedLib_h_

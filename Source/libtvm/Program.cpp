@@ -29,6 +29,7 @@
 #include <vector>
 #include "BlockReader.h"
 #include "Declarations.h"
+#include "SharedLib.h"
 #include "SymbolUtils.h"
 
 using namespace std;
@@ -130,8 +131,8 @@ int Program::loadStringTable(BlockReader& reader)
             {
                 if (m_strtab.find(str) != m_strtab.end())
                 {
-                    printf("duplicate string found in the table %s\n", 
-                        str.c_str());
+                    printf("duplicate string found in the table %s\n",
+                           str.c_str());
                     st = PS_ERROR;
                     i  = strTab.size;
                 }
@@ -145,7 +146,7 @@ int Program::loadStringTable(BlockReader& reader)
             else
             {
                 // force an early exit even if
-                // the whole string table has 
+                // the whole string table has
                 // not been read.
                 if (i + 1 != strTab.size)
                     st = PS_ERROR;
@@ -302,7 +303,6 @@ int Program::loadCode(BlockReader& reader)
     return PS_OK;
 }
 
-
 int Program::findStatic(ExecInstruction& ins)
 {
     int i = 0;
@@ -324,8 +324,8 @@ int Program::findDynamic(ExecInstruction& ins)
     if (ins.argv[0] < m_strtablist.size())
     {
         str_t name = m_strtablist.at(ins.argv[0]), look;
-        
-        // This needs to change... 
+
+        // This needs to change...
         look = "__" + name;
 
         SymbolMap::iterator it = m_symbols.find(name);
@@ -382,6 +382,19 @@ int Program::launch(void)
     return m_return;
 }
 
+Register* Program::clone(void)
+{
+    Register* reg = new Register[10];
+    memcpy(reg, m_regi, sizeof(Register) * 10);
+    return reg;
+}
+
+void Program::release(Register* reg)
+{
+    memcpy(m_regi, reg, sizeof(Register) * 10);
+    delete[] reg;
+}
+
 void Program::handle_OP_RET(const ExecInstruction& inst)
 {
     if (!m_callStack.empty())
@@ -412,7 +425,18 @@ void Program::handle_OP_CALL(const ExecInstruction& inst)
     if (inst.flags & IF_SYMA || inst.flags & IF_SYMU)
     {
         if (inst.call != nullptr)
-            inst.call(m_regi);
+        {
+            try
+            {
+                Register* cl = clone();
+                inst.call((tvmregister_t)cl);
+                release(cl);
+            }
+            catch (...)
+            {
+                printf("call threw an exception\n");
+            }
+        }
     }
     else
     {

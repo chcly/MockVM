@@ -25,21 +25,6 @@
 #include <stdint.h>
 #include "Declarations.h"
 
-// To bind external code to the binary.
-// 1. Build a shared library.
-// 2. Export the symbol *module_name*_init()
-// 3. Link it to the executable  with tcom -l module_name.
-// 4. The writer should check to see if the symbol is
-//    in the shared library.
-// 5. If the symbol is matched, store a reference to the
-//    module in the symbol table.
-// 6. Mark the symbol as IF_SYMU, and add the symbol name
-//    to the string table.
-// 7. Store the index in the string table, as the argument
-//    to the call.
-// 7. When loading, search the symbol table for modules.
-// 8. Reload the modules and attempt to resolve callbacks
-//    for symbols marked as IF_SYMU.
 #ifdef _WIN32
 #define SYM_EXPORT extern "C" __declspec(dllexport)
 #else

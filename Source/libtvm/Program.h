@@ -86,6 +86,10 @@ private:
     int  loadCode(BlockReader& reader);
     bool testInstruction(const ExecInstruction& exec);
 
+
+    Register* clone(void);
+    void      release(Register*);
+
 public:
     Program(const str_t& modpath);
     ~Program();

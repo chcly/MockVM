@@ -28,6 +28,7 @@
 #include <stack>
 #include <set>
 #include <unordered_map>
+#include "SharedLib.h"
 
 #define INS_ARG 3
 #define MAX_KWD 5
@@ -42,6 +43,9 @@ typedef union Register {
     uint32_t l[2];
     uint64_t x;
 } Register;
+
+typedef Register Registers[10];
+
 
 enum RegisterArg
 {
@@ -212,7 +216,7 @@ struct Instruction
     str_t    lname;
 };
 
-typedef void (*Symbol)(Register*);
+typedef void (*Symbol)(tvmregister_t);
 
 struct SymbolTable
 {

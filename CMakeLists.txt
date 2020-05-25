@@ -38,7 +38,6 @@ endif()
 
 
 subdirs(CMake)
-
 include (StaticRuntime)
 include (CopyTarget)
 set_static_runtime()
