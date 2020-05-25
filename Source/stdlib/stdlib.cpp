@@ -38,7 +38,7 @@ SYM_EXPORT void __change_cur_inst(Register* values)
     char*     cp = ((char*)&values[0].x) + 80;
     uint64_t* ip = (uint64_t*)cp;
     ++ip;
-    *ip = 4;
+    *ip = 5;
 }
 
 const SymbolTable stdlib[] = {

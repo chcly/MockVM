@@ -19,47 +19,8 @@
 # ------------------------------------------------------------------------------
 
 
-set(CommonSource
-    BlockReader.cpp
-    BinaryWriter.cpp
-    Parser.cpp
-    BlockReader.cpp
-    Program.cpp
-    SymbolUtils.cpp
-)
-
-
-set(CommonHeader
-    BlockReader.h
-    BinaryWriter.h
-    Parser.h
-    Declarations.h
-    BlockReader.h
-    Program.h
-    SymbolUtils.h
-    ../README.md
-)
-
-add_library(libtvm  ${CommonSource} ${CommonHeader})
-
-
-
-if (NOT WIN32)
-    target_link_libraries(libtvm dl)
-endif()
-
-add_executable(tcom  Compiler.cpp)
-target_link_libraries(tcom libtvm)
-copy_target(tcom ${ToyVM_BIN_DIR})
-
-
-add_executable(tvm  VM.cpp)
-target_link_libraries(tvm libtvm)
-copy_target(tvm ${ToyVM_BIN_DIR})
-
+subdirs(libtvm)
 subdirs(stdlib)
 
-
-copy_install_target(tcom)
-copy_install_target(tvm)
-
+subdirs(tcom)
+subdirs(tvm)

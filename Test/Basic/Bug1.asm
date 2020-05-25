@@ -1,7 +1,8 @@
 main:
-    call  change_cur_inst
+    call change_cur_inst
     mov  x0, 'P'
     call putchar
+    mov  x0, 0
     ret
 weee:
     mov  x0, 'H'

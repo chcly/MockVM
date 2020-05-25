@@ -18,9 +18,29 @@
 # 3. This notice may not be removed or altered from any source distribution.
 # ------------------------------------------------------------------------------
 
-include_directories(../libtvm)
-add_library(libstd SHARED stdlib.cpp)
+set(CommonSource
+    BlockReader.cpp
+    BinaryWriter.cpp
+    Parser.cpp
+    BlockReader.cpp
+    Program.cpp
+    SymbolUtils.cpp
+)
 
-target_link_libraries(libstd  libtvm)
-copy_target(libstd  ${ToyVM_LIB_DIR})
-copy_install_target(libstd  lib)
+
+set(CommonHeader
+    BlockReader.h
+    BinaryWriter.h
+    Parser.h
+    Declarations.h
+    BlockReader.h
+    Program.h
+    SymbolUtils.h
+)
+
+add_library(libtvm  ${CommonSource} ${CommonHeader})
+
+if (NOT WIN32)
+    target_link_libraries(libtvm dl)
+endif()
+

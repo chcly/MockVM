@@ -26,6 +26,15 @@ set(CMAKE_MODULE_PATH
 
 set(ToyVM_INSTALL_PATH CACHE STRING "")
 set(ToyVM_TEST         CACHE BOOL   OFF)
+set(BUILD_TEST         CACHE BOOL   OFF)
+
+if (BUILD_TEST)
+    set(ToyVM_TEST CACHE FORCE BOOL ON)
+else ()
+    if (ToyVM_TEST)
+        set(ToyVM_TEST CACHE FORCE BOOL OFF)
+    endif()
+endif()
 
 
 subdirs(CMake)

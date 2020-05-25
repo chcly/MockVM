@@ -18,9 +18,9 @@
 # 3. This notice may not be removed or altered from any source distribution.
 # ------------------------------------------------------------------------------
 
-include_directories(../libtvm)
-add_library(libstd SHARED stdlib.cpp)
 
-target_link_libraries(libstd  libtvm)
-copy_target(libstd  ${ToyVM_LIB_DIR})
-copy_install_target(libstd  lib)
+include_directories(../libtvm)
+add_executable(tcom  Compiler.cpp)
+target_link_libraries(tcom libtvm)
+copy_target(tcom ${ToyVM_BIN_DIR})
+
