@@ -19,7 +19,14 @@ tcom <options> <input file>
    options:
       -h show this message.
       -o output file.
+      -l link library.
+      -d disable full path when reporting errors.
+      -m print the module path and exit.
 ```
+
+* -l Links a shared library into the file so that exported symbols become callable in the assembly.
+* -d Is used in the tests to prevent full path names from being reported, which would cause them to fail.
+* -m Displays the shared library folder. It is located relative to the executables in a folder called lib.
 
 ## Syntax
 
