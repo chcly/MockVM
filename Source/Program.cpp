@@ -393,7 +393,7 @@ void Program::handle_OP_MOV(const ExecInstruction& inst)
 
 void Program::handle_OP_CALL(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_SYMA | IF_SYMU)
+    if (inst.flags & IF_SYMA || inst.flags & IF_SYMU)
     {
         if (inst.call != nullptr)
             inst.call(m_regi);
