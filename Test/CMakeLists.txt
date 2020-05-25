@@ -154,8 +154,6 @@ set(TestFiles_3
     Errors/Err1.asm
     Errors/Err2.asm
     Errors/Err3.asm
-    Errors/Err4.asm
-
 )
 
 add_compile_tests(OutFiles_1 Basic  ${TestFiles_1})

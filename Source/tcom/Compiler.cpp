@@ -96,6 +96,8 @@ int main(int argc, char **argv)
         return PS_ERROR;
     }
 
+    if (find(ctx.modules.begin(), ctx.modules.end(), "std") == ctx.modules.end())
+        ctx.modules.push_back("std");
 
     FindExecutableDirectory(ctx.modulePath);
 
