@@ -24,6 +24,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 #include "BinaryWriter.h"
 #include "BlockReader.h"
 #include "Declarations.h"
@@ -94,6 +95,9 @@ int main(int argc, char **argv)
         cout << "missing output file.\n";
         return PS_ERROR;
     }
+
+    if (find(ctx.modules.begin(), ctx.modules.end(), "std") == ctx.modules.end())
+        ctx.modules.push_back("std");
 
     FindExecutableDirectory(ctx.modulePath);
 

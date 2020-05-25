@@ -95,8 +95,9 @@ tvm runs the executable generated from tcom.
 tvm <options> <program_path>
 
    options:
-      -h display this message
-      -t display execution time
+      -h display this message.
+      -t display execution time.
+      -m print the module path and exit.
 ```
 
 ## Building
@@ -104,9 +105,17 @@ tvm <options> <program_path>
 Building with CMAKE.
 
 ```txt
-To compile the basic tests add -DBUILD_TEST=ON to the CMake command line.
-
 mkdir Build
 cd Build
 cmake ..
 ```
+
+Testing and Installing.
+
+```txt
+mkdir Build
+cd Build
+cmake -DToyVM_INSTALL_PATH=<some install directory> -DBUILD_TEST=ON ..
+```
+
+By default the executables are copied into ${CMAKE_BINARY_DIR}/bin and tested from that directory.

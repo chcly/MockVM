@@ -1,13 +1,14 @@
 main:
     mov  x1, 'a'
+
 beg:
     cmp  x1, 'z'
     jgt  enb
     mov  x0, x1
-    call putchar
+    call putchara
     add  x1, 1
     jmp  beg
-enb:
+ena:
     mov  x0, '\n'
     call putchar
     mov  x0, 0

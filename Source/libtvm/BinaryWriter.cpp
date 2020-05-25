@@ -222,7 +222,7 @@ int BinaryWriter::mapInstructions(void)
                 }
                 else
                 {
-                    printf("failed to resolve function %s\n", irp->lname.c_str());
+                    printf("failed to locate '%s'\n", irp->lname.c_str());
                     status = PS_ERROR;
                 }
             }
@@ -372,7 +372,7 @@ int BinaryWriter::writeHeader()
     size_t offset = sizeof(TVMHeader);
     if (mapInstructions() != PS_OK)
     {
-        printf("failed to find one or more required functions\n");
+        printf("failed to find one or more required symbols\n");
         return PS_ERROR;
     }
 
