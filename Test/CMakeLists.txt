@@ -43,7 +43,7 @@ macro(add_compile_tests OUT Group)
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
-            COMMAND ${tcom} -o ${GEN_FILE} ${ASMFILE}
+            COMMAND ${tcom} -l std -o ${GEN_FILE} ${ASMFILE}
             COMMAND ${tvm} ${GEN_FILE} > ${GEN_FILE_ANS}
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm
@@ -58,8 +58,6 @@ macro(add_compile_tests OUT Group)
             VERBATIM
             COMMENT ""
         )
-
-
     endforeach(it)
 endmacro(add_compile_tests)
 
@@ -81,7 +79,7 @@ macro(add_temp_test OUT Group)
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
-            COMMAND ${tcom} -d -o ${GEN_FILE} ${ASMFILE} 
+            COMMAND ${tcom}  -l std  -d -o ${GEN_FILE} ${ASMFILE} 
             COMMAND ${tvm} ${GEN_FILE} -t
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm
@@ -114,7 +112,7 @@ macro(add_test_dump_err OUT Group)
 
         add_custom_command(
             OUTPUT ${GEN_FILE_ANS}
-            COMMAND ${tcom} -d -o ${GEN_FILE} ${ASMFILE} > ${GEN_FILE_ANS}  ||
+            COMMAND ${tcom}  -l std  -d -o ${GEN_FILE} ${ASMFILE} > ${GEN_FILE_ANS}  ||
                     ${CMAKE_COMMAND} -E compare_files --ignore-eol ${GEN_FILE_ANS} ${GEN_FILE_EXP}
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm
@@ -146,8 +144,8 @@ set(TestFiles_2
     Exec/Add3.asm
     Exec/Sub1.asm
     Exec/Sub2.asm
-    Exec/Div1.asm
     Exec/Mul1.asm
+    Exec/Div1.asm
 )
 
 set(TestFiles_3
@@ -155,9 +153,6 @@ set(TestFiles_3
     Errors/Err2.asm
     Errors/Err3.asm
     Errors/Err4.asm
-)
-
-set(TestFiles_4
 )
 
 add_compile_tests(OutFiles_1 Basic  ${TestFiles_1})
@@ -170,11 +165,9 @@ set(SRC_ALL
     catch/catch.hpp
     Main.cpp
     BlockReader.cpp
-    ${OutFiles_0}
     ${OutFiles_1}
     ${OutFiles_2}
     ${OutFiles_3}
-    ${OutFiles_4}
     ${ToyVM_BINARY_DIR}/TestConfig.h
 )
 
