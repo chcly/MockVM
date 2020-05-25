@@ -28,7 +28,6 @@
 #include "Program.h"
 #include "SymbolUtils.h"
 
-
 using namespace std;
 
 void usage(void);
@@ -66,8 +65,6 @@ int main(int argc, char **argv)
             }
         }
     }
-
-
 
     if (ctx.file.empty())
     {

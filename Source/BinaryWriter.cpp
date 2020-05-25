@@ -28,7 +28,6 @@
 #include <iostream>
 #include "SymbolUtils.h"
 
-
 inline uint16_t getAlignment(size_t al)
 {
     uint16_t rem = (al % 16);
@@ -37,7 +36,7 @@ inline uint16_t getAlignment(size_t al)
     return 0;
 }
 
-BinaryWriter::BinaryWriter(const str_t &modpath) :
+BinaryWriter::BinaryWriter(const str_t& modpath) :
     m_fp(0),
     m_loc(0),
     m_ins(),
@@ -70,8 +69,8 @@ void BinaryWriter::mergeInstructions(const Instructions& insl)
 
 int BinaryWriter::mergeLabels(const LabelMap& map)
 {
-    int status = PS_OK;
-    LabelMap::const_iterator it = map.begin();
+    int                      status = PS_OK;
+    LabelMap::const_iterator it     = map.begin();
     while (it != map.end() && status == PS_OK)
     {
         if (m_labels.find(it->first) != m_labels.end())
@@ -81,7 +80,7 @@ int BinaryWriter::mergeLabels(const LabelMap& map)
         }
         else
             m_labels[it->first] = it->second;
- 
+
         ++it;
     }
     return status;
@@ -302,8 +301,8 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
             int i = 0;
             while (avail != nullptr && avail[i].name != nullptr && status == PS_OK)
             {
-                const str_t str = avail[i].name;
-                SymbolLookup::iterator it = m_symbols.find(str); 
+                const str_t            str = avail[i].name;
+                SymbolLookup::iterator it  = m_symbols.find(str);
                 if (it == m_symbols.end())
                     m_symbols[str] = lib;
                 else
@@ -335,12 +334,12 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
 
 int BinaryWriter::resolve(strvec_t& modules)
 {
-    int status = PS_OK;
-    strvec_t::iterator it = modules.begin();
+    int                status = PS_OK;
+    strvec_t::iterator it     = modules.begin();
     while (it != modules.end() && status == PS_OK)
     {
         const str_t& mod = (*it++);
-        status = loadSharedLibrary(mod);
+        status           = loadSharedLibrary(mod);
     }
     return status;
 }
@@ -404,10 +403,8 @@ int BinaryWriter::writeHeader()
         offset += getAlignment(m_sizeOfSym);
     }
 
-
     if (m_sizeOfStr != 0)
         m_header.str = (uint32_t)offset;
-
 
     write(&m_header, sizeof(TVMHeader));
     return PS_OK;
@@ -483,7 +480,6 @@ size_t BinaryWriter::writeSymbolSection(void)
         write8(0);
     }
 
-
     int pb = sec.align;
     while (pb--)
         write8(0);
@@ -544,7 +540,6 @@ int BinaryWriter::writeSections()
         size = writeStringSection();
         if (size != m_sizeOfStr)
             return PS_ERROR;
-
     }
     return PS_OK;
 }

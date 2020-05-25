@@ -22,15 +22,13 @@
 #include "SymbolUtils.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "Declarations.h"
 #include <sys/stat.h>
+#include "Declarations.h"
 
 void MakeModulePath(str_t& absPath, const str_t& modname, const str_t& moddir);
 
-
 #ifdef _WIN32
 #include <windows.h>
-
 
 LibHandle LoadSharedLibrary(const str_t& modname, const str_t& moddir)
 {
@@ -140,7 +138,6 @@ void FindExecutableDirectory(str_t& dest)
     }
 }
 #endif
-
 
 bool IsModulePresent(const str_t& modname, const str_t& moddir)
 {
