@@ -56,43 +56,39 @@ int main(int argc, char **argv)
     int rc = 0;
     if (a != b)
     {
-        printf("\tNEQ\n");
         rc = 1;
         goto done;
     }
 
     if (fileA == NULL && fileB == NULL)
     {
-        printf("\tEQ\n");
         goto done;
     }
     else if (fileA != NULL && fileB == NULL)
     {
-        printf("\tNEQ\n");
         rc = 1;
         goto done;
     }
     else if (fileA == NULL && fileB != NULL)
     {
-        printf("\tNEQ\n");
         rc = 1;
         goto done;
     }
     else
     {
         if (memcmp(fileA, fileB, a) == 0)
-        {
-            printf("\tEQ\n");
             goto done;
-        }
     }
 
     rc = 1;
-    printf("\tNEQ\n");
-
 done:
     delete[] fileA;
     delete[] fileB;
+
+    if (rc)
+        printf("NEQ\n");
+    else
+        printf("EQ\n");
     return rc;
 }
 
