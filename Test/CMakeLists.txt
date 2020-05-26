@@ -140,6 +140,7 @@ set(TestFiles_1
     Basic/TestPutChar.asm
     Basic/Reg1.asm
     Basic/Reg2.asm
+    Basic/Reg3.asm
 )
 
 set(TestFiles_2

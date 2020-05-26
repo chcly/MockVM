@@ -358,6 +358,9 @@ int Program::launch(void)
             forceExit(-1);
         }
     }
+
+    if (m_return == -1)
+        printf("an error occurred\n");
     return m_return;
 }
 
