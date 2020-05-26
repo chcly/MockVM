@@ -1,8 +1,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
-char *GetFilteredBuffer(const char *fname, size_t &len)
+char *GetFilteredBuffer(const char *fname, int64_t &len)
 {
     FILE *fp = fopen(fname, "rb");
     if (!fp)
@@ -26,7 +27,7 @@ char *GetFilteredBuffer(const char *fname, size_t &len)
     fread(bufB, 1, len, fp);
     fclose(fp);
 
-    size_t i, j = 0;
+    int64_t i, j = 0;
     for (i = 0; i < len; ++i)
     {
         char ch = bufB[i];
@@ -56,7 +57,7 @@ int main(int argc, char **argv)
         printf("Usage: fcmp file1 file2\n");
         return 1;
     }
-    size_t a, b;
+    int64_t a, b;
     char * fileA = GetFilteredBuffer(argv[1], a);
     char * fileB = GetFilteredBuffer(argv[2], b);
 
