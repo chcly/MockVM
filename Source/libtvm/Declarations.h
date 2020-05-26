@@ -46,18 +46,17 @@ typedef union Register {
 
 typedef Register Registers[10];
 
-
 enum RegisterArg
 {
-    A0_1 = 1 << 0,
-    A0_2 = 1 << 1,
-    A0_4 = 1 << 2,
-    A1_1 = 1 << 3,
-    A1_2 = 1 << 4,
-    A1_4 = 1 << 5,
-    A2_1 = 1 << 6,
-    A2_2 = 1 << 7,
-    A2_4 = 1 << 8,
+    A0_1 = 0x001,
+    A0_2 = 0x002,
+    A0_4 = 0x004,
+    A1_1 = 0x010,
+    A1_2 = 0x020,
+    A1_4 = 0x040,
+    A2_1 = 0x100,
+    A2_2 = 0x200,
+    A2_4 = 0x400, // uint16_t
 };
 
 const uint16_t SizeFlags[3][3] = {
@@ -146,8 +145,10 @@ enum Opcode
                  // ---- debugging ----
     OP_PRG,      // print register
     OP_PRI,      // print all registers
-    OP_MAX
+                 // ---- debugging ----
+    OP_MAX,      // uint8_t
 };
+
 
 enum ArgType
 {
@@ -177,13 +178,19 @@ enum SectionCodes
 
 enum InstructionFlags
 {
-    IF_REG0 = 0x01,
-    IF_REG1 = 0x02,
-    IF_REG2 = 0x04,
-    IF_ADDR = 0x08,
-    IF_SYMA = 0x10,
-    IF_SYMU = 0x20,
-    IF_MAXF = 0x40,
+    IF_REG0 = 0x001,
+    IF_REG1 = 0x002,
+    IF_REG2 = 0x004,
+    IF_ADDR = 0x008,
+    IF_SYMA = 0x010,
+    IF_SYMU = 0x020,
+    IF_STKP = 0x040,  // stack pointer
+    IF_INSP = 0x080,  // instruction pointer
+    IF_BTEB = 0x100,  // b uint8_t
+    IF_BTEW = 0x200,  // w uint16_t
+    IF_BTEL = 0x400,  // l uint32_t
+                      // x = default, if not present
+    IF_MAXF = 0x800,  // needs an uint16_t
 };
 
 struct TVMHeader
@@ -207,9 +214,9 @@ struct TVMSection
 struct Instruction
 {
     uint8_t  op;
-    uint8_t  flags;
-    uint16_t sizes;
     uint8_t  argc;
+    uint16_t flags;
+    uint16_t sizes;
     uint64_t argv[INS_ARG];
     uint64_t label;
     uint64_t sym;
@@ -229,8 +236,8 @@ typedef SymbolTable* (*ModuleInit)();
 struct ExecInstruction
 {
     uint8_t  op;
-    uint8_t  flags;
     uint8_t  argc;
+    uint16_t flags;
     uint64_t argv[INS_ARG];
     Symbol   call;
 };

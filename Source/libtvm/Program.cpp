@@ -226,7 +226,6 @@ int Program::loadCode(BlockReader& reader)
     if (code.size <= 0)
         return PS_OK;
 
-    uint8_t  ops[3] = {};
     uint16_t sizes  = 0;
     uint8_t  v8;
     uint16_t v16;
@@ -235,14 +234,11 @@ int Program::loadCode(BlockReader& reader)
     size_t   i = 0;
     while (i < code.size && !reader.eof())
     {
-        i += reader.read(ops, 3);
-        i += reader.read(&sizes, 2);
-
         ExecInstruction exec = {};
 
-        exec.op    = ops[0];
-        exec.argc  = ops[1];
-        exec.flags = ops[2];
+        i += reader.read(&exec.op, 2);
+        i += reader.read(&exec.flags, 2);
+        i += reader.read(&sizes, 2);
 
         for (a = 0; a < exec.argc && a < INS_ARG; ++a)
         {

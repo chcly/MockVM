@@ -242,7 +242,7 @@ size_t BinaryWriter::calculateInstructionSize(void)
         Instruction& ins = (*it++);
         ins.sizes        = 0;
 
-        size += 5;  // op, nr, flags, sizes
+        size += 6;  // op, nr, flags, sizes
         for (i = 0; i < ins.argc; ++i)
         {
             if (ins.argv[i] < 0xFF)
@@ -440,7 +440,7 @@ size_t BinaryWriter::writeCodeSection(void)
     {
         write8(ins.op);
         write8(ins.argc);
-        write8(ins.flags);
+        write16(ins.flags);
         write16(ins.sizes);
 
         int i;

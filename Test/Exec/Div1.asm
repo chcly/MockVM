@@ -1,5 +1,5 @@
 main:
-    mov x1, 0xF0 ; will be backwards 
+    mov x1, 0xF0 
     mov x7, 2
 top:
     cmp x1, 0
