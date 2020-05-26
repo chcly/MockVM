@@ -34,7 +34,6 @@ private:
     size_t          m_sizeOfData;
     size_t          m_sizeOfSym;
     size_t          m_sizeOfStr;
-    SymbolTable*    m_stdlib;
     IndexToPosition m_addrMap;
     LabelMap        m_labels;
     LabelMap        m_strtab;
@@ -62,8 +61,6 @@ private:
     size_t addToStringTable(const str_t& symname);
     size_t addLinkedSymbol(const str_t& symname, const str_t& libname);
     int    loadSharedLibrary(const str_t& lib);
-
-    SymbolTable* findStatic(const Instruction& ins);
 
 public:
     BinaryWriter(const str_t& modpath);

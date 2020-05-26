@@ -45,7 +45,6 @@ private:
     uint32_t         m_flags;
     int32_t          m_return;
     uint64_t         m_curinst;
-    SymbolTable*     m_stdLib;
     LabelMap         m_strtab;
     strvec_t         m_strtablist;
     Stack            m_callStack;
@@ -56,7 +55,6 @@ private:
     const static InstructionTable OPCodeTable;
     const static size_t           OPCodeTableSize;
 
-    int findStatic(ExecInstruction& ins);
     int findDynamic(ExecInstruction& ins);
 
     void handle_OP_RET(const ExecInstruction& inst);
@@ -80,6 +78,8 @@ private:
     void handle_OP_SHL(const ExecInstruction& inst);
     void handle_OP_PRG(const ExecInstruction& inst);
     void handle_OP_PRGI(const ExecInstruction& inst);
+
+    void forceExit(int returnCode);
 
     int  loadStringTable(BlockReader& reader);
     int  loadSymbolTable(BlockReader& reader);

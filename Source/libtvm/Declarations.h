@@ -76,6 +76,7 @@ struct Token
 {
     uint8_t  op;
     uint8_t  reg;
+    uint16_t regtype;
     Register ival;
     int32_t  type;
     str_t    value;
@@ -178,19 +179,18 @@ enum SectionCodes
 
 enum InstructionFlags
 {
-    IF_REG0 = 0x001,
-    IF_REG1 = 0x002,
-    IF_REG2 = 0x004,
-    IF_ADDR = 0x008,
-    IF_SYMA = 0x010,
-    IF_SYMU = 0x020,
-    IF_STKP = 0x040,  // stack pointer
-    IF_INSP = 0x080,  // instruction pointer
-    IF_BTEB = 0x100,  // b uint8_t
-    IF_BTEW = 0x200,  // w uint16_t
-    IF_BTEL = 0x400,  // l uint32_t
+    IF_REG0 = 0x001,  // actual flags
+    IF_REG1 = 0x002,  // ..
+    IF_REG2 = 0x004,  // ..
+    IF_ADDR = 0x008,  // the rest refer to a type...
+    IF_SYMU = 0x010,
+    IF_STKP = 0x020,  // stack pointer
+    IF_INSP = 0x040,  // instruction pointer
+    IF_BTEB = 0x080,  // b uint8_t
+    IF_BTEW = 0x100,  // w uint16_t
+    IF_BTEL = 0x200,  // l uint32_t
                       // x = default, if not present
-    IF_MAXF = 0x800,  // needs an uint16_t
+    IF_MAXF = 0x400,  // needs an uint16_t
 };
 
 struct TVMHeader

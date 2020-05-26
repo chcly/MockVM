@@ -127,6 +127,7 @@ set(TestFiles_1
     Basic/CRLF.asm
     Basic/CR.asm
     Basic/LF.asm
+    Basic/Bug1.asm
     Basic/Keywords.asm
     Basic/Comment.asm
     Basic/ParseArg.asm
@@ -137,8 +138,8 @@ set(TestFiles_1
     Basic/Compact.asm
     Basic/Label.asm
     Basic/TestPutChar.asm
-    Basic/Bug1.asm
-
+    Basic/Reg1.asm
+    Basic/Reg2.asm
 )
 
 set(TestFiles_2

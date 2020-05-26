@@ -37,11 +37,9 @@ using namespace std;
 Program::Program(const str_t& modpath) :
     m_flags(0),
     m_return(0),
-    m_stdLib(0),
     m_modpath(modpath)
 {
     memset(m_regi, 0, sizeof(Registers));
-    m_stdLib = nullptr;
 }
 
 Program::~Program()
@@ -53,17 +51,23 @@ Program::~Program()
 
 int Program::load(const char* fname)
 {
+    if (!fname)
+    {
+        printf("invalid file path name\n");
+        return PS_ERROR;
+    }
+
     BlockReader reader = BlockReader(fname);
     if (reader.eof())
     {
-        printf("failed to load %s\n", fname);
+        printf("failed to load '%s'\n", fname);
         return PS_ERROR;
     }
 
     reader.read(&m_header, sizeof(TVMHeader));
     if (m_header.code[0] != 'T' || m_header.code[1] != 'V')
     {
-        printf("Invalid file type\n");
+        printf("invalid file type identifier\n");
         return PS_ERROR;
     }
 
@@ -71,7 +75,7 @@ int Program::load(const char* fname)
     {
         if (loadStringTable(reader) != PS_OK)
         {
-            printf("failed to read string table\n");
+            printf("failed to read the string table\n");
             return PS_ERROR;
         }
     }
@@ -80,7 +84,7 @@ int Program::load(const char* fname)
     {
         if (loadSymbolTable(reader) != PS_OK)
         {
-            printf("failed to read symbol table\n");
+            printf("failed to read the symbol table\n");
             return PS_ERROR;
         }
     }
@@ -89,16 +93,15 @@ int Program::load(const char* fname)
     {
         if (loadCode(reader) != PS_OK)
         {
-            printf("failed to read the text section\n");
+            printf("failed to read the file's instruction table\n");
             return PS_ERROR;
         }
     }
     else
     {
-        printf("no code found in the file\n");
+        printf("the supplied file is missing the instruction table\n");
         return PS_ERROR;
     }
-
     return PS_OK;
 }
 
@@ -121,7 +124,7 @@ int Program::loadStringTable(BlockReader& reader)
             str.push_back(ch);
         else if (ch != 0)
         {
-            printf("unknown character %c in the string table\n", ch);
+            printf("unknown character '%c' was found in the string table\n", ch);
             st = PS_ERROR;
             i  = strTab.size;
         }
@@ -131,7 +134,7 @@ int Program::loadStringTable(BlockReader& reader)
             {
                 if (m_strtab.find(str) != m_strtab.end())
                 {
-                    printf("duplicate string found in the table %s\n",
+                    printf("duplicate string '%s' was found in the string table\n",
                            str.c_str());
                     st = PS_ERROR;
                     i  = strTab.size;
@@ -177,7 +180,7 @@ int Program::loadSymbolTable(BlockReader& reader)
             str.push_back(ch);
         else if (ch != 0)
         {
-            printf("unknown character %c in the symbol table\n", ch);
+            printf("unknown character '%c' was found in the string table\n", ch);
             st = PS_ERROR;
             i  = symtab.size;
         }
@@ -195,7 +198,7 @@ int Program::loadSymbolTable(BlockReader& reader)
 
                 if (!lib)
                 {
-                    printf("failed to find lib%s in %s\n",
+                    printf("failed to locate the file '%s' in the module directory '%s'\n",
                            str.c_str(),
                            m_modpath.c_str());
                     st = PS_ERROR;
@@ -226,7 +229,7 @@ int Program::loadCode(BlockReader& reader)
     if (code.size <= 0)
         return PS_OK;
 
-    uint16_t sizes  = 0;
+    uint16_t sizes = 0;
     uint8_t  v8;
     uint16_t v16;
     uint32_t v32;
@@ -262,19 +265,11 @@ int Program::loadCode(BlockReader& reader)
                 i += reader.read(&exec.argv[a], 8);
             }
 
-            if (exec.flags & IF_SYMA)
-            {
-                if (findStatic(exec) != PS_OK)
-                {
-                    printf("failed to find symbol\n");
-                    return PS_ERROR;
-                }
-            }
-            else if (exec.flags & IF_SYMU)
+            if (exec.flags & IF_SYMU)
             {
                 if (findDynamic(exec) != PS_OK)
                 {
-                    printf("failed to find symbol\n");
+                    printf("failed to locate symbol\n");
                     return PS_ERROR;
                 }
             }
@@ -299,29 +294,17 @@ int Program::loadCode(BlockReader& reader)
     return PS_OK;
 }
 
-int Program::findStatic(ExecInstruction& ins)
-{
-    int i = 0;
-    while (m_stdLib != nullptr && m_stdLib[i].name != nullptr && ins.call == nullptr)
-    {
-        StringMap::iterator it = m_strtab.find(m_stdLib[i].name);
-        if (it != m_strtab.end())
-        {
-            if (ins.argv[0] == it->second)
-                ins.call = m_stdLib[i].callback;
-        }
-        ++i;
-    }
-    return ins.call != nullptr ? (int)PS_OK : (int)PS_ERROR;
-}
-
 int Program::findDynamic(ExecInstruction& ins)
 {
     if (ins.argv[0] < m_strtablist.size())
     {
         str_t name = m_strtablist.at(ins.argv[0]), look;
 
-        // This needs to change...
+        // This needs to change to something better.
+        // It should be a predictable identifier to look up
+        // exported functions by the symbol itself rather
+        // than having to iterate over a table to find a named
+        // symbol
         look = "__" + name;
 
         SymbolMap::iterator it = m_symbols.find(name);
@@ -371,12 +354,19 @@ int Program::launch(void)
         }
         else
         {
-            printf("invalid code");
-            return -1;
+            printf("invalid code\n");
+            forceExit(-1);
         }
     }
     return m_return;
 }
+
+void Program::forceExit(int returnCode)
+{
+    m_return = returnCode;
+    m_curinst = m_ins.size();
+}
+
 
 Register* Program::clone(void)
 {
@@ -413,30 +403,51 @@ void Program::handle_OP_MOV(const ExecInstruction& inst)
 {
     if (inst.flags & IF_REG0)
     {
-        if (inst.flags & IF_REG1)
-            m_regi[inst.argv[0]].x = m_regi[inst.argv[1]].x;
+        if (inst.flags & IF_INSP)
+        {
+            if (inst.flags & IF_REG1)
+                m_curinst = m_regi[inst.argv[1]].x;
+            else
+                m_curinst = inst.argv[1];
+        }
         else
-            m_regi[inst.argv[0]].x = inst.argv[1];
+        {
+            if (inst.flags & IF_REG1)
+                m_regi[inst.argv[0]].x = m_regi[inst.argv[1]].x;
+            else
+                m_regi[inst.argv[0]].x = inst.argv[1];
+        }
     }
 }
 
 void Program::handle_OP_CALL(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_SYMA || inst.flags & IF_SYMU)
+    if (inst.flags & IF_SYMU)
     {
         if (inst.call != nullptr)
         {
+            // This does not guard against corrupting this
+            // pointer, but it allows access to the registers
+            // without passing the address of m_regi
+            // which can then be used to access internal
+            // class members.
             Register* cl = clone();
             inst.call((tvmregister_t)cl);
             release(cl);
         }
     }
-    else
+    else if (inst.flags & IF_ADDR)
     {
         m_callStack.push(m_curinst);
         m_curinst = inst.argv[0];
     }
+    else
+    {
+        printf("unknown call flag\n");
+        forceExit(-1);
+    }
 }
+
 
 void Program::handle_OP_INC(const ExecInstruction& inst)
 {
@@ -643,8 +654,8 @@ void Program::handle_OP_DIV(const ExecInstruction& inst)
                     m_regi[x0].x /= m_regi[inst.argv[1]].x;
                 else
                 {
-                    // m_curinst = m_ins.size();
-                    // printf("divide by zero\n");
+                    printf("divide by zero\n");
+                    forceExit(-1);
                 }
             }
             else
@@ -653,8 +664,8 @@ void Program::handle_OP_DIV(const ExecInstruction& inst)
                     m_regi[x0].x /= inst.argv[1];
                 else
                 {
-                    // m_curinst = m_ins.size();
-                    // printf("divide by zero\n");
+                    printf("divide by zero\n");
+                    forceExit(-1);
                 }
             }
         }
@@ -812,7 +823,9 @@ bool Program::testInstruction(const ExecInstruction& exec)
         pass = (exec.flags & IF_ADDR) != 0;
         break;
     case OP_GTO:
-        pass = (exec.flags & IF_ADDR | IF_SYMA) != 0;
+        pass = (exec.flags & IF_ADDR) != 0;
+        if (!pass)
+            pass = (exec.flags & IF_SYMU) != 0;
         break;
     case OP_PRG:
         if (exec.flags & IF_REG0)

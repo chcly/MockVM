@@ -44,14 +44,11 @@ BinaryWriter::BinaryWriter(const str_t& modpath) :
     m_sizeOfData(0),
     m_sizeOfSym(0),
     m_sizeOfStr(0),
-    m_stdlib(),
     m_addrMap(),
     m_labels(),
     m_header({}),
     m_modpath(modpath)
-
 {
-    m_stdlib = nullptr;
 }
 
 BinaryWriter::~BinaryWriter()
@@ -202,29 +199,18 @@ int BinaryWriter::mapInstructions(void)
         }
         else
         {
-            SymbolTable* map = findStatic(*irp);
-            if (map != nullptr)
+            // It points to an unknown symbol
+            // that may reside in a shared library.
+            SymbolLookup::iterator it = m_symbols.find(irp->lname);
+            if (it != m_symbols.end())
             {
-                // It points to a known symbol
-                irp->argv[0] = addToStringTable(irp->lname);
-                irp->flags |= IF_SYMA;
+                irp->argv[0] = addLinkedSymbol(irp->lname, it->second);
+                irp->flags |= IF_SYMU;
             }
             else
             {
-                // It points to an unknown symbol
-                // that may reside in a shared library.
-
-                SymbolLookup::iterator it = m_symbols.find(irp->lname);
-                if (it != m_symbols.end())
-                {
-                    irp->argv[0] = addLinkedSymbol(irp->lname, it->second);
-                    irp->flags |= IF_SYMU;
-                }
-                else
-                {
-                    printf("failed to locate '%s'\n", irp->lname.c_str());
-                    status = PS_ERROR;
-                }
+                printf("failed to locate '%s'\n", irp->lname.c_str());
+                status = PS_ERROR;
             }
         }
     }
@@ -342,22 +328,6 @@ int BinaryWriter::resolve(strvec_t& modules)
         status           = loadSharedLibrary(mod);
     }
     return status;
-}
-
-SymbolTable* BinaryWriter::findStatic(const Instruction& ins)
-{
-    SymbolTable* sym = nullptr;
-    if (m_stdlib)
-    {
-        int i = 0;
-        while (m_stdlib[i].name && sym == nullptr)
-        {
-            if (ins.lname == m_stdlib[i].name)
-                sym = &m_stdlib[i];
-            ++i;
-        }
-    }
-    return sym;
 }
 
 int BinaryWriter::writeHeader()

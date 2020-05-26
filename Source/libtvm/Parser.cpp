@@ -221,14 +221,49 @@ int32_t Parser::handleIdState(Token& tok)
             prepNextCall(tok, ch);
 
             m_state = ST_INITIAL;
-            if (tok.value.size() == 2 &&
-                tok.value[1] >= '0' &&
-                tok.value[1] <= '9')
+
+            size_t sz = tok.value.size();
+            if (sz == 2)
             {
-                if (tok.value[0] == 'x')
+                if (tok.value[1] >= '0' && tok.value[1] <= '9')
+                {
+                    char ch = tok.value[0];
+                    if (ch == 'x' || ch == 'b' || ch == 'w' || ch == 'l')
+                    {
+                        switch (ch)
+                        {
+                        case 'b':
+                            tok.regtype = IF_BTEB;
+                            break;
+                        case 'w':
+                            tok.regtype = IF_BTEW;
+                            break;
+                        case 'l':
+                            tok.regtype = IF_BTEL;
+                            break;
+                        case 'x':
+                        default:
+                            break;
+                        }
+                        tok.type = TOK_REGISTER;
+                        tok.reg  = tok.value[1] - '0';
+                        tok.value.clear();
+                        return ST_MAX;
+                    }
+                }
+                else if (tok.value[0] == 's' && tok.value[1] == 'p')
                 {
                     tok.type = TOK_REGISTER;
-                    tok.reg  = tok.value[1] - '0';
+                    tok.reg     = 0;
+                    tok.regtype = IF_STKP;
+                    tok.value.clear();
+                    return ST_MAX;
+                }
+                else if (tok.value[0] == 'p' && tok.value[1] == 'c')
+                {
+                    tok.type = TOK_REGISTER;
+                    tok.reg  = 0;
+                    tok.regtype = IF_INSP;
                     tok.value.clear();
                     return ST_MAX;
                 }
@@ -485,6 +520,28 @@ int32_t Parser::handleLabel(const Token& label)
     return PS_OK;
 }
 
+void Parser::markInstructionAsRegister(Instruction& ins, const Token& tok, int idx)
+{
+    ins.argv[idx] = tok.reg;
+    switch (idx)
+    {
+    case 0:
+        ins.flags |= IF_REG0;
+        break;
+    case 1:
+        ins.flags |= IF_REG1;
+        break;
+    case 2:
+        ins.flags |= IF_REG2;
+        break;
+    }
+
+    if (tok.regtype == IF_STKP)
+        ins.flags |= IF_STKP;
+    else if (tok.regtype == IF_INSP)
+        ins.flags |= IF_INSP;
+}
+
 int32_t Parser::handleArgument(Instruction&      ins,
                                const KeywordMap& kwd,
                                const Token&      tok,
@@ -498,19 +555,8 @@ int32_t Parser::handleArgument(Instruction&      ins,
             return PS_ERROR;
         }
 
-        ins.argv[idx] = tok.reg;
-        switch (idx)
-        {
-        case 0:
-            ins.flags |= IF_REG0;
-            break;
-        case 1:
-            ins.flags |= IF_REG1;
-            break;
-        case 2:
-            ins.flags |= IF_REG2;
-            break;
-        }
+        markInstructionAsRegister(ins, tok, idx);
+
     }
     else if (kwd.argv[idx] == AT_SVAL)
     {
@@ -529,19 +575,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         }
         else if (tok.type == TOK_REGISTER)
         {
-            ins.argv[idx] = tok.reg;
-            switch (idx)
-            {
-            case 0:
-                ins.flags |= IF_REG0;
-                break;
-            case 1:
-                ins.flags |= IF_REG1;
-                break;
-            case 2:
-                ins.flags |= IF_REG2;
-                break;
-            }
+            markInstructionAsRegister(ins, tok, idx);
         }
         else
         {

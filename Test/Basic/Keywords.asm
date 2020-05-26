@@ -12,11 +12,11 @@ main:
     inc x5
     jgt  ops
     inc x5
-    div  x0, x1
+    mov x1, 0
     inc x5
     div  x0, 123
     inc x5
-    div  x0, 0
+    div  x0, 1
     inc x5
     shr  x0, x1
     inc x5

@@ -67,8 +67,7 @@ int main(int argc, char **argv)
         rc = 1;
         goto done;
     }
-
-    if (fileA == NULL && fileB == NULL)
+    else if (fileA == NULL && fileB == NULL)
     {
         goto done;
     }
@@ -86,13 +85,11 @@ int main(int argc, char **argv)
     {
         if (memcmp(fileA, fileB, a) == 0)
             goto done;
+        rc = 1;
     }
-
-    rc = 1;
 done:
     delete[] fileA;
     delete[] fileB;
-
     if (rc)
         printf("NEQ\n");
     else

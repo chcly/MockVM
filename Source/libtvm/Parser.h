@@ -67,6 +67,9 @@ private:
     int32_t handleSection(const Token& tok);
     int32_t handleLabel(const Token& dest);
 
+
+
+    void    markInstructionAsRegister(Instruction& ins, const Token& tok, int idx);
     void    countNewLine(uint8_t ch);
     uint8_t scanEol(void);
     int32_t handleInitialState(Token& dest);
