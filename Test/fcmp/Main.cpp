@@ -2,23 +2,32 @@
 #include <stdio.h>
 #include <string.h>
 
-char *GetFilteredBuffer(const char *fname, size_t& len)
+char *GetFilteredBuffer(const char *fname, size_t &len)
 {
     FILE *fp = fopen(fname, "rb");
     if (!fp)
+    {
+        len = 0;
         return NULL;
+    }
 
     fseek(fp, 0L, SEEK_END);
     len = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
+
+    if (len <= 0)
+    {
+        len = 0;
+        return NULL;
+    }
 
     char *bufA = new char[len + 1];
     char *bufB = new char[len + 1];
     fread(bufB, 1, len, fp);
     fclose(fp);
 
-    size_t i, j=0;
-    for (i=0; i<len; ++i)
+    size_t i, j = 0;
+    for (i = 0; i < len; ++i)
     {
         char ch = bufB[i];
         if (ch != '\r' && ch != '\n')
@@ -40,8 +49,6 @@ char *GetFilteredBuffer(const char *fname, size_t& len)
     return bufA;
 }
 
-
-
 int main(int argc, char **argv)
 {
     if (argc < 3)
@@ -50,8 +57,8 @@ int main(int argc, char **argv)
         return 1;
     }
     size_t a, b;
-    char *fileA = GetFilteredBuffer(argv[1], a);
-    char *fileB = GetFilteredBuffer(argv[2], b);
+    char * fileA = GetFilteredBuffer(argv[1], a);
+    char * fileB = GetFilteredBuffer(argv[2], b);
 
     int rc = 0;
     if (a != b)
@@ -91,4 +98,3 @@ done:
         printf("EQ\n");
     return rc;
 }
-
