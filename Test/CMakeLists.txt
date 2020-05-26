@@ -145,6 +145,7 @@ set(TestFiles_2
     Exec/Add1.asm
     Exec/Add2.asm
     Exec/Add3.asm
+    Exec/Add4.asm
     Exec/Sub1.asm
     Exec/Sub2.asm
     Exec/Mul1.asm
