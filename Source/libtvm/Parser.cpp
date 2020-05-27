@@ -154,7 +154,7 @@ int32_t Parser::handleInitialState(Token& tok)
     int32_t st = ST_CONTINUE;
 
     uint8_t ch = m_reader.next();
-    if (ch == '#' || ch == ';')
+    if (isComment(ch))
         scanEol();
     else if (isNewLine(ch))
     {
@@ -190,7 +190,7 @@ int32_t Parser::handleIdState(Token& tok)
     int32_t st = ST_CONTINUE;
 
     uint8_t ch = m_reader.next();
-    if (ch == '#' || ch == ';')
+    if (isComment(ch))
         scanEol();
     else
     {
@@ -215,7 +215,8 @@ int32_t Parser::handleIdState(Token& tok)
             }
             else
             {
-                printf("%c\n", ch);
+                printf("error character '%c' was not handled\n", ch);
+                st = PS_ERROR;
             }
         }
     }
@@ -357,8 +358,8 @@ int32_t Parser::handleDigitState(Token& tok)
         {
             if (st != PS_ERROR)
             {
-                error("invalid termination\n");
-                st = PS_ERROR;
+                //error("invalid termination\n");
+                //st = PS_ERROR;
             }
         }
     }
@@ -392,6 +393,9 @@ int32_t Parser::handleCharacter(Token& tok, uint8_t ch)
             break;
         case '\\':
             v = '\\';
+            break;
+        case '0':
+            v = '\0';
             break;
         default:
             error("escape sequence '%c' not handled\n", n);
@@ -480,6 +484,10 @@ void Parser::prepNextCall(Token& tok, uint8_t ch)
         m_reader.offset(-1);
         tok.hasComma = ch == ',';
     }
+    else if (isComment(ch))
+        m_reader.offset(-1);
+    else if (isNewLine(ch))
+        m_reader.offset(-1);
     else if (ch == ',')
         tok.hasComma = true;
 }
@@ -693,6 +701,11 @@ const KeywordMap& Parser::getKeyword(const int32_t& val)
     return NullKeyword;
 }
 
+bool Parser::isComment(uint8_t ch)
+{
+    return ch == ';' || ch == '#';
+}
+
 bool Parser::isWhiteSpace(uint8_t ch)
 {
     return ch == ' ' || ch == '\t';
@@ -740,7 +753,11 @@ bool Parser::isNewLine(uint8_t ch)
 
 bool Parser::isTerminator(uint8_t ch)
 {
-    return isWhiteSpace(ch) || ch == ',' || isNewLine(ch) || ch == 0;
+    return isWhiteSpace(ch) ||
+           ch == ',' ||
+           isNewLine(ch) ||
+           isComment(ch) ||
+           ch == 0;
 }
 
 void Parser::errorTokenType(int tok)

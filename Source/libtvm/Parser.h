@@ -98,6 +98,7 @@ private:
     void prepNextCall(Token& tok, uint8_t ch);
 
     bool isWhiteSpace(uint8_t ch);
+    bool isComment(uint8_t ch);
     bool isAlphaL(uint8_t ch);
     bool isAlphaU(uint8_t ch);
     bool isAlpha(uint8_t ch);
