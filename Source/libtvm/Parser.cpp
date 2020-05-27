@@ -46,7 +46,6 @@ Parser::~Parser()
 {
 }
 
-
 int32_t Parser::open(const char* fname)
 {
     m_reader.open(fname);
@@ -118,9 +117,7 @@ int32_t Parser::parse(const char* fname)
 int32_t Parser::scan(Token& tok)
 {
     int32_t res = PS_EOF;
-
-    // Always reset the token to a null token. 
-    tok = {};
+    tok         = {};
 
     while (!m_reader.eof())
     {
@@ -211,7 +208,7 @@ int32_t Parser::handleIdState(Token& tok)
             {
                 m_state  = ST_INITIAL;
                 tok.type = TOK_LABEL;
-                st = ST_MAX;
+                st       = ST_MAX;
             }
             else
             {
@@ -223,6 +220,66 @@ int32_t Parser::handleIdState(Token& tok)
     return st;
 }
 
+int32_t Parser::handleDigitState(Token& tok)
+{
+    int32_t st = ST_CONTINUE;
+
+    uint8_t ch = m_reader.next();
+    if (isWhiteSpace(ch))
+        ch = eatWhiteSpace(ch);
+
+    if (isNumber(ch) || ch == '-')
+    {
+        int  base    = 10;
+        bool convert = ch == '0';
+
+        while (isEncodedNumber(ch) && st != PS_ERROR)
+        {
+            if (base == 2 &&
+                ch != '1' &&
+                ch != '0' &&
+                ch != 'b')
+            {
+                error("invalid binary number\n");
+                st = PS_ERROR;
+            }
+            else
+            {
+                tok.value.push_back(ch);
+                ch = m_reader.next();
+
+                if (convert && base == 10)
+                {
+                    if (ch == 'x')
+                        base = 16;
+                    else if (ch == 'b')
+                        base = 2;
+                    else
+                        convert = false;
+                }
+            }
+        }
+
+        if (isTerminator(ch) && st != PS_ERROR)
+        {
+            prepNextCall(tok, ch);
+
+            m_state  = ST_INITIAL;
+            tok.type = TOK_DIGIT;
+
+            if (convert)
+                tok.ival.x = std::strtoull(tok.value.c_str() + 2, nullptr, base);
+            else
+                tok.ival.x = std::strtoull(tok.value.c_str(), nullptr, base);
+
+            tok.value.clear();
+            st = ST_MAX;
+        }
+    }
+    else if (ch == '\'')
+        st = handleCharacter(tok, ch);
+    return st;
+}
 
 int32_t Parser::handleTermination(Token& tok, uint8_t ch)
 {
@@ -293,71 +350,6 @@ int32_t Parser::handleTermination(Token& tok, uint8_t ch)
 
     tok.type = TOK_IDENTIFIER;
     return ST_MAX;
-}
-
-
-int32_t Parser::handleDigitState(Token& tok)
-{
-    int32_t st = ST_CONTINUE;
-
-    uint8_t ch = m_reader.next();
-    if (isWhiteSpace(ch))
-        ch = eatWhiteSpace(ch);
-
-    if (isNumber(ch) || ch == '-')
-    {
-        int  base    = 10;
-        bool convert = ch == '0';
-        bool b2 = false, b16 = false;
-
-        while (isEncodedNumber(ch) && st != PS_ERROR)
-        {
-            if (b2 && ch != '1' && ch != '0' && ch != 'b')
-            {
-                error("invalid binary number\n");
-                st = PS_ERROR;
-            }
-            else
-            {
-                tok.value.push_back(ch);
-                ch = m_reader.next();
-
-                if (convert)
-                {
-                    if (ch == 'x')
-                        b16 = true;
-                    if (ch == 'b')
-                        b2 = true;
-                }
-            }
-        }
-
-        if (!b16 && !b2)
-            convert = false;
-
-        if (isTerminator(ch) && st != PS_ERROR)
-        {
-            prepNextCall(tok, ch);
-
-            m_state  = ST_INITIAL;
-            tok.type = TOK_DIGIT;
-            if (convert)
-            {
-                tok.value = tok.value.substr(2, tok.value.size());
-                if (b2)
-                    base = 2;
-                if (b16)
-                    base = 16;
-            }
-
-            tok.ival.x = std::strtoull(tok.value.c_str(), nullptr, base);
-            tok.value.clear();
-            st = ST_MAX;
-        }
-    }
-    else if (ch == '\'')
-        st = handleCharacter(tok, ch);
-    return st;
 }
 
 int32_t Parser::handleCharacter(Token& tok, uint8_t ch)
@@ -526,7 +518,7 @@ int32_t Parser::handleLabel(const Token& label)
     return PS_OK;
 }
 
-void Parser::markArgumentAdRegister(Instruction& ins, const Token& tok, int idx)
+void Parser::markArgumentAsRegister(Instruction& ins, const Token& tok, int idx)
 {
     ins.argv[idx] = tok.reg;
     switch (idx)
@@ -541,7 +533,6 @@ void Parser::markArgumentAdRegister(Instruction& ins, const Token& tok, int idx)
         ins.flags |= IF_REG2;
         break;
     }
-
     if (tok.regtype == IF_STKP)
         ins.flags |= IF_STKP;
     else if (tok.regtype == IF_INSP)
@@ -560,9 +551,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
             errorArgType(idx, tok.type, kwd.word);
             return PS_ERROR;
         }
-
-        markArgumentAdRegister(ins, tok, idx);
-
+        markArgumentAsRegister(ins, tok, idx);
     }
     else if (kwd.argv[idx] == AT_SVAL)
     {
@@ -581,7 +570,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         }
         else if (tok.type == TOK_REGISTER)
         {
-            markArgumentAdRegister(ins, tok, idx);
+            markArgumentAsRegister(ins, tok, idx);
         }
         else
         {

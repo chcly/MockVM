@@ -165,7 +165,6 @@ add_compile_tests(OutFiles_1 Basic  ${TestFiles_1})
 add_compile_tests(OutFiles_2 Exec   ${TestFiles_2})
 add_test_dump_err(OutFiles_3 Errors ${TestFiles_3})
 
-
 set(SRC_ALL
     Catch2.h
     catch/catch.hpp

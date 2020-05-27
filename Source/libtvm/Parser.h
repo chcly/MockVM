@@ -41,6 +41,7 @@ private:
     Instructions m_instructions;
     str_t        m_fname;
     bool         m_disableErrorFormat;
+
 public:
     Parser();
     ~Parser();
@@ -71,10 +72,6 @@ private:
     int32_t handleLabel(const Token& tok);
     int32_t handleTermination(Token& tok, uint8_t ch);
     int32_t handleCharacter(Token& tok, uint8_t ch);
-
-
-    void    markArgumentAdRegister(Instruction& ins, const Token& tok, int idx);
-    void    countNewLine(uint8_t ch);
     uint8_t scanEol(void);
     int32_t handleInitialState(Token& dest);
     int32_t handleIdState(Token& dest);
@@ -82,6 +79,8 @@ private:
     int32_t handleSectionState(Token& dest);
     uint8_t eatWhiteSpace(uint8_t ch);
 
+    void    markArgumentAsRegister(Instruction& ins, const Token& tok, int idx);
+    void    countNewLine(uint8_t ch);
     void    error(const char* fmt, ...);
     void    errorTokenType(int tok);
     void    errorArgType(int idx, int tok, const char* inst);
@@ -96,7 +95,6 @@ private:
                            const int32_t     idx);
 
     void prepNextCall(Token& tok, uint8_t ch);
-
     bool isWhiteSpace(uint8_t ch);
     bool isComment(uint8_t ch);
     bool isAlphaL(uint8_t ch);
