@@ -89,17 +89,9 @@ int Program::load(const char* fname)
         }
     }
 
-    if (m_header.code != 0)
+    if (loadCode(reader) != PS_OK)
     {
-        if (loadCode(reader) != PS_OK)
-        {
-            printf("failed to read the file's instruction table\n");
-            return PS_ERROR;
-        }
-    }
-    else
-    {
-        printf("the supplied file is missing the instruction table\n");
+        printf("failed to read the file's instruction table\n");
         return PS_ERROR;
     }
     return PS_OK;
@@ -380,12 +372,9 @@ Register* Program::clone(void)
 
 void Program::release(Register* reg)
 {
-    if (m_regi)
-    {
-        const size_t RegiLen = sizeof(Register) * 10;
-        memcpy(m_regi, reg, RegiLen);
-        delete[] reg;
-    }
+    const size_t RegiLen = sizeof(Register) * 10;
+    memcpy(m_regi, reg, RegiLen);
+    delete[] reg;
 }
 
 void Program::handle_OP_RET(const ExecInstruction& inst)

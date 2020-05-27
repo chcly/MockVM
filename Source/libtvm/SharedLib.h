@@ -22,30 +22,28 @@
 #ifndef _SharedLib_h_
 #define _SharedLib_h_
 
-#ifdef __cplusplus
-#define BEGIN_C \
-    extern "C"  \
-    {
-#define END_C }
+#define SYM_API extern "C"
+
+#ifdef _WIN32
+#define SYM_EXPORT __declspec(dllexport)
+#define SYM_LOCAL
 #else
-#define BEGIN_C
-#define END_C
-#endif
-BEGIN_C;
+#define SYM_EXPORT  __attribute__((__visibility__("default")))
+#define SYM_LOCAL   __attribute__((__visibility__("hidden")))
+#endif  //  _WIN32
+
 
 #include <stdint.h>
 
 typedef struct _register* tvmregister_t;
 
-uint8_t  prog_get_register8(tvmregister_t regi, uint8_t reg);
-uint16_t prog_get_register16(tvmregister_t regi, uint8_t reg);
-uint32_t prog_get_register32(tvmregister_t regi, uint8_t reg);
-uint64_t prog_get_register64(tvmregister_t regi, uint8_t reg);
+SYM_API SYM_LOCAL uint8_t  prog_get_register8(tvmregister_t regi, uint8_t reg);
+SYM_API SYM_LOCAL uint16_t prog_get_register16(tvmregister_t regi, uint8_t reg);
+SYM_API SYM_LOCAL uint32_t prog_get_register32(tvmregister_t regi, uint8_t reg);
+SYM_API SYM_LOCAL uint64_t prog_get_register64(tvmregister_t regi, uint8_t reg);
+SYM_API SYM_LOCAL void     prog_set_register8(tvmregister_t regi, uint8_t reg, uint8_t v);
+SYM_API SYM_LOCAL void     prog_set_register16(tvmregister_t regi, uint8_t reg, uint16_t v);
+SYM_API SYM_LOCAL void     prog_set_register32(tvmregister_t regi, uint8_t reg, uint32_t v);
+SYM_API SYM_LOCAL void     prog_set_register64(tvmregister_t regi, uint8_t reg, uint64_t v);
 
-void prog_set_register8(tvmregister_t regi, uint8_t reg, uint8_t v);
-void prog_set_register16(tvmregister_t regi, uint8_t reg, uint16_t v);
-void prog_set_register32(tvmregister_t regi, uint8_t reg, uint32_t v);
-void prog_set_register64(tvmregister_t regi, uint8_t reg, uint64_t v);
-
-END_C;
 #endif  //_SharedLib_h_

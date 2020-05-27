@@ -78,7 +78,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    FindExecutableDirectory(ctx.modulePath);
+    FindModuleDirectory(ctx.modulePath);
 
     Program prog(ctx.modulePath);
     if (prog.load(ctx.file.c_str()) != PS_OK)

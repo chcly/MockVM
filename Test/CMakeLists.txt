@@ -45,7 +45,7 @@ macro(add_compile_tests OUT Group)
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
-            COMMAND ${tcom} -l std -o ${GEN_FILE} ${ASMFILE}
+            COMMAND ${tcom} -o ${GEN_FILE} ${ASMFILE}
             COMMAND ${tvm} ${GEN_FILE} > ${GEN_FILE_ANS}
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm fcmp std
@@ -57,7 +57,7 @@ macro(add_compile_tests OUT Group)
             OUTPUT ${GEN_FILE}.txt
             MAIN_DEPENDENCY ${GEN_FILE_ANS}
             COMMAND ${fcmp} ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${GEN_FILE}.txt
-            DEPENDS tcom tvm fcmp std
+            DEPENDS tcom tvm fcmp std ${GEN_FILE}
             VERBATIM
             COMMENT ""
         )
@@ -82,7 +82,7 @@ macro(add_temp_test OUT Group)
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
-            COMMAND ${tcom}  -l std  -d -o ${GEN_FILE} ${ASMFILE} 
+            COMMAND ${tcom} -d -o ${GEN_FILE} ${ASMFILE} 
             COMMAND ${tvm} ${GEN_FILE} -t
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm fcmp std
@@ -127,7 +127,7 @@ set(TestFiles_1
     Basic/CRLF.asm
     Basic/CR.asm
     Basic/LF.asm
-    Basic/Bug1.asm
+    #Basic/Bug1.asm
     Basic/Keywords.asm
     Basic/Comment.asm
     Basic/ParseArg.asm

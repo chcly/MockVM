@@ -99,7 +99,7 @@ int main(int argc, char **argv)
     if (find(ctx.modules.begin(), ctx.modules.end(), "std") == ctx.modules.end())
         ctx.modules.push_back("std");
 
-    FindExecutableDirectory(ctx.modulePath);
+    FindModuleDirectory(ctx.modulePath);
 
     BinaryWriter w(ctx.modulePath);
     for (string file : ctx.files)

@@ -20,9 +20,10 @@
 -------------------------------------------------------------------------------
 */
 #include "SharedLib.h"
+#include "SymbolUtils.h"
 #include "Program.h"
 
-uint8_t prog_get_register8(tvmregister_t regi, uint8_t reg)
+SYM_API SYM_LOCAL uint8_t prog_get_register8(tvmregister_t regi, uint8_t reg)
 {
     if (regi && reg >= 0 && reg < 10)
     {
@@ -32,7 +33,7 @@ uint8_t prog_get_register8(tvmregister_t regi, uint8_t reg)
     return 0;
 }
 
-uint16_t prog_get_register16(tvmregister_t regi, uint8_t reg)
+SYM_API SYM_LOCAL uint16_t prog_get_register16(tvmregister_t regi, uint8_t reg)
 {
     if (regi && reg >= 0 && reg < 10)
     {
@@ -42,7 +43,7 @@ uint16_t prog_get_register16(tvmregister_t regi, uint8_t reg)
     return 0;
 }
 
-uint32_t prog_get_register32(tvmregister_t regi, uint8_t reg)
+SYM_API SYM_LOCAL uint32_t prog_get_register32(tvmregister_t regi, uint8_t reg)
 {
     if (regi && reg >= 0 && reg < 10)
     {
@@ -52,7 +53,7 @@ uint32_t prog_get_register32(tvmregister_t regi, uint8_t reg)
     return 0;
 }
 
-uint64_t prog_get_register64(tvmregister_t regi, uint8_t reg)
+SYM_API SYM_LOCAL uint64_t prog_get_register64(tvmregister_t regi, uint8_t reg)
 {
     if (regi && reg >= 0 && reg < 10)
     {
@@ -62,7 +63,7 @@ uint64_t prog_get_register64(tvmregister_t regi, uint8_t reg)
     return 0;
 }
 
-void prog_set_register8(tvmregister_t regi, uint8_t reg, uint8_t v)
+SYM_API SYM_LOCAL void prog_set_register8(tvmregister_t regi, uint8_t reg, uint8_t v)
 {
     if (regi && reg >= 0 && reg < 10)
     {
@@ -71,7 +72,7 @@ void prog_set_register8(tvmregister_t regi, uint8_t reg, uint8_t v)
     }
 }
 
-void prog_set_register16(tvmregister_t regi, uint8_t reg, uint16_t v)
+SYM_API SYM_LOCAL void prog_set_register16(tvmregister_t regi, uint8_t reg, uint16_t v)
 {
     if (regi && reg >= 0 && reg < 10)
     {
@@ -80,7 +81,7 @@ void prog_set_register16(tvmregister_t regi, uint8_t reg, uint16_t v)
     }
 }
 
-void prog_set_register32(tvmregister_t regi, uint8_t reg, uint32_t v)
+SYM_API SYM_LOCAL void prog_set_register32(tvmregister_t regi, uint8_t reg, uint32_t v)
 {
     if (regi && reg >= 0 && reg < 10)
     {
@@ -89,7 +90,7 @@ void prog_set_register32(tvmregister_t regi, uint8_t reg, uint32_t v)
     }
 }
 
-void prog_set_register64(tvmregister_t regi, uint8_t reg, uint64_t v)
+SYM_API SYM_LOCAL void prog_set_register64(tvmregister_t regi, uint8_t reg, uint64_t v)
 {
     if (regi && reg >= 0 && reg < 10)
     {

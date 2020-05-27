@@ -284,6 +284,13 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
         {
             SymbolTable* avail = ((ModuleInit)sym)();
 
+            if (avail == nullptr)
+            {
+                printf("symbol initialization failed in %s\n",
+                       (m_modpath + lib).c_str());
+                status = PS_ERROR;
+            }
+
             int i = 0;
             while (avail != nullptr && avail[i].name != nullptr && status == PS_OK)
             {
@@ -302,17 +309,25 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
                 }
                 ++i;
             }
+
+
+
+
         }
         else
         {
-            printf("failed to find function %s\n", lookup.c_str());
+
+            printf("failed to find function '%s' in %s\n", 
+                lookup.c_str(), 
+                (m_modpath).c_str());
             status = PS_ERROR;
         }
+
         UnloadSharedLibrary(shlib);
     }
     else
     {
-        printf("failed to find library %s\n", lib.c_str());
+        printf("failed to load library '%s'\n", lib.c_str());
         status = PS_ERROR;
     }
     return status;
@@ -325,7 +340,8 @@ int BinaryWriter::resolve(strvec_t& modules)
     while (it != modules.end() && status == PS_OK)
     {
         const str_t& mod = (*it++);
-        status           = loadSharedLibrary(mod);
+
+        status = loadSharedLibrary(mod);
     }
     return status;
 }

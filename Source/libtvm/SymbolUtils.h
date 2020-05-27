@@ -24,12 +24,9 @@
 
 #include <stdint.h>
 #include "Declarations.h"
+#include "SharedLib.h"
 
-#ifdef _WIN32
-#define SYM_EXPORT extern "C" __declspec(dllexport)
-#else
-#define SYM_EXPORT extern "C" __attribute__((__visibility__("default")))
-#endif  //  _WIN32
+
 
 typedef void* LibHandle;
 typedef void* LibSymbol;
@@ -37,7 +34,7 @@ typedef void* LibSymbol;
 extern LibHandle LoadSharedLibrary(const str_t& modname, const str_t& moddir);
 extern void      UnloadSharedLibrary(LibHandle handle);
 extern LibSymbol GetSymbolAddress(LibHandle handle, const str_t& symname);
-extern void      FindExecutableDirectory(str_t& dest);
+extern void      FindModuleDirectory(str_t& dest);
 extern bool      IsModulePresent(const str_t& modname, const str_t& moddir);
 extern void      DisplayModulePath(void);
 

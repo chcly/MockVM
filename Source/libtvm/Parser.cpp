@@ -28,7 +28,7 @@
 
 using namespace std;
 const uint8_t    nullarg[3]  = {0xFF, 0xFF, 0xFF};
-const KeywordMap NullKeyword = {{'\0'}, 0xFF, 0, nullarg};
+const KeywordMap NullKeyword = {{'\0'}, OP_MAX, 0, nullarg};
 
 Parser::Parser() :
     m_state(0),
@@ -599,7 +599,7 @@ int32_t Parser::handleOpCode(const Token& tok)
 {
     const KeywordMap& kwd = getKeyword(tok.index);
 
-    if (kwd.op != PS_UNDEFINED)
+    if (kwd.op != OP_MAX)
     {
         Instruction ins = {};
         ins.op          = kwd.op;
@@ -694,12 +694,12 @@ bool Parser::isWhiteSpace(uint8_t ch)
 
 bool Parser::isAlphaL(uint8_t ch)
 {
-    return ch >= 'a' && ch <= 'z';
+    return (ch >= 'a' && ch <= 'z');
 }
 
 bool Parser::isAlphaU(uint8_t ch)
 {
-    return ch >= 'A' && ch <= 'Z';
+    return (ch >= 'A' && ch <= 'Z');
 }
 
 bool Parser::isAlpha(uint8_t ch)
@@ -709,17 +709,17 @@ bool Parser::isAlpha(uint8_t ch)
 
 bool Parser::isDigit(uint8_t ch)
 {
-    return ch >= '0' && ch <= '9';
+    return (ch >= '0' && ch <= '9');
 }
 
 bool Parser::isNumber(uint8_t ch)
 {
-    return ch >= '0' && ch <= '9' || ch == '-';
+    return (ch >= '0' && ch <= '9') || ch == '-';
 }
 
 bool Parser::isEncodedNumber(uint8_t ch)
 {
-    return isNumber(ch) || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <= 'F' || ch == 'x';
+    return isNumber(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || ch == 'x';
 }
 
 bool Parser::isAlphaNumeric(uint8_t ch)

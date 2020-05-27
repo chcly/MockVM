@@ -25,7 +25,12 @@
 #include <sys/stat.h>
 #include "Declarations.h"
 
+#define MAX_PATH_LEN 270
+
+
+
 void MakeModulePath(str_t& absPath, const str_t& modname, const str_t& moddir);
+void MakeModulePath(str_t& dest, char* buffer, size_t sz);
 
 #ifdef _WIN32
 #include <windows.h>
@@ -57,22 +62,16 @@ LibSymbol GetSymbolAddress(LibHandle handle, const str_t& symname)
     return nullptr;
 }
 
-void FindExecutableDirectory(str_t& dest)
+void FindModuleDirectory(str_t& dest)
 {
     dest.clear();
     HMODULE mod = GetModuleHandle(NULL);
     if (mod)
     {
-        char  buf[270];
-        DWORD sz = GetModuleFileName(mod, buf, 270);
-        if (sz > 0 && sz < 270)
-        {
-            buf[sz] = 0;
-            dest    = str_t(buf, sz);
-            size_t pos = dest.find_last_of('\\');
-            if (pos != str_t::npos)
-                dest = dest.substr(0, pos);
-        }
+        char  buf[MAX_PATH_LEN+1];
+        DWORD sz = GetModuleFileName(mod, buf, MAX_PATH_LEN);
+        if (sz > 0 && sz < MAX_PATH_LEN)
+            MakeModulePath(dest, buf, sz);
         else
         {
             printf("failed to get the executable path.\n");
@@ -95,7 +94,7 @@ LibHandle LoadSharedLibrary(const str_t& modname, const str_t& moddir)
     str_t absPath;
     MakeModulePath(absPath, modname, moddir);
 
-    LibHandle lib = (LibHandle)dlopen(absPath.c_str(), RTLD_LAZY);
+    LibHandle lib = (LibHandle)dlopen(absPath.c_str(), RTLD_LOCAL|RTLD_LAZY);
     if (!lib)
     {
         printf("failed to find '%s'\n", absPath.c_str());
@@ -112,31 +111,53 @@ void UnloadSharedLibrary(LibHandle handle)
 
 LibSymbol GetSymbolAddress(LibHandle handle, const str_t& symname)
 {
+    LibSymbol rval = nullptr;
     if (handle)
-        return dlsym((void*)handle, symname.c_str());
-    return nullptr;
+        rval = dlsym((void*)handle, symname.c_str());
+    return rval;
 }
 
-void FindExecutableDirectory(str_t& dest)
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+
+
+void FindModuleDirectory(str_t& dest)
 {
     dest.clear();
-    char    buf[270];
-    ssize_t sz = readlink("/proc/self/exe", buf, 270);
-    if (sz > 0 && sz < 270)
-    {
-        buf[sz] = 0;
-        dest    = str_t(buf, sz);
+    char buf[MAX_PATH_LEN + 1] = {};
 
-        size_t pos = dest.find_last_of('/');
-        if (pos != str_t::npos)
-            dest = dest.substr(0, pos);
+    uint32_t sz = MAX_PATH_LEN;
+    int      rc = _NSGetExecutablePath(buf, &sz);
+    if (sz > 0 && sz <= MAX_PATH_LEN && rc == 0)
+    {
+
+
+        MakeModulePath(dest, buf, sz);
     }
     else
     {
         printf("failed to get the executable path.\n");
     }
 }
-#endif
+
+#else
+
+void FindModuleDirectory(str_t& dest)
+{
+    dest.clear();
+    char    buf[MAX_PATH_LEN+1];
+    ssize_t sz = readlink("/proc/self/exe", buf, MAX_PATH_LEN);
+    if (sz > 0 && sz < MAX_PATH_LEN)
+        MakeModulePath(dest, buf, sz);
+    else
+    {
+        printf("failed to get the executable path.\n");
+    }
+}
+
+#endif  // __APPLE__
+
+#endif // _WIN32
 
 bool IsModulePresent(const str_t& modname, const str_t& moddir)
 {
@@ -155,23 +176,43 @@ void MakeModulePath(str_t& absPath, const str_t& modname, const str_t& moddir)
 
     absPath += moddir;
 #ifdef _WIN32
-    absPath += "\\lib\\";
+    absPath += "\\";
     absPath += modname;
     absPath += ".dll";
+#elif __APPLE__
+    absPath += "lib";
+    absPath += modname;
+    absPath += ".dylib";
 #else
-    absPath += "/lib/lib";
+    absPath += "lib";
     absPath += modname;
     absPath += ".so";
 #endif
 }
 
+void MakeModulePath(str_t& dest, char* buf, size_t sz)
+{
+    int i = 0, s = sz;
+    if (buf[s] == '/' || buf[s] == '\\')
+        s--;
+    while (s > 0)
+    {
+        if (buf[s] == '/' || buf[s] == '\\')
+            break;
+        --s;
+    }
+    dest = str_t(buf, s);
+#ifdef _WIN32
+        dest += "\\lib\\";
+#else
+        dest += "/lib/";
+#endif
+}
+
+
 void DisplayModulePath(void)
 {
     str_t path;
-    FindExecutableDirectory(path);
-#if _WIN32
-    puts((path+"\\lib").c_str());
-#else
-    puts((path + "/lib").c_str());
-#endif
+    FindModuleDirectory(path);
+    puts((path).c_str());
 }

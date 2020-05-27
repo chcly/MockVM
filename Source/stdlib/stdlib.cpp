@@ -24,8 +24,7 @@
 #include "SymbolUtils.h"
 
 
-
-SYM_EXPORT void __putchar(tvmregister_t regi)
+SYM_API SYM_EXPORT void __putchar(tvmregister_t regi)
 {
     uint8_t ch = prog_get_register8(regi, 0);
     if (ch)
@@ -35,13 +34,13 @@ SYM_EXPORT void __putchar(tvmregister_t regi)
     }
 }
 
-SYM_EXPORT void __getchar(tvmregister_t regi)
+SYM_API SYM_EXPORT void __getchar(tvmregister_t regi)
 {
     prog_set_register8(regi, 0, getchar());
 }
 
 
-SYM_EXPORT void __change_cur_inst(tvmregister_t regi)
+SYM_API SYM_EXPORT void __change_cur_inst(tvmregister_t regi)
 {
 }
 
@@ -53,7 +52,7 @@ const SymbolTable stdlib[] = {
 };
 
 
-SYM_EXPORT const SymbolTable* std_init()
+SYM_API SYM_EXPORT SymbolTable* std_init()
 {
-    return stdlib;
+    return (SymbolTable*)stdlib;
 }
