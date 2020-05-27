@@ -354,14 +354,6 @@ int32_t Parser::handleDigitState(Token& tok)
             tok.value.clear();
             st = ST_MAX;
         }
-        else
-        {
-            if (st != PS_ERROR)
-            {
-                //error("invalid termination\n");
-                //st = PS_ERROR;
-            }
-        }
     }
     else if (ch == '\'')
         st = handleCharacter(tok, ch);
@@ -534,7 +526,7 @@ int32_t Parser::handleLabel(const Token& label)
     return PS_OK;
 }
 
-void Parser::markInstructionAsRegister(Instruction& ins, const Token& tok, int idx)
+void Parser::markArgumentAdRegister(Instruction& ins, const Token& tok, int idx)
 {
     ins.argv[idx] = tok.reg;
     switch (idx)
@@ -569,7 +561,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
             return PS_ERROR;
         }
 
-        markInstructionAsRegister(ins, tok, idx);
+        markArgumentAdRegister(ins, tok, idx);
 
     }
     else if (kwd.argv[idx] == AT_SVAL)
@@ -589,7 +581,7 @@ int32_t Parser::handleArgument(Instruction&      ins,
         }
         else if (tok.type == TOK_REGISTER)
         {
-            markInstructionAsRegister(ins, tok, idx);
+            markArgumentAdRegister(ins, tok, idx);
         }
         else
         {

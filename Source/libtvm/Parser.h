@@ -73,7 +73,7 @@ private:
     int32_t handleCharacter(Token& tok, uint8_t ch);
 
 
-    void    markInstructionAsRegister(Instruction& ins, const Token& tok, int idx);
+    void    markArgumentAdRegister(Instruction& ins, const Token& tok, int idx);
     void    countNewLine(uint8_t ch);
     uint8_t scanEol(void);
     int32_t handleInitialState(Token& dest);
