@@ -358,10 +358,9 @@ int Program::launch(void)
 
 void Program::forceExit(int returnCode)
 {
-    m_return = returnCode;
+    m_return  = returnCode;
     m_curinst = m_ins.size();
 }
-
 
 Register* Program::clone(void)
 {
@@ -439,7 +438,6 @@ void Program::handle_OP_CALL(const ExecInstruction& inst)
         forceExit(-1);
     }
 }
-
 
 void Program::handle_OP_INC(const ExecInstruction& inst)
 {

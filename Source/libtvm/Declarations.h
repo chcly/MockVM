@@ -23,11 +23,11 @@
 #define _Declarations_h_
 
 #include <stdint.h>
-#include <string>
-#include <vector>
-#include <stack>
 #include <set>
+#include <stack>
+#include <string>
 #include <unordered_map>
+#include <vector>
 #include "SharedLib.h"
 
 #define INS_ARG 3
@@ -56,7 +56,7 @@ enum RegisterArg
     A1_4 = 0x040,
     A2_1 = 0x100,
     A2_2 = 0x200,
-    A2_4 = 0x400, // uint16_t
+    A2_4 = 0x400,  // uint16_t
 };
 
 const uint16_t SizeFlags[3][3] = {
@@ -93,7 +93,7 @@ enum ParseResult
     // return value for actions that need to scan
     // for more information before returning a token.
     PS_CONTINUE,
-    PS_OK,      // Keep at zero
+    PS_OK,  // Keep at zero
     PS_MAX
 };
 
@@ -150,7 +150,6 @@ enum Opcode
                  // ---- debugging ----
     OP_MAX,      // uint8_t
 };
-
 
 enum ArgType
 {
@@ -243,7 +242,6 @@ struct ExecInstruction
     Symbol   call;
 };
 
-
 using Instructions     = std::vector<Instruction>;
 using IndexToPosition  = std::unordered_map<size_t, size_t>;
 using LabelMap         = std::unordered_map<str_t, size_t>;
@@ -253,7 +251,6 @@ using DynamicLib       = std::vector<void*>;
 using StringMap        = std::unordered_map<str_t, size_t>;
 using ExecInstructions = std::vector<ExecInstruction>;
 using Stack            = std::stack<uint64_t>;
-
 
 #define _RELITAVE_TIME_CHECK_BEGIN                                    \
     {                                                                 \

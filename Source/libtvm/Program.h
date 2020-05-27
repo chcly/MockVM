@@ -38,7 +38,6 @@ public:
     typedef Operation InstructionTable[OP_MAX];
 
 private:
-
     ExecInstructions m_ins;
     TVMHeader        m_header;
     Registers        m_regi;
@@ -85,7 +84,6 @@ private:
     int  loadSymbolTable(BlockReader& reader);
     int  loadCode(BlockReader& reader);
     bool testInstruction(const ExecInstruction& exec);
-
 
     Register* clone(void);
     void      release(Register*);

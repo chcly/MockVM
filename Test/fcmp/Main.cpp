@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 
 char *GetFilteredBuffer(const char *fname, int64_t &len)
 {
@@ -58,8 +58,8 @@ int main(int argc, char **argv)
         return 1;
     }
     int64_t a, b;
-    char * fileA = GetFilteredBuffer(argv[1], a);
-    char * fileB = GetFilteredBuffer(argv[2], b);
+    char *  fileA = GetFilteredBuffer(argv[1], a);
+    char *  fileB = GetFilteredBuffer(argv[2], b);
 
     int rc = 0;
     if (a != b)

@@ -28,10 +28,9 @@
 #define SYM_EXPORT __declspec(dllexport)
 #define SYM_LOCAL
 #else
-#define SYM_EXPORT  __attribute__((__visibility__("default")))
-#define SYM_LOCAL   __attribute__((__visibility__("hidden")))
+#define SYM_EXPORT __attribute__((__visibility__("default")))
+#define SYM_LOCAL __attribute__((__visibility__("hidden")))
 #endif  //  _WIN32
-
 
 #include <stdint.h>
 

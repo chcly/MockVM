@@ -22,20 +22,18 @@
 #include "Parser.h"
 #include "Catch2.h"
 
-
 TEST_CASE("Scan1")
 {
     const std::string TestFile = std::string(TestDirectory) + "/Scan/Scan1.asm";
 
     Parser p;
 
-    int sr  = p.open(TestFile.c_str());
+    int sr = p.open(TestFile.c_str());
     EXPECT_EQ(sr, PS_OK);
 
-
     Token tok = {};
-    sr = p.scan(tok);
-    EXPECT_NE(sr,       PS_ERROR);
+    sr        = p.scan(tok);
+    EXPECT_NE(sr, PS_ERROR);
     EXPECT_EQ(tok.type, TOK_IDENTIFIER);
     EXPECT_EQ(tok.value, "abc");
     sr = p.scan(tok);
@@ -80,8 +78,6 @@ TEST_CASE("Scan2")
     sr = p.scan(tok);
     EXPECT_EQ(tok.type, PS_OK);
 }
-
-
 
 TEST_CASE("Scan3")
 {

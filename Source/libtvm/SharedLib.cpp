@@ -20,8 +20,8 @@
 -------------------------------------------------------------------------------
 */
 #include "SharedLib.h"
-#include "SymbolUtils.h"
 #include "Program.h"
+#include "SymbolUtils.h"
 
 SYM_API SYM_LOCAL uint8_t prog_get_register8(tvmregister_t regi, uint8_t reg)
 {

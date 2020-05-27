@@ -43,12 +43,11 @@ private:
     TVMHeader       m_header;
     str_t           m_modpath;
 
-
-    void   write(const void* v, size_t size);
-    void   write8(uint8_t v);
-    void   write16(uint16_t v);
-    void   write32(uint32_t v);
-    void   write64(uint64_t v);
+    void write(const void* v, size_t size);
+    void write8(uint8_t v);
+    void write16(uint16_t v);
+    void write32(uint32_t v);
+    void write64(uint64_t v);
 
     size_t writeDataSection(void);
     size_t writeCodeSection(void);

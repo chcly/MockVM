@@ -79,11 +79,11 @@ private:
     int32_t handleSectionState(Token& dest);
     uint8_t eatWhiteSpace(uint8_t ch);
 
-    void    markArgumentAsRegister(Instruction& ins, const Token& tok, int idx);
-    void    countNewLine(uint8_t ch);
-    void    error(const char* fmt, ...);
-    void    errorTokenType(int tok);
-    void    errorArgType(int idx, int tok, const char* inst);
+    void markArgumentAsRegister(Instruction& ins, const Token& tok, int idx);
+    void countNewLine(uint8_t ch);
+    void error(const char* fmt, ...);
+    void errorTokenType(int tok);
+    void errorArgType(int idx, int tok, const char* inst);
 
     int32_t           getSection(const std::string& val);
     int32_t           getKeywordIndex(const uint8_t& val);

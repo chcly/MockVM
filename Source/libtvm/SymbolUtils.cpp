@@ -27,8 +27,6 @@
 
 #define MAX_PATH_LEN 270
 
-
-
 void MakeModulePath(str_t& absPath, const str_t& modname, const str_t& moddir);
 void MakeModulePath(str_t& dest, char* buffer, size_t sz);
 
@@ -68,19 +66,15 @@ void FindModuleDirectory(str_t& dest)
     HMODULE mod = GetModuleHandle(NULL);
     if (mod)
     {
-        char  buf[MAX_PATH_LEN+1];
+        char  buf[MAX_PATH_LEN + 1];
         DWORD sz = GetModuleFileName(mod, buf, MAX_PATH_LEN);
         if (sz > 0 && sz < MAX_PATH_LEN)
             MakeModulePath(dest, buf, sz);
         else
-        {
             printf("failed to get the executable path.\n");
-        }
     }
     else
-    {
         printf("failed to get the module handle.\n");
-    }
 }
 
 #else
@@ -93,8 +87,7 @@ LibHandle LoadSharedLibrary(const str_t& modname, const str_t& moddir)
 {
     str_t absPath;
     MakeModulePath(absPath, modname, moddir);
-
-    LibHandle lib = (LibHandle)dlopen(absPath.c_str(), RTLD_LOCAL|RTLD_LAZY);
+    LibHandle lib = (LibHandle)dlopen(absPath.c_str(), RTLD_LOCAL | RTLD_LAZY);
     if (!lib)
     {
         printf("failed to find '%s'\n", absPath.c_str());
@@ -120,7 +113,6 @@ LibSymbol GetSymbolAddress(LibHandle handle, const str_t& symname)
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 
-
 void FindModuleDirectory(str_t& dest)
 {
     dest.clear();
@@ -129,35 +121,24 @@ void FindModuleDirectory(str_t& dest)
     uint32_t sz = MAX_PATH_LEN;
     int      rc = _NSGetExecutablePath(buf, &sz);
     if (sz > 0 && sz <= MAX_PATH_LEN && rc == 0)
-    {
-
-
         MakeModulePath(dest, buf, sz);
-    }
     else
-    {
         printf("failed to get the executable path.\n");
-    }
 }
-
 #else
-
 void FindModuleDirectory(str_t& dest)
 {
     dest.clear();
-    char    buf[MAX_PATH_LEN+1];
+    char    buf[MAX_PATH_LEN + 1];
     ssize_t sz = readlink("/proc/self/exe", buf, MAX_PATH_LEN);
     if (sz > 0 && sz < MAX_PATH_LEN)
         MakeModulePath(dest, buf, sz);
     else
-    {
         printf("failed to get the executable path.\n");
-    }
 }
 
 #endif  // __APPLE__
-
-#endif // _WIN32
+#endif  // _WIN32
 
 bool IsModulePresent(const str_t& modname, const str_t& moddir)
 {
@@ -170,8 +151,8 @@ bool IsModulePresent(const str_t& modname, const str_t& moddir)
 
 void MakeModulePath(str_t& absPath, const str_t& modname, const str_t& moddir)
 {
-    // Maintain control of the loaded module by allowing only absolute 
-    // paths to be specified. It's ether where it should be or not found at all. 
+    // Maintain control of the loaded module by allowing only absolute
+    // paths to be specified. It's ether where it should be or not found at all.
     absPath.clear();
 
     absPath += moddir;
@@ -192,7 +173,7 @@ void MakeModulePath(str_t& absPath, const str_t& modname, const str_t& moddir)
 
 void MakeModulePath(str_t& dest, char* buf, size_t sz)
 {
-    int i = 0, s = sz;
+    int s = (int)sz;
     if (buf[s] == '/' || buf[s] == '\\')
         s--;
     while (s > 0)
@@ -203,12 +184,11 @@ void MakeModulePath(str_t& dest, char* buf, size_t sz)
     }
     dest = str_t(buf, s);
 #ifdef _WIN32
-        dest += "\\lib\\";
+    dest += "\\lib\\";
 #else
-        dest += "/lib/";
+    dest += "/lib/";
 #endif
 }
-
 
 void DisplayModulePath(void)
 {

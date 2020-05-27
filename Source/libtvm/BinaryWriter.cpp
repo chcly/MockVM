@@ -309,17 +309,12 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
                 }
                 ++i;
             }
-
-
-
-
         }
         else
         {
-
-            printf("failed to find function '%s' in %s\n", 
-                lookup.c_str(), 
-                (m_modpath).c_str());
+            printf("failed to find function '%s' in %s\n",
+                   lookup.c_str(),
+                   (m_modpath).c_str());
             status = PS_ERROR;
         }
 
