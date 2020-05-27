@@ -46,12 +46,24 @@ Parser::~Parser()
 {
 }
 
+
+int32_t Parser::open(const char* fname)
+{
+    m_reader.open(fname);
+    m_section = -1;
+    m_label   = 0;
+    m_state   = ST_INITIAL;
+    m_fname   = fname;
+    return m_reader.eof() ? (int32_t)PS_ERROR : (int32_t)PS_OK;
+}
+
 int32_t Parser::parse(const char* fname)
 {
     m_reader.open(fname);
     if (!m_reader.eof())
     {
         int32_t sr, rc;
+
         m_section = -1;
         m_label   = 0;
         m_state   = ST_INITIAL;
@@ -61,6 +73,7 @@ int32_t Parser::parse(const char* fname)
         {
             Token curTok;
             sr = scan(curTok);
+
             switch (sr)
             {
             case TOK_OPCODE:
@@ -72,7 +85,9 @@ int32_t Parser::parse(const char* fname)
             case TOK_LABEL:
                 rc = handleLabel(curTok);
                 break;
+            case PS_EOF:
             case PS_OK:
+            case ST_CONTINUE:
                 return PS_OK;
             default:
                 if (sr != PS_ERROR)
@@ -84,6 +99,7 @@ int32_t Parser::parse(const char* fname)
                 rc = PS_ERROR;
                 break;
             }
+
             if (rc != PS_OK)
             {
                 error("syntax error\n");
@@ -101,7 +117,11 @@ int32_t Parser::parse(const char* fname)
 
 int32_t Parser::scan(Token& tok)
 {
-    int32_t res = PS_ERROR;
+    int32_t res = PS_EOF;
+
+    // Always reset the token to a null token. 
+    tok = {};
+
     while (!m_reader.eof())
     {
         switch (m_state)
@@ -121,183 +141,164 @@ int32_t Parser::scan(Token& tok)
         default:
             break;
         }
-
         if (res == PS_ERROR)
             return PS_ERROR;
-
         else if (res != ST_CONTINUE)
             return tok.type;
     }
-    return PS_OK;
+    return res;
 }
 
 int32_t Parser::handleInitialState(Token& tok)
 {
+    int32_t st = ST_CONTINUE;
+
     uint8_t ch = m_reader.next();
-    if (ch == '#')
-    {
+    if (ch == '#' || ch == ';')
         scanEol();
-        return ST_CONTINUE;
-    }
-    else if (ch == ';')
-    {
-        scanEol();
-        return ST_CONTINUE;
-    }
     else if (isNewLine(ch))
     {
-        while (isNewLine(ch) && !m_reader.eof())
+        do
         {
             countNewLine(ch);
             ch = m_reader.next();
-        }
-        if (!m_reader.eof())
+        } while (isNewLine(ch));
+
+        if (ch != 0)
             m_reader.offset(-1);
-        return ST_CONTINUE;
     }
+    else
+    {
+        if (isWhiteSpace(ch))
+            ch = eatWhiteSpace(ch);
 
-    if (isWhiteSpace(ch))
-        ch = eatWhiteSpace(ch);
+        if (ch != 0)
+            m_reader.offset(-1);
 
-    if (isAlpha(ch))
-    {
-        m_reader.offset(-1);
-        m_state = ST_ID;
+        if (isAlpha(ch))
+            m_state = ST_ID;
+        else if (isDigit(ch) || ch == '-' || ch == '\'')
+            m_state = ST_DIGIT;
+        else if (ch == '.')
+            m_state = ST_SECTION;
     }
-    else if (isDigit(ch) || ch == '-' || ch == '\'')
-    {
-        m_reader.offset(-1);
-        m_state = ST_DIGIT;
-    }
-    else if (ch == '.')
-    {
-        m_state = ST_SECTION;
-    }
-    else if (ch == '#')
-    {
-        scanEol();
-        return ST_CONTINUE;
-    }
-    else if (ch == ';')
-    {
-        scanEol();
-        return ST_CONTINUE;
-    }
-    else if (!isNewLine(ch) && ch != 0)
-    {
-        error("undefined character '%c'\n", ch);
-        return PS_ERROR;
-    }
-    return ST_CONTINUE;
+    return st;
 }
 
 int32_t Parser::handleIdState(Token& tok)
 {
+    int32_t st = ST_CONTINUE;
+
     uint8_t ch = m_reader.next();
-    if (ch == '#')
-    {
+    if (ch == '#' || ch == ';')
         scanEol();
-        return ST_CONTINUE;
-    }
-    else if (ch == ';')
+    else
     {
-        scanEol();
-        return ST_CONTINUE;
-    }
+        if (isWhiteSpace(ch))
+            ch = eatWhiteSpace(ch);
 
-    if (isWhiteSpace(ch))
-        ch = eatWhiteSpace(ch);
-
-    if (isAlpha(ch))
-    {
-        while (isAlphaNumeric(ch) && !m_reader.eof())
+        if (isAlpha(ch))
         {
-            tok.value.push_back(ch);
-            ch = m_reader.next();
-        }
-
-        if (isTerminator(ch))
-        {
-            prepNextCall(tok, ch);
-
-            m_state = ST_INITIAL;
-
-            size_t sz = tok.value.size();
-            if (sz == 2)
+            do
             {
-                if (tok.value[1] >= '0' && tok.value[1] <= '9')
-                {
-                    char ch = tok.value[0];
-                    if (ch == 'x' || ch == 'b' || ch == 'w' || ch == 'l')
-                    {
-                        switch (ch)
-                        {
-                        case 'b':
-                            tok.regtype = IF_BTEB;
-                            break;
-                        case 'w':
-                            tok.regtype = IF_BTEW;
-                            break;
-                        case 'l':
-                            tok.regtype = IF_BTEL;
-                            break;
-                        case 'x':
-                        default:
-                            break;
-                        }
-                        tok.type = TOK_REGISTER;
-                        tok.reg  = tok.value[1] - '0';
-                        tok.value.clear();
-                        return ST_MAX;
-                    }
-                }
-                else if (tok.value[0] == 's' && tok.value[1] == 'p')
-                {
-                    tok.type = TOK_REGISTER;
-                    tok.reg     = 0;
-                    tok.regtype = IF_STKP;
-                    tok.value.clear();
-                    return ST_MAX;
-                }
-                else if (tok.value[0] == 'p' && tok.value[1] == 'c')
-                {
-                    tok.type = TOK_REGISTER;
-                    tok.reg  = 0;
-                    tok.regtype = IF_INSP;
-                    tok.value.clear();
-                    return ST_MAX;
-                }
-            }
+                tok.value.push_back(ch);
+                ch = m_reader.next();
+            } while (isAlphaNumeric(ch));
 
-            size_t i = 0;
-            for (i = 0; i < KeywordTableSize; ++i)
+            if (isTerminator(ch))
+                st = handleTermination(tok, ch);
+            else if (ch == ':')
             {
-                if (strncmp(KeywordTable[i].word, tok.value.c_str(), MAX_KWD) == 0)
-                {
-                    // swap the string with the opcode
-                    tok.value.clear();
-                    tok.op    = KeywordTable[i].op;
-                    tok.type  = TOK_OPCODE;
-                    tok.index = (int32_t)i;
-                    return ST_MAX;
-                }
+                m_state  = ST_INITIAL;
+                tok.type = TOK_LABEL;
+                st = ST_MAX;
             }
-
-            tok.type = TOK_IDENTIFIER;
-            return ST_MAX;
-        }
-        else if (ch == ':')
-        {
-            m_state  = ST_INITIAL;
-            tok.type = TOK_LABEL;
-            return ST_MAX;
+            else
+            {
+                printf("%c\n", ch);
+            }
         }
     }
-    return ST_CONTINUE;
+    return st;
 }
+
+
+int32_t Parser::handleTermination(Token& tok, uint8_t ch)
+{
+    prepNextCall(tok, ch);
+
+    m_state = ST_INITIAL;
+
+    size_t sz = tok.value.size();
+    if (sz == 2)
+    {
+        if (tok.value[1] >= '0' && tok.value[1] <= '9')
+        {
+            char ch = tok.value[0];
+            if (ch == 'x' || ch == 'b' || ch == 'w' || ch == 'l')
+            {
+                switch (ch)
+                {
+                case 'b':
+                    tok.regtype = IF_BTEB;
+                    break;
+                case 'w':
+                    tok.regtype = IF_BTEW;
+                    break;
+                case 'l':
+                    tok.regtype = IF_BTEL;
+                    break;
+                case 'x':
+                default:
+                    break;
+                }
+                tok.type = TOK_REGISTER;
+                tok.reg  = tok.value[1] - '0';
+                tok.value.clear();
+                return ST_MAX;
+            }
+        }
+        else if (tok.value[0] == 's' && tok.value[1] == 'p')
+        {
+            tok.type    = TOK_REGISTER;
+            tok.reg     = 0;
+            tok.regtype = IF_STKP;
+            tok.value.clear();
+            return ST_MAX;
+        }
+        else if (tok.value[0] == 'p' && tok.value[1] == 'c')
+        {
+            tok.type    = TOK_REGISTER;
+            tok.reg     = 0;
+            tok.regtype = IF_INSP;
+            tok.value.clear();
+            return ST_MAX;
+        }
+    }
+
+    size_t i = 0;
+    for (i = 0; i < KeywordTableSize; ++i)
+    {
+        if (strncmp(KeywordTable[i].word, tok.value.c_str(), MAX_KWD) == 0)
+        {
+            // swap the string with the opcode
+            tok.value.clear();
+            tok.op    = KeywordTable[i].op;
+            tok.type  = TOK_OPCODE;
+            tok.index = (int32_t)i;
+            return ST_MAX;
+        }
+    }
+
+    tok.type = TOK_IDENTIFIER;
+    return ST_MAX;
+}
+
 
 int32_t Parser::handleDigitState(Token& tok)
 {
+    int32_t st = ST_CONTINUE;
+
     uint8_t ch = m_reader.next();
     if (isWhiteSpace(ch))
         ch = eatWhiteSpace(ch);
@@ -308,35 +309,37 @@ int32_t Parser::handleDigitState(Token& tok)
         bool convert = ch == '0';
         bool b2 = false, b16 = false;
 
-        while (isEncodedNumber(ch))
+        while (isEncodedNumber(ch) && st != PS_ERROR)
         {
             if (b2 && ch != '1' && ch != '0' && ch != 'b')
             {
-                error("invalid binary number.\n");
-                return PS_ERROR;
+                error("invalid binary number\n");
+                st = PS_ERROR;
             }
-
-            tok.value.push_back(ch);
-            ch = m_reader.next();
-
-            if (convert)
+            else
             {
-                if (ch == 'x')
-                    b16 = true;
-                if (ch == 'b')
-                    b2 = true;
+                tok.value.push_back(ch);
+                ch = m_reader.next();
+
+                if (convert)
+                {
+                    if (ch == 'x')
+                        b16 = true;
+                    if (ch == 'b')
+                        b2 = true;
+                }
             }
         }
+
         if (!b16 && !b2)
             convert = false;
 
-        if (isTerminator(ch))
+        if (isTerminator(ch) && st != PS_ERROR)
         {
             prepNextCall(tok, ch);
 
             m_state  = ST_INITIAL;
             tok.type = TOK_DIGIT;
-
             if (convert)
             {
                 tok.value = tok.value.substr(2, tok.value.size());
@@ -348,64 +351,69 @@ int32_t Parser::handleDigitState(Token& tok)
 
             tok.ival.x = std::strtoull(tok.value.c_str(), nullptr, base);
             tok.value.clear();
-            return ST_MAX;
+            st = ST_MAX;
         }
         else
         {
-            error("Invalid termination.\n");
-            return PS_ERROR;
+            if (st != PS_ERROR)
+            {
+                error("invalid termination\n");
+                st = PS_ERROR;
+            }
         }
     }
     else if (ch == '\'')
+        st = handleCharacter(tok, ch);
+    return st;
+}
+
+int32_t Parser::handleCharacter(Token& tok, uint8_t ch)
+{
+    char v, n;
+    ch = m_reader.next();
+    v  = ch;
+
+    n = m_reader.next();
+    if (ch == '\\')
     {
-        char v, n;
-        ch = m_reader.next();
-        v  = ch;
-
-        n = m_reader.next();
-        if (ch =='\\')
+        switch (n)
         {
-            switch (n)
-            {
-            case 'n':
-                v = '\n';
-                break;
-            case 't':
-                v = '\t';
-                break;
-            case 'r':
-                v = '\r';
-                break;
-            case '\'':
-                v = '\'';
-                break;
-            case '\\':
-                v = '\\';
-                break;
-            default:
-                error("escape sequence '%c' not handled.\n", n);
-                return PS_ERROR;
-            }
-
-            n = m_reader.next();
-        }
-        
-        if (n != '\'')
-        {
-            error("invalid character.\n");
+        case 'n':
+            v = '\n';
+            break;
+        case 't':
+            v = '\t';
+            break;
+        case 'r':
+            v = '\r';
+            break;
+        case '\'':
+            v = '\'';
+            break;
+        case '\\':
+            v = '\\';
+            break;
+        default:
+            error("escape sequence '%c' not handled\n", n);
             return PS_ERROR;
         }
-
-        ch = m_reader.next();
-        prepNextCall(tok, ch);
-
-        m_state  = ST_INITIAL;
-        tok.type = TOK_DIGIT;
-        tok.ival.x = (int)v;
-        tok.value.clear();
-        return ST_MAX;
+        n = m_reader.next();
     }
-    return ST_CONTINUE;
+
+    if (n != '\'')
+    {
+        error("invalid character\n");
+        return PS_ERROR;
+    }
+
+    ch = m_reader.next();
+    prepNextCall(tok, ch);
+
+    m_state    = ST_INITIAL;
+    tok.type   = TOK_DIGIT;
+    tok.ival.x = (int)v;
+    tok.value.clear();
+    return ST_MAX;
 }
 
 int32_t Parser::handleSectionState(Token& tok)
@@ -437,7 +445,7 @@ int32_t Parser::handleSectionState(Token& tok)
 uint8_t Parser::scanEol(void)
 {
     uint8_t ch = m_reader.current();
-    while (!m_reader.eof() && (ch != '\n' && ch != '\r'))
+    while (ch != '\n' && ch != '\r' && ch != 0)
         ch = m_reader.next();
     countNewLine(ch);
     return ch;
@@ -449,7 +457,7 @@ void Parser::countNewLine(uint8_t ch)
     if (ch == '\r')
     {
         ch = m_reader.next();
-        if (ch != '\n')
+        if (ch != '\n' && ch != 0)
         {
             // CR, so put back the last char
             m_reader.offset(-1);
@@ -472,15 +480,13 @@ void Parser::prepNextCall(Token& tok, uint8_t ch)
         m_reader.offset(-1);
         tok.hasComma = ch == ',';
     }
-    else if (isNewLine(ch))
-        m_reader.offset(-1);
     else if (ch == ',')
         tok.hasComma = true;
 }
 
 uint8_t Parser::eatWhiteSpace(uint8_t ch)
 {
-    while (isWhiteSpace(ch) && !m_reader.eof())
+    while (isWhiteSpace(ch))
         ch = m_reader.next();
     return ch;
 }
@@ -623,7 +629,6 @@ int32_t Parser::handleOpCode(const Token& tok)
                 error("%s expects %i arguments.\n", kwd.word, ins.argc);
                 return PS_ERROR;
             }
-            lastTok = {};
             if (scan(lastTok) == PS_ERROR)
                 return PS_ERROR;
 

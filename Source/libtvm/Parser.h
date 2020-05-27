@@ -47,6 +47,9 @@ public:
 
     int32_t parse(const char* fname);
 
+    int32_t open(const char* fname);
+    int32_t scan(Token& tok);
+
     inline const Instructions& getInstructions(void)
     {
         return m_instructions;
@@ -65,8 +68,9 @@ public:
 private:
     int32_t handleOpCode(const Token& tok);
     int32_t handleSection(const Token& tok);
-    int32_t handleLabel(const Token& dest);
-
+    int32_t handleLabel(const Token& tok);
+    int32_t handleTermination(Token& tok, uint8_t ch);
+    int32_t handleCharacter(Token& tok, uint8_t ch);
 
 
     void    markInstructionAsRegister(Instruction& ins, const Token& tok, int idx);
@@ -78,7 +82,6 @@ private:
     int32_t handleSectionState(Token& dest);
     uint8_t eatWhiteSpace(uint8_t ch);
 
-    int32_t scan(Token& tok);
     void    error(const char* fmt, ...);
     void    errorTokenType(int tok);
     void    errorArgType(int idx, int tok, const char* inst);

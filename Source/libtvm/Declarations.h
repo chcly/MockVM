@@ -86,13 +86,14 @@ struct Token
 
 enum ParseResult
 {
-    PS_ERROR = -3,
+    PS_ERROR = -4,
+    PS_EOF,
     // Common error return code
     PS_UNDEFINED,
     // return value for actions that need to scan
     // for more information before returning a token.
     PS_CONTINUE,
-    PS_OK,
+    PS_OK,      // Keep at zero
     PS_MAX
 };
 
