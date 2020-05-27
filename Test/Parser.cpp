@@ -25,10 +25,11 @@
 
 TEST_CASE("Scan1")
 {
-    const std::string Scan1 = std::string(TestDirectory) + "/Scan/Scan1.asm";
+    const std::string TestFile = std::string(TestDirectory) + "/Scan/Scan1.asm";
 
-    Parser            p;
-    int sr  = p.open(Scan1.c_str());
+    Parser p;
+
+    int sr  = p.open(TestFile.c_str());
     EXPECT_EQ(sr, PS_OK);
 
 
@@ -43,10 +44,10 @@ TEST_CASE("Scan1")
 
 TEST_CASE("Scan2")
 {
-    const std::string Scan1 = std::string(TestDirectory) + "/Scan/Scan2.asm";
+    const std::string TestFile = std::string(TestDirectory) + "/Scan/Scan2.asm";
 
     Parser p;
-    int    sr = p.open(Scan1.c_str());
+    int    sr = p.open(TestFile.c_str());
     EXPECT_EQ(sr, PS_OK);
 
     Token tok;
@@ -75,6 +76,49 @@ TEST_CASE("Scan2")
     sr = p.scan(tok);
     EXPECT_EQ(tok.type, TOK_DIGIT);
     EXPECT_EQ(tok.ival.x, 0);
+
+    sr = p.scan(tok);
+    EXPECT_EQ(tok.type, PS_OK);
+}
+
+
+
+TEST_CASE("Scan3")
+{
+    const std::string TestFile = std::string(TestDirectory) + "/Scan/Scan3.asm";
+
+    Parser p;
+    int    sr = p.open(TestFile.c_str());
+    EXPECT_EQ(sr, PS_OK);
+
+    Token tok;
+    sr = p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_LABEL);
+    EXPECT_EQ(tok.value, "main");
+
+    sr = p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_OPCODE);
+    EXPECT_EQ(tok.op, OP_MOV);
+    sr = p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_REGISTER);
+    EXPECT_EQ(tok.reg, 0);
+    sr = p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_DIGIT);
+    EXPECT_EQ(tok.ival.x, 0);
+
+    sr = p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_LABEL);
+    EXPECT_EQ(tok.value, "abc");
+
+    sr = p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_OPCODE);
+    EXPECT_EQ(tok.op, OP_MOV);
+    sr = p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_REGISTER);
+    EXPECT_EQ(tok.reg, 1);
+    sr = p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_DIGIT);
+    EXPECT_EQ(tok.ival.x, 5);
 
     sr = p.scan(tok);
     EXPECT_EQ(tok.type, PS_OK);
