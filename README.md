@@ -1,8 +1,15 @@
 # ToyVM
 
-Is a custom assembly compiler and a virtual machine to execute the compiled code.
-The implemented assembly is a mixture of ARM and Intel operations, but it tends towards a more ARM like architecture.
+ToyVM is a custom assembly compiler and a simple virtual machine/interpreter to execute the compiled code. It runs on Windows, Linux, and OSX. It supports linking c/c++ dynamic libraries through a simple plugin interface.
+
+The exported symbols are accessible with the bl opcode.
+
+```asm
+bl exported_symbol
+```
+
 As of right now, there are two main programs in the repo.
+
 
 * tcom
 * tvm
@@ -24,9 +31,9 @@ tcom <options> <input file>
       -m print the module path and exit.
 ```
 
-* -l Links a shared library into the file so that exported symbols become callable in the assembly.
+* -l Links a shared library into the file.
+* -m Displays the location of the shared library folder.
 * -d Is used in the tests to prevent full path names from being reported, which would cause them to fail.
-* -m Displays the shared library folder. It is located relative to the executables in a folder called lib.
 
 ## Syntax
 
@@ -36,15 +43,13 @@ main:           ; label
    mov x0, 0    ; op dest, src
 top:
    cmp x0, 10
-   jge done
+   bge done
    inc x0
-   jmp top
+   b top
 done:
    mov x0, 0    ; return value is in x0
    ret
 ```
-
-Each program needs at least one label called main.
 
 ### Registers
 
@@ -69,13 +74,14 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 | cmp    | cmp o1, o2       | R/V | R/V |        | does a logical comparison of o1, and o2              |
 | inc    | inc o1           |  R  |     |        | increments o1 by 1                                   |
 | dec    | dec o1           |  R  |     |        | decrements o1 by 1                                   |
-| jmp    | jmp label        |  A  |     |        | unconditional jump.                                  |
-| jeq    | jeq label        |  A  |     |        | jump if the E flag is set.                           |
-| jne    | jne label        |  A  |     |        | jump if the E flag is not set.                       |
-| jgt    | jgt label        |  A  |     |        | jump if the G flag is set.                           |
-| jlt    | jlt label        |  A  |     |        | jump if the L flag is set.                           |
-| jge    | jge label        |  A  |     |        | jump if the G or E flags are set.                    |
-| jle    | jle label        |  A  |     |        | jump if the L or E flags are set.                    |
+| b      | b label          |  A  |     |        | branch to label.                                     |
+| bl     | bl label         |  A  |     |        | branch with link.                                    |
+| beq    | beq label        |  A  |     |        | branch if the E flag is set.                         |
+| bne    | bne label        |  A  |     |        | branch if the E flag is not set.                     |
+| bgt    | bgt label        |  A  |     |        | branch if the G flag is set.                         |
+| blt    | blt label        |  A  |     |        | branch if the L flag is set.                         |
+| bge    | bge label        |  A  |     |        | branch if the G or E flags are set.                  |
+| ble    | ble label        |  A  |     |        | branch if the L or E flags are set.                  |
 | add    | add o1, o2, o3   |  R  | R/V |  R/V   | add o1 and o2 and store the result in o1             |
 | sub    | sub o1, o2, o3   |  R  | R/V |  R/V   | subtract o1 and o2 and store the result in o1        |
 | mul    | mul o1, o2, o3   |  R  | R/V |  R/V   | multiply o1 and o2 and store the result in o1        |
@@ -87,7 +93,7 @@ Each register is a union, so for ten 64 bit registers, there are a total of 20 3
 
 ## tvm
 
-tvm runs the executable generated from tcom.
+tvm runs the executable file generated from tcom.
 
 ### tvm Usage
 

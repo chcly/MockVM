@@ -2,10 +2,10 @@ main:
     mov x0, ' '
 top:
     cmp x0, '~'
-    jgt done
-    call putchar
+    bgt done
+    bl putchar
     inc x0
-    jmp top
+    b top
 done:
     mov x0, 0
     ret

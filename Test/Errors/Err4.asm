@@ -3,13 +3,13 @@ main:
 
 beg:
     cmp  x1, 'z'
-    jgt  enb
+    bgt  enb
     mov  x0, x1
-    call putchara
+    bl putchara
     add  x1, 1
-    jmp  beg
+    b  beg
 ena:
     mov  x0, '\n'
-    call putchar
+    bl putchar
     mov  x0, 0
     ret

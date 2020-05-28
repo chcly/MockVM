@@ -1,22 +1,22 @@
 main:
-    call change_cur_inst
+    bl change_cur_inst
     mov  x0, 'P'
-    call putchar
+    bl putchar
     mov  x0, 0
     ret
 weee:
     mov  x0, 'H'
-    call putchar
+    bl putchar
     mov  x0, 'e'
-    call putchar
+    bl putchar
     mov  x0, 'l'
-    call putchar
+    bl putchar
     mov  x0, 'l'
-    call putchar
+    bl putchar
     mov  x0, '0'
-    call putchar
+    bl putchar
     mov  x0, '\n'
-    call putchar
+    bl putchar
     mov  x0, 0
     ret
     

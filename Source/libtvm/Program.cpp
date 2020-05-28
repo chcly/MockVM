@@ -455,12 +455,14 @@ void Program::handle_OP_CMP(const ExecInstruction& inst)
 {
     uint64_t a = inst.argv[0];
     uint64_t b = inst.argv[1];
+
     if (inst.flags & IF_REG0)
         a = m_regi[a].x;
     if (inst.flags & IF_REG1)
         b = m_regi[b].x;
 
     m_flags   = 0;
+
     int64_t r = (int64_t)a - (int64_t)b;
     if (r == 0)
         m_flags |= PF_E;
@@ -547,13 +549,14 @@ void Program::handle_OP_ADD(const ExecInstruction& inst)
 
         if (inst.argc > 2)
         {
-            // A, B, C -> A = B + C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
+
             if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
             if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
+
             m_regi[x0].x = b + c;
         }
         else
@@ -573,9 +576,9 @@ void Program::handle_OP_SUB(const ExecInstruction& inst)
         const uint64_t& x0 = inst.argv[0];
         if (inst.argc > 2)
         {
-            // A, B, C -> A = B - C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
+
             if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
             if (inst.flags & IF_REG2)
@@ -599,13 +602,14 @@ void Program::handle_OP_MUL(const ExecInstruction& inst)
         const uint64_t& x0 = inst.argv[0];
         if (inst.argc > 2)
         {
-            // A, B, C -> A = B * C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
+
             if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
             if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
+
             m_regi[x0].x = b * c;
         }
         else
@@ -626,15 +630,22 @@ void Program::handle_OP_DIV(const ExecInstruction& inst)
 
         if (inst.argc > 2)
         {
-            // A, B, C -> A = B / C
+
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
+
             if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
             if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
+
             if (c != 0)
                 m_regi[x0].x = b / c;
+            else
+            {
+                printf("divide by zero\n");
+                forceExit(-1);
+            }
         }
         else
         {
@@ -670,13 +681,15 @@ void Program::handle_OP_SHR(const ExecInstruction& inst)
 
         if (inst.argc > 2)
         {
-            // A, B, C -> A = B >> C
+
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
+
             if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
             if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
+
             m_regi[x0].x = b >> c;
         }
         else
@@ -748,6 +761,7 @@ void Program::handle_OP_PRGI(const ExecInstruction& inst)
         cout << '\n';
     }
 }
+
 
 bool Program::testInstruction(const ExecInstruction& exec)
 {

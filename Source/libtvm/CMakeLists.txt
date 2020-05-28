@@ -36,6 +36,7 @@ set(CommonHeader
     Declarations.h
     BlockReader.h
     Program.h
+    Keywords.inl
     SharedLib.h
     SymbolUtils.h
 )

@@ -5,19 +5,19 @@
 ; is exceeded the program will terminate.
 main:
     mov w0, 'B'
-    call putchar
+    bl putchar
     mov w0, '4'
-    call putchar
+    bl putchar
     mov pc, 9
     mov w0, 'E'
-    call putchar
+    bl putchar
     mov w0, 'C'
-    call putchar
+    bl putchar
 done:
     mov w0, 'P'
-    call putchar
+    bl putchar
     mov w0, '\n'
-    call putchar
+    bl putchar
     prgi
     mov w0, 0
     ret

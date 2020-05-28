@@ -1,16 +1,16 @@
 main:
     mov x5, 0
-    jlt  ops
+    blt  ops
     inc x5
-    jgt  ops
+    bgt  ops
     inc x5
-    jge  ops
+    bge  ops
     inc x5
-    jle  ops
+    ble  ops
     inc x5
-    jeq  ops
+    beq  ops
     inc x5
-    jgt  ops
+    bgt  ops
     inc x5
     mov x1, 0
     inc x5
@@ -49,10 +49,10 @@ main:
     cmp x5, 23
     cmp 23, x5
 
-    jeq ops
-    jmp  fail
-    jne  ops
-    call ops
+    beq ops
+    b   fail
+    bne  ops
+    bl   ops
 ops:
     mov x0, 0   
     ret

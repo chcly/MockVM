@@ -2,29 +2,29 @@ main:
     mov x1, 1 
     cmp x1, 1
     prg x1
-    jeq t1
-    jmp fail
+    beq t1
+    b fail
 ; ---------------------------------------------------
 t1:
     mov x1, 0x0123456789ABCDEF 
     cmp x1, 81985529216486895
     prg x1
-    jeq t2
-    jmp fail
+    beq t2
+    b fail
 ; ---------------------------------------------------
 t2:
     mov x1, 0xFF 
     cmp x1, 255
     prg x1
-    jeq t3
-    jmp fail
+    beq t3
+    b fail
 ; ---------------------------------------------------
 t3:
     mov x1, 0b1100101011111001 
     cmp x1, 51961
     prg x1
-    jeq t4
-    jmp fail
+    beq t4
+    b fail
 ; ---------------------------------------------------
 t4:
     mov x0, 0x02
@@ -32,8 +32,8 @@ t4:
     mul x2, x0, x1
     cmp x2, 4
     prg x2
-    jeq t5
-    jmp fail
+    beq t5
+    b fail
 ; ---------------------------------------------------
 t5:
     mov x0, 0x02
@@ -41,8 +41,8 @@ t5:
     div x2, x0, x1
     cmp x2, 1
     prg x2
-    jeq t6
-    jmp fail
+    beq t6
+    b fail
 ; ---------------------------------------------------
 t6:
     mov x0, 0x02
@@ -50,8 +50,8 @@ t6:
     add x2, x0, x1
     cmp x2, 4
     prg x2
-    jeq t7
-    jmp fail
+    beq t7
+    b fail
 ; ---------------------------------------------------
 t7:
     mov x0, 0x02
@@ -59,8 +59,8 @@ t7:
     sub x2, x0, x1
     cmp x2, 0
     prg x2
-    jeq t8
-    jmp fail
+    beq t8
+    b fail
 ; ---------------------------------------------------
 t8:
     mov x0, 1
@@ -68,8 +68,8 @@ t8:
     shl x2, x0, x1
     cmp x2, 32
     prg x2
-    jeq t9
-    jmp fail
+    beq t9
+    b fail
 ; ---------------------------------------------------
 t9:
     mov x0, 32
@@ -77,8 +77,8 @@ t9:
     shr x2, x0, x1
     cmp x2, 1
     prg x2
-    jeq success
-    jmp fail
+    beq success
+    b fail
 ; ---------------------------------------------------
 success:
     mov x0, 0

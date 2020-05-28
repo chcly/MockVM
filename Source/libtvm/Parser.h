@@ -27,10 +27,6 @@
 
 class Parser
 {
-public:
-    const static KeywordMap KeywordTable[];
-    const static size_t     KeywordTableSize;
-
 private:
     BlockReader  m_reader;
     int32_t      m_state;
@@ -41,7 +37,6 @@ private:
     Instructions m_instructions;
     str_t        m_fname;
     bool         m_disableErrorFormat;
-
 public:
     Parser();
     ~Parser();
