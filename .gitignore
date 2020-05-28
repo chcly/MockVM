@@ -1,7 +1,7 @@
-/Build
-/osx
-/l64
-/Source/.vscode
-/wb
-/*.code-workspace
-/*.DS_Store
+Build
+osx
+l64
+wb
+*.code-workspace
+*.DS_Store
+.vscode
