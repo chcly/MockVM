@@ -176,12 +176,14 @@ void MakeModulePath(str_t& dest, char* buf, size_t sz)
     int s = (int)sz;
     if (buf[s] == '/' || buf[s] == '\\')
         s--;
+
     while (s > 0)
     {
         if (buf[s] == '/' || buf[s] == '\\')
             break;
         --s;
     }
+
     dest = str_t(buf, s);
 #ifdef _WIN32
     dest += "\\lib\\";
@@ -189,6 +191,7 @@ void MakeModulePath(str_t& dest, char* buf, size_t sz)
     dest += "/lib/";
 #endif
 }
+
 
 void DisplayModulePath(void)
 {

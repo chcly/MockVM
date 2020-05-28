@@ -694,15 +694,17 @@ void Program::handle_OP_SHL(const ExecInstruction& inst)
     if (inst.flags & IF_REG0)
     {
         const uint64_t& x0 = inst.argv[0];
+    
         if (inst.argc > 2)
         {
-            // A, B, C -> A = B >> C
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
+        
             if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
             if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
+
             m_regi[x0].x = b << c;
         }
         else

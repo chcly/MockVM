@@ -127,7 +127,7 @@ set(TestFiles_1
     Basic/CRLF.asm
     Basic/CR.asm
     Basic/LF.asm
-    #Basic/Bug1.asm
+    Basic/Bug1.asm
     Basic/Keywords.asm
     Basic/Comment.asm
     Basic/ParseArg.asm

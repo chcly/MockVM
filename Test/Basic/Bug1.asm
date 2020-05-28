@@ -19,3 +19,4 @@ weee:
     call putchar
     mov  x0, 0
     ret
+    

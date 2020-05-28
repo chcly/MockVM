@@ -178,6 +178,11 @@ int32_t Parser::handleInitialState(Token& tok)
             m_state = ST_DIGIT;
         else if (ch == '.')
             m_state = ST_SECTION;
+        else if (!isNewLine(ch) && ch != 0 && !isComment(ch))
+        {
+            printf("error character '%c' was not handled\n", ch);
+            st = PS_ERROR;
+        }
     }
     return st;
 }
@@ -278,6 +283,11 @@ int32_t Parser::handleDigitState(Token& tok)
     }
     else if (ch == '\'')
         st = handleCharacter(tok, ch);
+    else
+    {
+        printf("error character '%c' was not handled\n", ch);
+        st = PS_ERROR;
+    }
     return st;
 }
 
