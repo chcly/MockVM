@@ -3,28 +3,28 @@ main:
     cmp x1, 1
     prg x1
     beq t1
-    b fail
+    b   fail
 ; ---------------------------------------------------
 t1:
     mov x1, 0x0123456789ABCDEF 
     cmp x1, 81985529216486895
     prg x1
     beq t2
-    b fail
+    b   fail
 ; ---------------------------------------------------
 t2:
     mov x1, 0xFF 
     cmp x1, 255
     prg x1
     beq t3
-    b fail
+    b   fail
 ; ---------------------------------------------------
 t3:
     mov x1, 0b1100101011111001 
     cmp x1, 51961
     prg x1
     beq t4
-    b fail
+    b   fail
 ; ---------------------------------------------------
 t4:
     mov x0, 0x02
@@ -33,7 +33,7 @@ t4:
     cmp x2, 4
     prg x2
     beq t5
-    b fail
+    b   fail
 ; ---------------------------------------------------
 t5:
     mov x0, 0x02
@@ -42,7 +42,7 @@ t5:
     cmp x2, 1
     prg x2
     beq t6
-    b fail
+    b   fail
 ; ---------------------------------------------------
 t6:
     mov x0, 0x02
@@ -51,7 +51,7 @@ t6:
     cmp x2, 4
     prg x2
     beq t7
-    b fail
+    b   fail
 ; ---------------------------------------------------
 t7:
     mov x0, 0x02
@@ -60,7 +60,7 @@ t7:
     cmp x2, 0
     prg x2
     beq t8
-    b fail
+    b   fail
 ; ---------------------------------------------------
 t8:
     mov x0, 1
@@ -69,7 +69,7 @@ t8:
     cmp x2, 32
     prg x2
     beq t9
-    b fail
+    b   fail
 ; ---------------------------------------------------
 t9:
     mov x0, 32
@@ -78,12 +78,12 @@ t9:
     cmp x2, 1
     prg x2
     beq success
-    b fail
+    b   fail
 ; ---------------------------------------------------
 success:
     mov x0, 0
     ret
 fail:
-    mov x0, 10 ; any non zero code 
+    mov x0, 10; any non zero code 
     ret
 

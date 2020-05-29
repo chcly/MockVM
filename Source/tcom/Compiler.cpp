@@ -114,10 +114,7 @@ int main(int argc, char **argv)
         if (w.mergeLabels(p.getLabels()) != PS_OK)
             return PS_ERROR;
         
-        if (w.mergeIntegerDeclarations(p.getIntegerDeclarations()) != PS_OK)
-            return PS_ERROR;
-
-        if (w.mergeStringDeclarations(p.getStringDeclarations()) != PS_OK)
+        if (w.mergeDataDeclarations(p.getDataDeclarations()) != PS_OK)
             return PS_ERROR;
 
         w.mergeInstructions(p.getInstructions());

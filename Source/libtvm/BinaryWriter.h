@@ -44,8 +44,7 @@ private:
     StringLookup    m_symbols;
     TVMHeader       m_header;
     str_t           m_modpath;
-    StringLookup    m_asciiDecl;
-    AddressLookup   m_integerDecl;
+    DataLookup      m_dataDecl;
     MemoryStream    m_dataTable;
 
 
@@ -68,7 +67,7 @@ private:
     size_t findLabel(const str_t& name);
     
     size_t addToStringTable(const str_t& symname);
-    size_t addToDataTable(const void *data, size_t size, bool pad);
+    size_t addToDataTable(const DataDeclaration& dt);
 
     size_t addLinkedSymbol(const str_t& symname, const str_t& libname);
     int    loadSharedLibrary(const str_t& lib);
@@ -78,8 +77,7 @@ public:
     ~BinaryWriter();
 
     void mergeInstructions(const Instructions& insl);
-    int mergeStringDeclarations(const StringLookup& str);
-    int mergeIntegerDeclarations(const AddressLookup& addr);
+    int  mergeDataDeclarations(const DataLookup& data);
 
     int mergeLabels(const LabelMap& map);
     int resolve(strvec_t& modules);

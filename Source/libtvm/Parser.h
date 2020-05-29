@@ -37,8 +37,7 @@ private:
     Instructions  m_instructions;
     str_t         m_fname;
     bool          m_disableErrorFormat;
-    StringLookup  m_asciiDecl;
-    AddressLookup m_integerDecl;
+    DataLookup    m_dataDecl;
 
 public:
     Parser();
@@ -59,17 +58,12 @@ public:
         return m_labels;
     }
 
-    const StringLookup& getStringDeclarations(void)
+    const DataLookup& getDataDeclarations(void)
     {
-        return m_asciiDecl;
+        return m_dataDecl;
     }
 
-    const AddressLookup getIntegerDeclarations(void)
-    {
-        return m_integerDecl;
-    }
-
-    inline void disableErrorFormat(bool v)
+    void disableErrorFormat(bool v)
     {
         m_disableErrorFormat = v;
     }

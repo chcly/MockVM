@@ -64,43 +64,25 @@ void BinaryWriter::mergeInstructions(const Instructions& insl)
         m_ins.push_back(ins);
 }
 
-int BinaryWriter::mergeStringDeclarations(const StringLookup& str)
+int BinaryWriter::mergeDataDeclarations(const DataLookup& data)
 {
     int status = PS_OK;
 
-    StringLookup::const_iterator it = str.begin();
-    while (it != str.end() && status == PS_OK)
+    DataLookup::const_iterator it = data.begin();
+    while (it != data.end() && status == PS_OK)
     {
-        if (m_asciiDecl.find(it->first) != m_asciiDecl.end())
+        if (m_dataDecl.find(it->first) != m_dataDecl.end())
         {
             printf("duplicate label '%s'\n", it->first.c_str());
             status = PS_ERROR;
         }
         else
-            m_asciiDecl[it->first] = it->second;
+            m_dataDecl[it->first] = it->second;
         ++it;
     }
     return status;
 }
 
-int BinaryWriter::mergeIntegerDeclarations(const AddressLookup& addr)
-{
-    int status = PS_OK;
-
-    AddressLookup::const_iterator it = addr.begin();
-    while (it != addr.end() && status == PS_OK)
-    {
-        if (m_integerDecl.find(it->first) != m_integerDecl.end())
-        {
-            printf("duplicate label '%s'\n", it->first.c_str());
-            status = PS_ERROR;
-        }
-        else
-            m_integerDecl[it->first] = it->second;
-        ++it;
-    }
-    return status;
-}
 
 int BinaryWriter::mergeLabels(const LabelMap& map)
 {
@@ -178,11 +160,24 @@ size_t BinaryWriter::addToStringTable(const str_t& symname)
     return size;
 }
 
-size_t BinaryWriter::addToDataTable(const void* data, size_t size, bool pad)
+size_t BinaryWriter::addToDataTable(const DataDeclaration& dt)
 {
-    size_t old_size = m_sizeOfData;
-    m_sizeOfData += m_dataTable.write(data, size, pad);
-    return old_size;
+    size_t startAddr = m_sizeOfData;
+
+    if (dt.type == SEC_ASCII)
+    {
+        m_sizeOfData += m_dataTable.writeString(dt.sval.c_str(),
+                                          dt.sval.size());
+    }
+    else if (dt.type == SEC_ZERO)
+    {
+        m_sizeOfData += m_dataTable.fill(dt.ival, 0);
+    }
+    else
+    {
+        m_sizeOfData += m_dataTable.write64(dt.ival);
+    }
+    return startAddr;
 }
 
 size_t BinaryWriter::addLinkedSymbol(const str_t& symname, const str_t& libname)
@@ -245,25 +240,17 @@ int BinaryWriter::mapInstructions(void)
         }
         else
         {
-            StringLookup::iterator it;
-            it = m_asciiDecl.find(irp->lname);
-            if (it != m_asciiDecl.end())
+            DataLookup::iterator it;
+            it = m_dataDecl.find(irp->lname);
+            if (it != m_dataDecl.end())
             {
                 // It points to a data entry
-                irp->argv[1] = addToDataTable(it->second.c_str(), it->second.size(), true);
+                const DataDeclaration& dt = it->second;
+                irp->argv[1] = addToDataTable(dt);
                 irp->flags |= IF_ADRD;
             }
             else
             {
-                AddressLookup::iterator iit = m_integerDecl.find(irp->lname);
-                if (iit != m_integerDecl.end())
-                {
-                    // It points to a data entry
-                    irp->argv[1] = addToDataTable(&iit->second, 8, false);
-                    irp->flags |= IF_ADRD;
-                }
-                else
-                {
                     // It points to an unknown symbol
                     // that may reside in a shared library.
                     StringLookup::iterator it = m_symbols.find(irp->lname);
@@ -277,7 +264,6 @@ int BinaryWriter::mapInstructions(void)
                         printf("failed to locate '%s'\n", irp->lname.c_str());
                         status = PS_ERROR;
                     }
-                }
             }
         }
     }

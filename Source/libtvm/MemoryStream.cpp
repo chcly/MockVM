@@ -53,31 +53,80 @@ void MemoryStream::reserve(size_t nr)
             memcpy(buf, m_data, m_size);
             delete[] m_data;
         }
-        m_data         = buf;
-        m_data[m_size] = 0;
-        m_capacity     = nr;
+        m_data     = buf;
+        m_capacity = nr;
     }
 }
 
 size_t MemoryStream::write(const void* src, size_t nr, bool pad)
 {
-    m_capacity = m_size + nr + 1;
+    size_t al = 0;
     if (pad)
-        m_capacity++;
+        al = findAllocLen(nr + 1);
+    else
+        al = findAllocLen(nr);
 
-    uint8_t* ptr = new uint8_t[m_capacity];
-    if (m_data)
-    {
-        memcpy(ptr, m_data, m_size);
-        delete[] m_data;
-    }
-    m_data = ptr;
-    memcpy(m_data + m_size, src, nr);
+    if (al > 0)
+        reserve(al);
+
+    uint8_t* ptr = &m_data[m_size];
+    memcpy(ptr, src, nr);
     m_size += nr;
     if (pad)
     {
-        m_data[m_size++] = 0;
-        nr++;
+        m_data[m_size] = 0;
+        ++nr;
+        ++m_size;
     }
+    return nr;
+}
+
+
+size_t MemoryStream::findAllocLen(size_t nr)
+{
+    if (m_size + nr > m_capacity)
+    {
+        size_t lsize = m_size + nr;
+        size_t over  = lsize - m_capacity;
+        size_t r16   = over % 16;
+        if (r16 > 0)
+            over += 16 - r16;
+
+        over += m_capacity;
+        over += 256;
+        return over;
+    }
+    return 0;
+}
+
+
+size_t MemoryStream::writeString(const char* src, size_t len)
+{
+    return write(src, len, true);
+}
+
+size_t MemoryStream::write8(uint8_t val)
+{
+    return write(&val, 1, false);
+}
+
+size_t MemoryStream::write16(uint16_t val)
+{
+    return write(&val, 2, false);
+}
+
+size_t MemoryStream::write32(uint32_t val)
+{
+    return write(&val, 4, false);
+}
+
+size_t MemoryStream::write64(uint64_t val)
+{
+    return write(&val, 8, false);
+}
+
+
+size_t MemoryStream::fill(size_t nr, uint8_t code)
+{
     return nr;
 }

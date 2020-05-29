@@ -85,6 +85,16 @@ struct Token
     bool     hasComma;
 };
 
+
+struct DataDeclaration
+{
+    str_t    lname;
+    uint16_t type;
+    str_t    sval;
+    uint64_t ival;
+};
+
+
 enum ParseResult
 {
     PS_ERROR = -4,
@@ -181,12 +191,14 @@ enum SectionCodes
     SEC_TXT,
 
     // Data sections
+    SEC_DECL_ST,
     SEC_ASCII, // .asciz
     SEC_BYTE,  // .byte 
     SEC_WORD,  // .word
     SEC_LONG,  // .long
     SEC_QUAD,  // .quad | .xword
     SEC_ZERO,  // Reserve a block of zeroed memory
+    SEC_DECL_EN,
 };
 
 enum InstructionFlags
@@ -265,6 +277,7 @@ using DynamicLib       = std::vector<void*>;
 using StringMap        = std::unordered_map<str_t, size_t>;
 using ExecInstructions = std::vector<ExecInstruction>;
 using Stack            = std::stack<uint64_t>;
+using DataLookup       = std::unordered_map<str_t, DataDeclaration>;
 
 #define _RELITAVE_TIME_CHECK_BEGIN                                    \
     {                                                                 \

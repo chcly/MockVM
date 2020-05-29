@@ -137,11 +137,10 @@ int32_t Parser::parseTextState(void)
 
 int32_t Parser::parseDataState(void)
 {
-    int32_t sr, rc = PS_OK;
+    int32_t rc = PS_OK;
 
     Token t1, t2, t3;
-    sr = scan(t1);
-
+    scan(t1);
     if (t1.type == TOK_SECTION && t1.sectype == SEC_TXT)
     {
         m_section = SEC_TXT;
@@ -152,51 +151,49 @@ int32_t Parser::parseDataState(void)
         error("unknown section parsed\n");
         return PS_ERROR;
     }
-
-    if (t1.type != TOK_LABEL || t1.value.empty())
+    else if (t1.type != TOK_LABEL || t1.value.empty())
     {
         error("expected a data declaration label\n");
         return PS_ERROR;
     }
 
-    // TODO check section type against the scan type.
-
-    sr = scan(t2);
+    scan(t2);
     if (t2.type != TOK_SECTION)
     {
         error("expected a data type\n");
         return PS_ERROR;
     }
+    else if (t2.sectype < SEC_DECL_ST && t2.sectype > SEC_DECL_EN)
+    {
+        error("unknown section type %d\n", t2.sectype);
+        return PS_ERROR;
+    }
 
-    sr = scan(t3);
+    DataDeclaration decl = {};
+    scan(t3);
+
     if (t3.type == TOK_ASCII)
-    {
-        if (!hasDataDeclaration(t1.value))
-            m_asciiDecl[t1.value] = t3.value;
-        else
-        {
-            error("duplicate data declaration for '%s'\n",
-                  t1.value.c_str());
-            rc = PS_ERROR;
-        }
-    }
+        decl.sval = t3.value;
     else if (t3.type == TOK_DIGIT)
-    {
-        if (!hasDataDeclaration(t1.value))
-            m_integerDecl[t1.value] = t3.ival.x;
-        else
-        {
-            error("duplicate data declaration for '%s'\n",
-                  t1.value.c_str());
-            rc = PS_ERROR;
-        }
-    }
+        decl.ival = t3.ival.x;
     else
     {
         getTokenName(t3.value, t3.type);
         error("unknown type declaration for '%s' -> '%s'\n",
               t1.value.c_str(),
               t3.value.c_str());
+        return PS_ERROR;
+    }
+
+    decl.lname = t1.value;
+    decl.type  = t2.sectype;
+
+    if (!hasDataDeclaration(t1.value))
+        m_dataDecl[t1.value] = decl;
+    else
+    {
+        error("duplicate data declaration for '%s'\n",
+              t1.value.c_str());
         rc = PS_ERROR;
     }
     return rc;
@@ -808,9 +805,7 @@ int32_t Parser::getSection(const str_t& val)
 
 bool Parser::hasDataDeclaration(const str_t& str)
 {
-    if (m_asciiDecl.find(str) != m_asciiDecl.end())
-        return true;
-    else if (m_integerDecl.find(str) != m_integerDecl.end())
+    if (m_dataDecl.find(str) != m_dataDecl.end())
         return true;
     else if (m_labels.find(str) != m_labels.end())
         return true;

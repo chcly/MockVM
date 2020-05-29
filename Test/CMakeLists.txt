@@ -170,6 +170,7 @@ set(SRC_ALL
     catch/catch.hpp
     Main.cpp
     Parser.cpp
+    MemoryStream.cpp
     BlockReader.cpp
     ${OutFiles_1}
     ${OutFiles_2}

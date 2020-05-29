@@ -32,7 +32,12 @@ public:
     ~MemoryStream();
 
     void   clear(void);
-    size_t write(const void* src, size_t nr, bool pad);
+    size_t writeString(const char* src, size_t len);
+    size_t write8(uint8_t val);
+    size_t write16(uint16_t val);
+    size_t write32(uint32_t val);
+    size_t write64(uint64_t val);
+    size_t fill(size_t nr, uint8_t code);
 
     void reserve(size_t cap);
 
@@ -57,7 +62,14 @@ public:
     }
 
 private:
-    size_t   m_size, m_capacity;
+
+    size_t findAllocLen(size_t nr);
+    size_t write(const void *ptr, size_t nr, bool pad);
+
+
+    size_t m_size;
+    size_t m_capacity;
+
     uint8_t* m_data;
 };
 
