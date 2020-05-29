@@ -20,6 +20,5 @@ main:
     bl    puts
     adrp  x0, message5
     bl    puts
-    prgi
     mov   x0, 0
     ret

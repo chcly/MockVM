@@ -23,8 +23,6 @@
 #include "memory.h"
 #include "string.h"
 
-
-
 MemoryStream::MemoryStream() :
     m_data(nullptr),
     m_size(0),
@@ -37,7 +35,6 @@ MemoryStream::~MemoryStream()
     clear();
 }
 
-
 void MemoryStream::clear(void)
 {
     if (m_data)
@@ -46,10 +43,8 @@ void MemoryStream::clear(void)
     m_capacity = 0;
 }
 
-
 void MemoryStream::reserve(size_t nr)
 {
-
     if (m_capacity < nr)
     {
         uint8_t* buf = new uint8_t[nr + 1];
@@ -63,7 +58,6 @@ void MemoryStream::reserve(size_t nr)
         m_capacity     = nr;
     }
 }
-
 
 size_t MemoryStream::write(const void* src, size_t nr, bool pad)
 {

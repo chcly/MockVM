@@ -761,12 +761,8 @@ void Program::handle_OP_ADRP(const ExecInstruction& inst)
         if (inst.argv[1] < m_dataTable.capacity())
         {
             uint8_t* base = m_dataTable.ptr();
-            size_t arg = (size_t)(&base[inst.argv[1]]);
-
-            m_regi[inst.argv[0]].x = arg;
+            m_regi[inst.argv[0]].x = (size_t)(&base[inst.argv[1]]);
         }
-
-
     }
 }
 

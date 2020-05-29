@@ -116,9 +116,6 @@ int32_t Parser::parseTextState(void)
     case TOK_LABEL:
         rc = handleLabel(curTok);
         break;
-    case TOK_ASCII:
-        rc = handleLabel(curTok);
-        break;
     case PS_EOF:
     case PS_OK:
     case ST_CONTINUE:
@@ -128,7 +125,9 @@ int32_t Parser::parseTextState(void)
         {
             str_t tok;
             getTokenName(tok, sr);
-            error("token %s parsed outside of any known context\n", tok.c_str(), sr);
+            error("token %s parsed outside of any known context\n",
+                  tok.c_str(),
+                  sr);
         }
         rc = PS_ERROR;
         break;
@@ -159,6 +158,8 @@ int32_t Parser::parseDataState(void)
         error("expected a data declaration label\n");
         return PS_ERROR;
     }
+
+    // TODO check section type against the scan type.
 
     sr = scan(t2);
     if (t2.type != TOK_SECTION)
