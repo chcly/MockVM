@@ -91,8 +91,10 @@ TEST_CASE("Memory3")
 {
     MemoryStream ms;
 
+    bool   pass = false;
     size_t of = 0, sz = 0;
-    for (int i=0; i<7; ++i)
+    int    i;
+    for (i=0; i<7; ++i)
     {
 
         sz = ms.size();
@@ -104,17 +106,45 @@ TEST_CASE("Memory3")
         EXPECT_EQ(of, sz + 1);
 
         sz = ms.size();
-        of += ms.write16(0xFFFF);
+        of += ms.write16(0x012F);
         EXPECT_EQ(of, sz + 2);
         
         sz = ms.size();
-        of += ms.write32(0xFFFFFFFF);
+        of += ms.write32(0xF0EAD01F);
         EXPECT_EQ(of, sz + 4);
 
         sz = ms.size();
-        of += ms.write64(0xFFFFFFFFFFFFFFFF);
+        of += ms.write64(0x0123456789ABCDEF);
         EXPECT_EQ(of, sz + 8);
     }
 
     EXPECT_EQ(272, ms.capacity());
+
+
+    uint8_t *ptr = ms.ptr();
+
+    for (i = 0; i < 7; ++i)
+    {
+        char *cp = (char*)ptr;
+
+        pass = strncmp(cp, "HelloWorld", 10) == 0;
+        EXPECT_TRUE(pass);
+        ptr += 11;
+
+        EXPECT_EQ(*ptr, 'A');
+        ptr += 1;
+
+        uint16_t *v16 = (uint16_t*)ptr;
+        EXPECT_EQ(*v16, 0x012F);
+        ptr += 2;
+
+        uint32_t *v32 = (uint32_t *)ptr;
+        EXPECT_EQ(*v32, 0xF0EAD01F);
+        ptr += 4;
+
+        uint64_t *v64 = (uint64_t *)ptr;
+        EXPECT_EQ(*v64, 0x0123456789ABCDEF);
+        ptr += 8;
+    }
+
 }
