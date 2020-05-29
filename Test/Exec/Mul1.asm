@@ -1,5 +1,6 @@
 main:
     mov  x3, 1
+
 top:    
     cmp  x3, 10
     bgt pass

@@ -38,10 +38,11 @@ macro(add_compile_tests OUT Group)
         list(APPEND ${OUT} ${GEN_FILE_ANS})
 
         set_source_files_properties(${GEN_FILE_ANS} GENERATED)
-        source_group("Test\\${Group}\\Assembly"    FILES ${ASMFILE})
-        source_group("Test\\${Group}\\Generated"   FILES ${GEN_FILE})
-        source_group("Result\\${Group}\\Expected"  FILES ${GEN_FILE_EXP})
-        source_group("Result\\${Group}\\Actual"    FILES ${GEN_FILE_ANS})
+        source_group("Test\\${Group}\\Input"    FILES ${ASMFILE})
+        source_group("Test\\${Group}\\Output"   FILES ${GEN_FILE})
+        source_group("Test\\${Group}\\Expected" FILES ${GEN_FILE_EXP})
+        source_group("Test\\${Group}\\Actual"   FILES ${GEN_FILE_ANS})
+
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
@@ -77,8 +78,8 @@ macro(add_temp_test OUT Group)
         list(APPEND ${OUT} ${GEN_FILE})
         list(APPEND ${OUT} ${ASMFILE})
 
-        source_group("Assembly\\${Group}"  FILES ${ASMFILE})
-        source_group("Generated\\${Group}" FILES ${GEN_FILE})
+        source_group("Test\\${Group}\\Input"  FILES ${ASMFILE})
+        source_group("Test\\${Group}\\Output" FILES ${GEN_FILE})
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
@@ -107,10 +108,10 @@ macro(add_test_dump_err OUT Group)
         list(APPEND ${OUT} ${GEN_FILE_ANS})
         set_source_files_properties(${GEN_FILE_ANS} GENERATED)
 
-        source_group("Test\\${Group}\\Assembly"    FILES ${ASMFILE})
-        source_group("Test\\${Group}\\Generated"   FILES ${GEN_FILE})
-        source_group("Result\\${Group}\\Expected"  FILES ${GEN_FILE_EXP})
-        source_group("Result\\${Group}\\Actual"    FILES ${GEN_FILE_ANS})
+        source_group("Test\\${Group}\\Input"    FILES ${ASMFILE})
+        source_group("Test\\${Group}\\Output"   FILES ${GEN_FILE})
+        source_group("Test\\${Group}\\Expected" FILES ${GEN_FILE_EXP})
+        source_group("Test\\${Group}\\Actual"   FILES ${GEN_FILE_ANS})
 
         add_custom_command(
             OUTPUT ${GEN_FILE_ANS}
@@ -127,6 +128,7 @@ set(TestFiles_1
     Basic/CRLF.asm
     Basic/CR.asm
     Basic/LF.asm
+    Basic/Bug1.asm
     Basic/Keywords.asm
     Basic/Comment.asm
     Basic/ParseArg.asm
@@ -141,6 +143,7 @@ set(TestFiles_1
     Basic/Reg2.asm
     Basic/Reg3.asm
     Basic/Data1.asm
+    Basic/Data2.asm
 )
 
 set(TestFiles_2

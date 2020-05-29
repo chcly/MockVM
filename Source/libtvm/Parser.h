@@ -28,16 +28,16 @@
 class Parser
 {
 private:
-    BlockReader   m_reader;
-    int32_t       m_state;
-    int32_t       m_section;
-    int32_t       m_label;
-    int32_t       m_lineNo;
-    LabelMap      m_labels;
-    Instructions  m_instructions;
-    str_t         m_fname;
-    bool          m_disableErrorFormat;
-    DataLookup    m_dataDecl;
+    BlockReader  m_reader;
+    int32_t      m_state;
+    int32_t      m_section;
+    int32_t      m_label;
+    int32_t      m_lineNo;
+    LabelMap     m_labels;
+    Instructions m_instructions;
+    str_t        m_fname;
+    bool         m_disableErrorFormat;
+    DataLookup   m_dataDecl;
 
 public:
     Parser();
@@ -82,12 +82,13 @@ private:
     int32_t handleSectionState(Token& dest);
     uint8_t eatWhiteSpace(uint8_t ch);
 
+    int32_t parseEscapeSequence(uint8_t ch);
 
     // section states
     int32_t parseTextState(void);
     int32_t parseDataState(void);
 
-    bool hasDataDeclaration(const str_t &str);
+    bool hasDataDeclaration(const str_t& str);
 
     void markArgumentAsRegister(Instruction& ins, const Token& tok, int idx);
     void countNewLine(uint8_t ch);

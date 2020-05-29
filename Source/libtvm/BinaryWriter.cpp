@@ -66,6 +66,9 @@ void BinaryWriter::mergeInstructions(const Instructions& insl)
 
 int BinaryWriter::mergeDataDeclarations(const DataLookup& data)
 {
+    // There should be no conflict between labels defined
+    // elsewhere in the file. The scanner will weed out duplicates
+    // before execution reaches this step.
     int status = PS_OK;
 
     DataLookup::const_iterator it = data.begin();
@@ -83,7 +86,6 @@ int BinaryWriter::mergeDataDeclarations(const DataLookup& data)
     return status;
 }
 
-
 int BinaryWriter::mergeLabels(const LabelMap& map)
 {
     int status = PS_OK;
@@ -97,7 +99,10 @@ int BinaryWriter::mergeLabels(const LabelMap& map)
             status = PS_ERROR;
         }
         else
-            m_labels[it->first] = it->second;
+        {
+            m_labels[it->first]   = it->second;
+            m_addrMap[it->second] = 0;
+        }
 
         ++it;
     }
@@ -167,7 +172,7 @@ size_t BinaryWriter::addToDataTable(const DataDeclaration& dt)
     if (dt.type == SEC_ASCII)
     {
         m_sizeOfData += m_dataTable.writeString(dt.sval.c_str(),
-                                          dt.sval.size());
+                                                dt.sval.size());
     }
     else if (dt.type == SEC_ZERO)
     {
@@ -201,7 +206,6 @@ int BinaryWriter::mapInstructions(void)
     using InstPtr = std::vector<Instruction*>;
 
     InstPtr symbols;
-    m_addrMap.clear();
 
     Instructions::iterator it = m_ins.begin();
     while (it != m_ins.end())
@@ -245,25 +249,24 @@ int BinaryWriter::mapInstructions(void)
             if (it != m_dataDecl.end())
             {
                 // It points to a data entry
-                const DataDeclaration& dt = it->second;
-                irp->argv[1] = addToDataTable(dt);
+                irp->argv[1] = addToDataTable(it->second);
                 irp->flags |= IF_ADRD;
             }
             else
             {
-                    // It points to an unknown symbol
-                    // that may reside in a shared library.
-                    StringLookup::iterator it = m_symbols.find(irp->lname);
-                    if (it != m_symbols.end())
-                    {
-                        irp->argv[0] = addLinkedSymbol(irp->lname, it->second);
-                        irp->flags |= IF_SYMU;
-                    }
-                    else
-                    {
-                        printf("failed to locate '%s'\n", irp->lname.c_str());
-                        status = PS_ERROR;
-                    }
+                // It points to an unknown symbol
+                // that may reside in a shared library.
+                StringLookup::iterator it = m_symbols.find(irp->lname);
+                if (it != m_symbols.end())
+                {
+                    irp->argv[0] = addLinkedSymbol(irp->lname, it->second);
+                    irp->flags |= IF_SYMU;
+                }
+                else
+                {
+                    printf("failed to locate '%s'\n", irp->lname.c_str());
+                    status = PS_ERROR;
+                }
             }
         }
     }

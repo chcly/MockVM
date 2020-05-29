@@ -120,8 +120,6 @@ TEST_CASE("Scan3")
     EXPECT_EQ(tok.type, PS_OK);
 }
 
-
-
 TEST_CASE("Scan4")
 {
     const std::string TestFile = std::string(TestDirectory) + "/Scan/Scan4.asm";
@@ -130,8 +128,6 @@ TEST_CASE("Scan4")
     int    sr = p.parse(TestFile.c_str());
     EXPECT_EQ(sr, PS_ERROR);
 }
-
-
 
 TEST_CASE("Scan5")
 {

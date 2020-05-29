@@ -30,15 +30,13 @@
 #include "Declarations.h"
 #include "MemoryStream.h"
 
-
-
 class Program
 {
 public:
     typedef Register Registers[10];
 
     typedef void (Program::*Operation)(const ExecInstruction& inst);
-    typedef Operation InstructionTable[OP_MAX];
+    typedef Operation InstructionTable[OP_MAX - OP_BEG];
 
 private:
     ExecInstructions m_ins;

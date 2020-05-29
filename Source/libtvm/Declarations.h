@@ -85,7 +85,6 @@ struct Token
     bool     hasComma;
 };
 
-
 struct DataDeclaration
 {
     str_t    lname;
@@ -93,7 +92,6 @@ struct DataDeclaration
     str_t    sval;
     uint64_t ival;
 };
-
 
 enum ParseResult
 {
@@ -131,38 +129,41 @@ enum TokenCode
     TOK_MAX,
 };
 
-// The value here needs to start at zero
-// and match the method table index in the program.
-// class. The only reason is to prevent having to do
-// a lookup during execution.
 enum Opcode
 {
+    // The value here needs to start at zero
+    // and match the method table index in the program.
+    // class. The only reason is to prevent having to do
+    // a lookup during execution. If OP_BEG ever needs to
+    // change, the offset can also be found by subtracting
+    // off the difference then using that as the index.
     OP_BEG = 0,  // unused padding
-    OP_RET,      // ret
-    OP_MOV,      // mov r(n), src
-    OP_GTO,      // call address
-    OP_INC,      // inc, r(n)
-    OP_DEC,      // dec, r(n)
-    OP_CMP,      // cmp, r(n), src
-    OP_JMP,      // jump
-    OP_JEQ,      // jump ==
-    OP_JNE,      // jump !
-    OP_JLT,      // jump <
-    OP_JGT,      // jump >
-    OP_JLE,      // jump <=
-    OP_JGE,      // jump >=
-    OP_ADD,      // add r(n), src
-    OP_SUB,      // sub r(n), src
-    OP_MUL,      // mul r(n), src
-    OP_DIV,      // div r(n), src
-    OP_SHR,      // shr r(n), src
-    OP_SHL,      // shl r(n), src
-    OP_ADRP,     // adrp r(n), addr 
-                 // ---- debugging ----
-    OP_PRG,      // print register
-    OP_PRI,      // print all registers
-                 // ---- debugging ----
-    OP_MAX,      // uint8_t
+
+    OP_RET,   // ret
+    OP_MOV,   // mov r(n), src
+    OP_GTO,   // call address
+    OP_INC,   // inc, r(n)
+    OP_DEC,   // dec, r(n)
+    OP_CMP,   // cmp, r(n), src
+    OP_JMP,   // jump
+    OP_JEQ,   // jump ==
+    OP_JNE,   // jump !
+    OP_JLT,   // jump <
+    OP_JGT,   // jump >
+    OP_JLE,   // jump <=
+    OP_JGE,   // jump >=
+    OP_ADD,   // add r(n), src
+    OP_SUB,   // sub r(n), src
+    OP_MUL,   // mul r(n), src
+    OP_DIV,   // div r(n), src
+    OP_SHR,   // shr r(n), src
+    OP_SHL,   // shl r(n), src
+    OP_ADRP,  // adrp r(n), addr
+              // ---- debugging ----
+    OP_PRG,   // print register
+    OP_PRI,   // print all registers
+              // ---- debugging ----
+    OP_MAX,   // uint8_t
 };
 
 enum ArgType
@@ -192,12 +193,12 @@ enum SectionCodes
 
     // Data sections
     SEC_DECL_ST,
-    SEC_ASCII, // .asciz
-    SEC_BYTE,  // .byte 
-    SEC_WORD,  // .word
-    SEC_LONG,  // .long
-    SEC_QUAD,  // .quad | .xword
-    SEC_ZERO,  // Reserve a block of zeroed memory
+    SEC_ASCII,  // .asciz
+    SEC_BYTE,   // .byte
+    SEC_WORD,   // .word
+    SEC_LONG,   // .long
+    SEC_QUAD,   // .quad | .xword
+    SEC_ZERO,   // Reserve a block of zeroed memory
     SEC_DECL_EN,
 };
 
@@ -207,7 +208,7 @@ enum InstructionFlags
     IF_REG1 = 0x002,  // ..
     IF_REG2 = 0x004,  // ..
     IF_ADDR = 0x008,  // the rest refer to a type...
-    IF_ADRD = 0x010,  // 
+    IF_ADRD = 0x010,  //
     IF_SYMU = 0x020,
     IF_STKP = 0x040,  // stack pointer
     IF_INSP = 0x080,  // instruction pointer

@@ -19,9 +19,8 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#include "Catch2.h"
 #include "MemoryStream.h"
-
+#include "Catch2.h"
 
 // Basic reserve test
 TEST_CASE("Memory1")
@@ -43,16 +42,15 @@ TEST_CASE("Memory1")
     EXPECT_NE(ms.ptr(), nullptr);
 }
 
-
 // Testing expansion.
 TEST_CASE("Memory2")
 {
     MemoryStream ms;
-    for (int  i=0; i< 272; ++i)
+    for (int i = 0; i < 272; ++i)
         ms.write8('A');
 
     EXPECT_EQ(272, ms.capacity());
-    ms.write8('E'); // cause an expansion
+    ms.write8('E');  // cause an expansion
     EXPECT_EQ(544, ms.capacity());
 
     char *tp = new char[272];
@@ -84,8 +82,6 @@ TEST_CASE("Memory2")
     delete[] blk;
 }
 
-
-
 // Testing return values
 TEST_CASE("Memory3")
 {
@@ -94,13 +90,12 @@ TEST_CASE("Memory3")
     bool   pass = false;
     size_t of = 0, sz = 0;
     int    i;
-    for (i=0; i<7; ++i)
+    for (i = 0; i < 7; ++i)
     {
-
         sz = ms.size();
         of += ms.writeString("HelloWorld", 10);
         EXPECT_EQ(of, sz + 11);  // plus the null terminator.
-   
+
         sz = ms.size();
         of += ms.write8('A');
         EXPECT_EQ(of, sz + 1);
@@ -108,7 +103,7 @@ TEST_CASE("Memory3")
         sz = ms.size();
         of += ms.write16(0x012F);
         EXPECT_EQ(of, sz + 2);
-        
+
         sz = ms.size();
         of += ms.write32(0xF0EAD01F);
         EXPECT_EQ(of, sz + 4);
@@ -120,12 +115,10 @@ TEST_CASE("Memory3")
 
     EXPECT_EQ(272, ms.capacity());
 
-
     uint8_t *ptr = ms.ptr();
-
     for (i = 0; i < 7; ++i)
     {
-        char *cp = (char*)ptr;
+        char *cp = (char *)ptr;
 
         pass = strncmp(cp, "HelloWorld", 10) == 0;
         EXPECT_TRUE(pass);
@@ -134,7 +127,7 @@ TEST_CASE("Memory3")
         EXPECT_EQ(*ptr, 'A');
         ptr += 1;
 
-        uint16_t *v16 = (uint16_t*)ptr;
+        uint16_t *v16 = (uint16_t *)ptr;
         EXPECT_EQ(*v16, 0x012F);
         ptr += 2;
 
@@ -146,5 +139,4 @@ TEST_CASE("Memory3")
         EXPECT_EQ(*v64, 0x0123456789ABCDEF);
         ptr += 8;
     }
-
 }

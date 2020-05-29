@@ -235,8 +235,7 @@ int Program::loadDataTable(BlockReader& reader)
     return PS_OK;
 }
 
- 
- int Program::loadCode(BlockReader& reader)
+int Program::loadCode(BlockReader& reader)
 {
     reader.moveTo(sizeof(TVMHeader));
     TVMSection code;
@@ -363,7 +362,7 @@ int Program::launch(void)
     while (m_curinst < tinst)
     {
         const ExecInstruction& inst = basePtr[m_curinst++];
-        if (inst.op >= 0 && inst.op < OP_MAX)
+        if (inst.op > OP_BEG && inst.op < OP_MAX)
         {
             if (OPCodeTable[inst.op] != nullptr)
                 (this->*OPCodeTable[inst.op])(inst);
@@ -485,7 +484,7 @@ void Program::handle_OP_CMP(const ExecInstruction& inst)
     if (inst.flags & IF_REG1)
         b = m_regi[b].x;
 
-    m_flags   = 0;
+    m_flags = 0;
 
     int64_t r = (int64_t)a - (int64_t)b;
     if (r == 0)
@@ -654,7 +653,6 @@ void Program::handle_OP_DIV(const ExecInstruction& inst)
 
         if (inst.argc > 2)
         {
-
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
 
@@ -705,7 +703,6 @@ void Program::handle_OP_SHR(const ExecInstruction& inst)
 
         if (inst.argc > 2)
         {
-
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
 
@@ -731,12 +728,12 @@ void Program::handle_OP_SHL(const ExecInstruction& inst)
     if (inst.flags & IF_REG0)
     {
         const uint64_t& x0 = inst.argv[0];
-    
+
         if (inst.argc > 2)
         {
             uint64_t b = inst.argv[1];
             uint64_t c = inst.argv[2];
-        
+
             if (inst.flags & IF_REG1)
                 b = m_regi[b].x;
             if (inst.flags & IF_REG2)
@@ -760,12 +757,11 @@ void Program::handle_OP_ADRP(const ExecInstruction& inst)
     {
         if (inst.argv[1] < m_dataTable.capacity())
         {
-            uint8_t* base = m_dataTable.ptr();
+            uint8_t* base          = m_dataTable.ptr();
             m_regi[inst.argv[0]].x = (size_t)(&base[inst.argv[1]]);
         }
     }
 }
-
 
 void Program::handle_OP_PRG(const ExecInstruction& inst)
 {
@@ -799,10 +795,9 @@ void Program::handle_OP_PRGI(const ExecInstruction& inst)
     }
 }
 
-
 bool Program::testInstruction(const ExecInstruction& exec)
 {
-    bool pass = exec.op > 0 && exec.op < OP_MAX;
+    bool pass = exec.op > OP_BEG && exec.op < OP_MAX;
     if (!pass)
     {
         printf("instruction boundary exceeded\n");

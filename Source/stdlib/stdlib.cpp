@@ -23,7 +23,6 @@
 #include "SharedLib.h"
 #include "SymbolUtils.h"
 
-
 SYM_API SYM_EXPORT void __putchar(tvmregister_t regi)
 {
     uint8_t ch = prog_get_register8(regi, 0);
@@ -51,11 +50,10 @@ SYM_API SYM_EXPORT void __getchar(tvmregister_t regi)
 
 const SymbolTable stdlib[] = {
     {"putchar", __putchar},
-    {"puts",    __puts},
+    {"puts", __puts},
     {"getchar", __getchar},
     {nullptr, nullptr},
 };
-
 
 SYM_API SYM_EXPORT SymbolTable* std_init()
 {

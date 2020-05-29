@@ -389,16 +389,26 @@ int32_t Parser::handleAsciiState(Token& tok)
     if (ch == '"')
     {
         ch = m_reader.next();
-        while (ch != '"' && ch != 0)
+        while (ch != '"' && ch != 0 && st != PS_ERROR)
         {
-            // needs to handle escape sequences.
+            if (ch == '\\')
+            {
+                ch = m_reader.next();
+                ch = parseEscapeSequence(ch);
+                if (ch == PS_ERROR)
+                    st = PS_ERROR;
+            }
+
             tok.value.push_back(ch);
             ch = m_reader.next();
         }
 
-        m_state  = ST_INITIAL;
-        tok.type = TOK_ASCII;
-        st       = ST_MAX;
+        if (st != PS_ERROR)
+        {
+            m_state  = ST_INITIAL;
+            tok.type = TOK_ASCII;
+            st       = ST_MAX;
+        }
     }
     else
     {
@@ -479,6 +489,42 @@ int32_t Parser::handleTermination(Token& tok, uint8_t ch)
     return ST_MAX;
 }
 
+int32_t Parser::parseEscapeSequence(uint8_t ch)
+{
+    char v, n;
+
+    v = n = ch;
+
+    switch (n)
+    {
+    case 'n':
+        v = '\n';
+        break;
+    case 't':
+        v = '\t';
+        break;
+    case 'r':
+        v = '\r';
+        break;
+    case '\'':
+        v = '\'';
+        break;
+    case '\\':
+        v = '\\';
+        break;
+    case '0':
+        v = '\0';
+        break;
+    case '\"':
+        v = '"';
+        break;
+    default:
+        error("escape sequence '\\%c' not handled\n", n);
+        return PS_ERROR;
+    }
+    return v;
+}
+
 int32_t Parser::handleCharacter(Token& tok, uint8_t ch)
 {
     char v, n;
@@ -488,30 +534,7 @@ int32_t Parser::handleCharacter(Token& tok, uint8_t ch)
     n = m_reader.next();
     if (ch == '\\')
     {
-        switch (n)
-        {
-        case 'n':
-            v = '\n';
-            break;
-        case 't':
-            v = '\t';
-            break;
-        case 'r':
-            v = '\r';
-            break;
-        case '\'':
-            v = '\'';
-            break;
-        case '\\':
-            v = '\\';
-            break;
-        case '0':
-            v = '\0';
-            break;
-        default:
-            error("escape sequence '%c' not handled\n", n);
-            return PS_ERROR;
-        }
+        v = parseEscapeSequence(n);
         n = m_reader.next();
     }
 
