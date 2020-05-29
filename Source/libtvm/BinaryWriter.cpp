@@ -64,10 +64,49 @@ void BinaryWriter::mergeInstructions(const Instructions& insl)
         m_ins.push_back(ins);
 }
 
+int BinaryWriter::mergeStringDeclarations(const StringLookup& str)
+{
+    int status = PS_OK;
+
+    StringLookup::const_iterator it = str.begin();
+    while (it != str.end() && status == PS_OK)
+    {
+        if (m_asciiDecl.find(it->first) != m_asciiDecl.end())
+        {
+            printf("duplicate label '%s'\n", it->first.c_str());
+            status = PS_ERROR;
+        }
+        else
+            m_asciiDecl[it->first] = it->second;
+        ++it;
+    }
+    return status;
+}
+
+int BinaryWriter::mergeIntegerDeclarations(const AddressLookup& addr)
+{
+    int status = PS_OK;
+
+    AddressLookup::const_iterator it = addr.begin();
+    while (it != addr.end() && status == PS_OK)
+    {
+        if (m_integerDecl.find(it->first) != m_integerDecl.end())
+        {
+            printf("duplicate label '%s'\n", it->first.c_str());
+            status = PS_ERROR;
+        }
+        else
+            m_integerDecl[it->first] = it->second;
+        ++it;
+    }
+    return status;
+}
+
 int BinaryWriter::mergeLabels(const LabelMap& map)
 {
-    int                      status = PS_OK;
-    LabelMap::const_iterator it     = map.begin();
+    int status = PS_OK;
+
+    LabelMap::const_iterator it = map.begin();
     while (it != map.end() && status == PS_OK)
     {
         if (m_labels.find(it->first) != m_labels.end())
@@ -139,6 +178,13 @@ size_t BinaryWriter::addToStringTable(const str_t& symname)
     return size;
 }
 
+size_t BinaryWriter::addToDataTable(const void* data, size_t size, bool pad)
+{
+    size_t old_size = m_sizeOfData;
+    m_sizeOfData += m_dataTable.write(data, size, pad);
+    return old_size;
+}
+
 size_t BinaryWriter::addLinkedSymbol(const str_t& symname, const str_t& libname)
 {
     if (m_linkedLibraries.find(libname) == m_linkedLibraries.end())
@@ -199,18 +245,39 @@ int BinaryWriter::mapInstructions(void)
         }
         else
         {
-            // It points to an unknown symbol
-            // that may reside in a shared library.
-            SymbolLookup::iterator it = m_symbols.find(irp->lname);
-            if (it != m_symbols.end())
+            StringLookup::iterator it;
+            it = m_asciiDecl.find(irp->lname);
+            if (it != m_asciiDecl.end())
             {
-                irp->argv[0] = addLinkedSymbol(irp->lname, it->second);
-                irp->flags |= IF_SYMU;
+                // It points to a data entry
+                irp->argv[1] = addToDataTable(it->second.c_str(), it->second.size(), true);
+                irp->flags |= IF_ADRD;
             }
             else
             {
-                printf("failed to locate '%s'\n", irp->lname.c_str());
-                status = PS_ERROR;
+                AddressLookup::iterator iit = m_integerDecl.find(irp->lname);
+                if (iit != m_integerDecl.end())
+                {
+                    // It points to a data entry
+                    irp->argv[1] = addToDataTable(&iit->second, 8, false);
+                    irp->flags |= IF_ADRD;
+                }
+                else
+                {
+                    // It points to an unknown symbol
+                    // that may reside in a shared library.
+                    StringLookup::iterator it = m_symbols.find(irp->lname);
+                    if (it != m_symbols.end())
+                    {
+                        irp->argv[0] = addLinkedSymbol(irp->lname, it->second);
+                        irp->flags |= IF_SYMU;
+                    }
+                    else
+                    {
+                        printf("failed to locate '%s'\n", irp->lname.c_str());
+                        status = PS_ERROR;
+                    }
+                }
             }
         }
     }
@@ -295,7 +362,7 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
             while (avail != nullptr && avail[i].name != nullptr && status == PS_OK)
             {
                 const str_t            str = avail[i].name;
-                SymbolLookup::iterator it  = m_symbols.find(str);
+                StringLookup::iterator it  = m_symbols.find(str);
                 if (it == m_symbols.end())
                     m_symbols[str] = lib;
                 else
@@ -396,8 +463,13 @@ size_t BinaryWriter::writeDataSection(void)
     TVMSection sec = {};
     sec.size       = (uint32_t)m_sizeOfData;
     sec.entry      = m_header.dat;
-    sec.align      = 0;
+    sec.align      = getAlignment(m_sizeOfData);
     write(&sec, sizeof(TVMSection));
+    write(m_dataTable.ptr(), m_dataTable.size());
+
+    int pb = sec.align;
+    while (pb--)
+        write8(0);
     return m_sizeOfData;
 }
 

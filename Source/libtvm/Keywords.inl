@@ -28,6 +28,7 @@ const uint8_t ArgTypeStd1[3] = {AT_REGI, AT_RVAL, AT_NULL};
 const uint8_t ArgTypeStd2[3] = {AT_RVAL, AT_RVAL, AT_NULL};
 const uint8_t ArgTypeStd3[3] = {AT_RVAL, AT_NULL, AT_NULL};
 const uint8_t ArgTypeStd4[3] = {AT_REGI, AT_RVAL, AT_RVAL};
+const uint8_t ArgTypeStd5[3] = {AT_REGI, AT_ADDR, AT_NULL};
 const uint8_t ArgTypeReg1[3] = {AT_REGI, AT_NULL, AT_NULL};
 const uint8_t ArgTypeAdr1[3] = {AT_ADDR, AT_NULL, AT_NULL};
 const uint8_t ArgTypeNone[3] = {AT_REGI, AT_RVAL, AT_NULL};
@@ -52,6 +53,7 @@ const KeywordMap KeywordTable[] = {
     {"div\0 ", OP_DIV, 2, ArgTypeStd4},
     {"shr\0 ", OP_SHR, 2, ArgTypeStd4},
     {"shl\0 ", OP_SHL, 2, ArgTypeStd4},
+    {"adrp\0", OP_ADRP, 2, ArgTypeStd5},
     //  -- debugging
     {"prgi\0", OP_PRI, 0, ArgTypeAdr1},
     {"prg\0 ", OP_PRG, 1, ArgTypeStd3},

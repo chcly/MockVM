@@ -80,6 +80,15 @@ int Program::load(const char* fname)
         }
     }
 
+    if (m_header.dat != 0)
+    {
+        if (loadDataTable(reader) != PS_OK)
+        {
+            printf("failed to read the data table\n");
+            return PS_ERROR;
+        }
+    }
+
     if (m_header.sym != 0)
     {
         if (loadSymbolTable(reader) != PS_OK)
@@ -212,7 +221,22 @@ int Program::loadSymbolTable(BlockReader& reader)
     return st;
 }
 
-int Program::loadCode(BlockReader& reader)
+int Program::loadDataTable(BlockReader& reader)
+{
+    reader.moveTo(m_header.dat);
+    TVMSection dat;
+    reader.read(&dat, sizeof(TVMSection));
+
+    if (dat.size <= 0)
+        return PS_OK;
+
+    m_dataTable.reserve((size_t)dat.size + (size_t)dat.align);
+    reader.read(m_dataTable.ptr(), m_dataTable.capacity());
+    return PS_OK;
+}
+
+ 
+ int Program::loadCode(BlockReader& reader)
 {
     reader.moveTo(sizeof(TVMHeader));
     TVMSection code;
@@ -730,6 +754,23 @@ void Program::handle_OP_SHL(const ExecInstruction& inst)
     }
 }
 
+void Program::handle_OP_ADRP(const ExecInstruction& inst)
+{
+    if (inst.flags & IF_REG0)
+    {
+        if (inst.argv[1] < m_dataTable.capacity())
+        {
+            uint8_t* base = m_dataTable.ptr();
+            size_t arg = (size_t)(&base[inst.argv[1]]);
+
+            m_regi[inst.argv[0]].x = arg;
+        }
+
+
+    }
+}
+
+
 void Program::handle_OP_PRG(const ExecInstruction& inst)
 {
     if (inst.flags & IF_REG0)
@@ -793,6 +834,7 @@ bool Program::testInstruction(const ExecInstruction& exec)
         break;
     case OP_MOV:
     case OP_CMP:
+    case OP_ADRP:
         pass = exec.argc == 2;
         break;
     case OP_ADD:
@@ -848,6 +890,15 @@ bool Program::testInstruction(const ExecInstruction& exec)
             pass = exec.argv[0] < 10;
         if (exec.flags & IF_REG1)
             pass = exec.argv[1] < 10;
+        break;
+    case OP_ADRP:
+        pass = (exec.flags & IF_REG0) != 0;
+        if (pass)
+        {
+            pass = exec.argv[0] < 10;
+            if (pass)
+                pass = (exec.flags & IF_ADRD) != 0;
+        }
         break;
     case OP_MOV:
     case OP_ADD:
@@ -905,6 +956,7 @@ const Program::Operation Program::OPCodeTable[] = {
     &Program::handle_OP_DIV,
     &Program::handle_OP_SHR,
     &Program::handle_OP_SHL,
+    &Program::handle_OP_ADRP,
     &Program::handle_OP_PRG,
     &Program::handle_OP_PRGI,
 };

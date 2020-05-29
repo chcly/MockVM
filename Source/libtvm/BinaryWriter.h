@@ -23,6 +23,8 @@
 #define _BinaryWriter_h_
 
 #include "Declarations.h"
+#include "MemoryStream.h"
+
 
 class BinaryWriter
 {
@@ -39,9 +41,13 @@ private:
     LabelMap        m_strtab;
     strvec_t        m_orderedString;
     strset_t        m_linkedLibraries;
-    SymbolLookup    m_symbols;
+    StringLookup    m_symbols;
     TVMHeader       m_header;
     str_t           m_modpath;
+    StringLookup    m_asciiDecl;
+    AddressLookup   m_integerDecl;
+    MemoryStream    m_dataTable;
+
 
     void write(const void* v, size_t size);
     void write8(uint8_t v);
@@ -53,11 +59,17 @@ private:
     size_t writeCodeSection(void);
     size_t writeSymbolSection(void);
     size_t writeStringSection(void);
-    int    mapInstructions(void);
+
+
+    int mapInstructions(void);
+
     size_t calculateInstructionSize(void);
 
     size_t findLabel(const str_t& name);
+    
     size_t addToStringTable(const str_t& symname);
+    size_t addToDataTable(const void *data, size_t size, bool pad);
+
     size_t addLinkedSymbol(const str_t& symname, const str_t& libname);
     int    loadSharedLibrary(const str_t& lib);
 
@@ -66,6 +78,8 @@ public:
     ~BinaryWriter();
 
     void mergeInstructions(const Instructions& insl);
+    int mergeStringDeclarations(const StringLookup& str);
+    int mergeIntegerDeclarations(const AddressLookup& addr);
 
     int mergeLabels(const LabelMap& map);
     int resolve(strvec_t& modules);

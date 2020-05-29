@@ -19,45 +19,71 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#include <stdio.h>
-#include "SharedLib.h"
-#include "SymbolUtils.h"
+#include "MemoryStream.h"
+#include "memory.h"
+#include "string.h"
 
 
-SYM_API SYM_EXPORT void __putchar(tvmregister_t regi)
+
+MemoryStream::MemoryStream() :
+    m_data(nullptr),
+    m_size(0),
+    m_capacity(0)
 {
-    uint8_t ch = prog_get_register8(regi, 0);
-    if (ch)
+}
+
+MemoryStream::~MemoryStream()
+{
+    clear();
+}
+
+
+void MemoryStream::clear(void)
+{
+    if (m_data)
+        delete[] m_data;
+    m_size     = 0;
+    m_capacity = 0;
+}
+
+
+void MemoryStream::reserve(size_t nr)
+{
+
+    if (m_capacity < nr)
     {
-        putchar(ch);
-        fflush(stdout);
+        uint8_t* buf = new uint8_t[nr + 1];
+        if (m_data != 0)
+        {
+            memcpy(buf, m_data, m_size);
+            delete[] m_data;
+        }
+        m_data         = buf;
+        m_data[m_size] = 0;
+        m_capacity     = nr;
     }
 }
 
-SYM_API SYM_EXPORT void __puts(tvmregister_t regi)
+
+size_t MemoryStream::write(const void* src, size_t nr, bool pad)
 {
-    size_t ptr = prog_get_register64(regi, 0);
-    if (ptr)
+    m_capacity = m_size + nr + 1;
+    if (pad)
+        m_capacity++;
+
+    uint8_t* ptr = new uint8_t[m_capacity];
+    if (m_data)
     {
-        puts((char*)ptr);
-        fflush(stdout);
+        memcpy(ptr, m_data, m_size);
+        delete[] m_data;
     }
-}
-
-SYM_API SYM_EXPORT void __getchar(tvmregister_t regi)
-{
-    prog_set_register8(regi, 0, getchar());
-}
-
-const SymbolTable stdlib[] = {
-    {"putchar", __putchar},
-    {"puts",    __puts},
-    {"getchar", __getchar},
-    {nullptr, nullptr},
-};
-
-
-SYM_API SYM_EXPORT SymbolTable* std_init()
-{
-    return (SymbolTable*)stdlib;
+    m_data = ptr;
+    memcpy(m_data + m_size, src, nr);
+    m_size += nr;
+    if (pad)
+    {
+        m_data[m_size++] = 0;
+        nr++;
+    }
+    return nr;
 }

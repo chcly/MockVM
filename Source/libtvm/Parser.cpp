@@ -48,7 +48,7 @@ Parser::~Parser()
 int32_t Parser::open(const char* fname)
 {
     m_reader.open(fname);
-    m_section = -1;
+    m_section = SEC_TXT;
     m_label   = 0;
     m_state   = ST_INITIAL;
     m_fname   = fname;
@@ -60,44 +60,29 @@ int32_t Parser::parse(const char* fname)
     m_reader.open(fname);
     if (!m_reader.eof())
     {
-        int32_t sr, rc;
+        int32_t rc;
 
-        m_section = -1;
+        m_section = SEC_TXT;
         m_label   = 0;
         m_state   = ST_INITIAL;
         m_fname   = fname;
 
         while (!m_reader.eof())
         {
-            Token curTok;
-            sr = scan(curTok);
-
-            switch (sr)
+            switch (m_section)
             {
-            case TOK_OPCODE:
-                rc = handleOpCode(curTok);
+            case SEC_TXT:
+                rc = parseTextState();
                 break;
-            case TOK_SECTION:
-                rc = handleSection(curTok);
+            case SEC_DAT:
+                rc = parseDataState();
                 break;
-            case TOK_LABEL:
-                rc = handleLabel(curTok);
-                break;
-            case PS_EOF:
-            case PS_OK:
-            case ST_CONTINUE:
-                return PS_OK;
             default:
-                if (sr != PS_ERROR)
-                {
-                    str_t tok;
-                    getTokenName(tok, sr);
-                    error("token %s parsed outside of any known context\n", tok.c_str(), sr);
-                }
+                error("unknown section '%d' parsed in the global context.\n",
+                      m_section);
                 rc = PS_ERROR;
                 break;
             }
-
             if (rc != PS_OK)
             {
                 error("syntax error\n");
@@ -111,6 +96,109 @@ int32_t Parser::parse(const char* fname)
         return PS_ERROR;
     }
     return PS_OK;
+}
+
+int32_t Parser::parseTextState(void)
+{
+    int32_t sr, rc;
+
+    Token curTok;
+    sr = scan(curTok);
+
+    switch (sr)
+    {
+    case TOK_OPCODE:
+        rc = handleOpCode(curTok);
+        break;
+    case TOK_SECTION:
+        rc = handleSection(curTok);
+        break;
+    case TOK_LABEL:
+        rc = handleLabel(curTok);
+        break;
+    case TOK_ASCII:
+        rc = handleLabel(curTok);
+        break;
+    case PS_EOF:
+    case PS_OK:
+    case ST_CONTINUE:
+        return PS_OK;
+    default:
+        if (sr != PS_ERROR)
+        {
+            str_t tok;
+            getTokenName(tok, sr);
+            error("token %s parsed outside of any known context\n", tok.c_str(), sr);
+        }
+        rc = PS_ERROR;
+        break;
+    }
+    return rc;
+}
+
+int32_t Parser::parseDataState(void)
+{
+    int32_t sr, rc = PS_OK;
+
+    Token t1, t2, t3;
+    sr = scan(t1);
+
+    if (t1.type == TOK_SECTION && t1.sectype == SEC_TXT)
+    {
+        m_section = SEC_TXT;
+        return PS_OK;
+    }
+    else if (t1.type == TOK_SECTION)
+    {
+        error("unknown section parsed\n");
+        return PS_ERROR;
+    }
+
+    if (t1.type != TOK_LABEL || t1.value.empty())
+    {
+        error("expected a data declaration label\n");
+        return PS_ERROR;
+    }
+
+    sr = scan(t2);
+    if (t2.type != TOK_SECTION)
+    {
+        error("expected a data type\n");
+        return PS_ERROR;
+    }
+
+    sr = scan(t3);
+    if (t3.type == TOK_ASCII)
+    {
+        if (!hasDataDeclaration(t1.value))
+            m_asciiDecl[t1.value] = t3.value;
+        else
+        {
+            error("duplicate data declaration for '%s'\n",
+                  t1.value.c_str());
+            rc = PS_ERROR;
+        }
+    }
+    else if (t3.type == TOK_DIGIT)
+    {
+        if (!hasDataDeclaration(t1.value))
+            m_integerDecl[t1.value] = t3.ival.x;
+        else
+        {
+            error("duplicate data declaration for '%s'\n",
+                  t1.value.c_str());
+            rc = PS_ERROR;
+        }
+    }
+    else
+    {
+        getTokenName(t3.value, t3.type);
+        error("unknown type declaration for '%s' -> '%s'\n",
+              t1.value.c_str(),
+              t3.value.c_str());
+        rc = PS_ERROR;
+    }
+    return rc;
 }
 
 int32_t Parser::scan(Token& tok)
@@ -133,6 +221,9 @@ int32_t Parser::scan(Token& tok)
             break;
         case ST_SECTION:
             res = handleSectionState(tok);
+            break;
+        case ST_ASCII:
+            res = handleAsciiState(tok);
             break;
         default:
             break;
@@ -177,9 +268,11 @@ int32_t Parser::handleInitialState(Token& tok)
             m_state = ST_DIGIT;
         else if (ch == '.')
             m_state = ST_SECTION;
+        else if (ch == '"')
+            m_state = ST_ASCII;
         else if (!isNewLine(ch) && ch != 0 && !isComment(ch))
         {
-            printf("error character '%c' was not handled\n", ch);
+            error("error character '%c' was not handled\n", ch);
             st = PS_ERROR;
         }
     }
@@ -216,7 +309,7 @@ int32_t Parser::handleIdState(Token& tok)
             }
             else
             {
-                printf("error character '%c' was not handled\n", ch);
+                error("error character '%c' was not handled\n", ch);
                 st = PS_ERROR;
             }
         }
@@ -284,7 +377,34 @@ int32_t Parser::handleDigitState(Token& tok)
         st = handleCharacter(tok, ch);
     else
     {
-        printf("error character '%c' was not handled\n", ch);
+        error("error character '%c' was not handled\n", ch);
+        st = PS_ERROR;
+    }
+    return st;
+}
+
+int32_t Parser::handleAsciiState(Token& tok)
+{
+    int32_t st = ST_CONTINUE;
+
+    uint8_t ch = m_reader.next();
+    if (ch == '"')
+    {
+        ch = m_reader.next();
+        while (ch != '"' && ch != 0)
+        {
+            // needs to handle escape sequences.
+            tok.value.push_back(ch);
+            ch = m_reader.next();
+        }
+
+        m_state  = ST_INITIAL;
+        tok.type = TOK_ASCII;
+        st       = ST_MAX;
+    }
+    else
+    {
+        error("error character '%c' was not handled\n", ch);
         st = PS_ERROR;
     }
     return st;
@@ -419,19 +539,23 @@ int32_t Parser::handleSectionState(Token& tok)
     if (isWhiteSpace(ch))
         ch = eatWhiteSpace(ch);
 
+    if (ch == '.')
+        ch = m_reader.next();
+
     if (isAlphaL(ch))
     {
-        while (isAlpha(ch) && !m_reader.eof())
+        do
         {
             tok.value.push_back(ch);
             ch = m_reader.next();
-        }
+        } while (isAlpha(ch));
 
         if (isNewLine(ch))
             m_reader.offset(-1);
 
-        m_state  = ST_INITIAL;
-        tok.type = TOK_SECTION;
+        m_state     = ST_INITIAL;
+        tok.type    = TOK_SECTION;
+        tok.sectype = getSection(tok.value);
         return ST_MAX;
     }
 
@@ -494,7 +618,7 @@ uint8_t Parser::eatWhiteSpace(uint8_t ch)
 
 int32_t Parser::handleSection(const Token& tok)
 {
-    m_section = getSection(tok.value);
+    m_section = tok.sectype;
     if (m_section == PS_UNDEFINED)
     {
         error("undefined section '%s'\n", tok.value.c_str());
@@ -658,13 +782,38 @@ int32_t Parser::handleOpCode(const Token& tok)
     return PS_ERROR;
 }
 
-int32_t Parser::getSection(const std::string& val)
+int32_t Parser::getSection(const str_t& val)
 {
     if (val == "data")
         return SEC_DAT;
     else if (val == "text")
         return SEC_TXT;
+    else if (val == "asciz")
+        return SEC_ASCII;
+    else if (val == "byte")
+        return SEC_ASCII;
+    else if (val == "word")
+        return SEC_WORD;
+    else if (val == "long")
+        return SEC_LONG;
+    else if (val == "quad")
+        return SEC_QUAD;
+    else if (val == "xword")
+        return SEC_QUAD;
+    else if (val == "zero")
+        return SEC_ZERO;
     return PS_UNDEFINED;
+}
+
+bool Parser::hasDataDeclaration(const str_t& str)
+{
+    if (m_asciiDecl.find(str) != m_asciiDecl.end())
+        return true;
+    else if (m_integerDecl.find(str) != m_integerDecl.end())
+        return true;
+    else if (m_labels.find(str) != m_labels.end())
+        return true;
+    return false;
 }
 
 int32_t Parser::getKeywordIndex(const uint8_t& val)

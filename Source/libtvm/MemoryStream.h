@@ -19,45 +19,46 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#include <stdio.h>
-#include "SharedLib.h"
-#include "SymbolUtils.h"
+#ifndef _MemoryStream_h_
+#define _MemoryStream_h_
+
+#include "Declarations.h"
 
 
-SYM_API SYM_EXPORT void __putchar(tvmregister_t regi)
+class MemoryStream
 {
-    uint8_t ch = prog_get_register8(regi, 0);
-    if (ch)
+public:
+    MemoryStream();
+    ~MemoryStream();
+
+    void   clear(void);
+    size_t write(const void* src, size_t nr, bool pad);
+
+    void reserve(size_t cap);
+
+    inline size_t size(void) const
     {
-        putchar(ch);
-        fflush(stdout);
+        return m_size;
     }
-}
-
-SYM_API SYM_EXPORT void __puts(tvmregister_t regi)
-{
-    size_t ptr = prog_get_register64(regi, 0);
-    if (ptr)
+    
+    inline size_t capacity(void) const
     {
-        puts((char*)ptr);
-        fflush(stdout);
+        return m_capacity;
     }
-}
 
-SYM_API SYM_EXPORT void __getchar(tvmregister_t regi)
-{
-    prog_set_register8(regi, 0, getchar());
-}
+    inline uint8_t* ptr()
+    {
+        return m_data;
+    }
 
-const SymbolTable stdlib[] = {
-    {"putchar", __putchar},
-    {"puts",    __puts},
-    {"getchar", __getchar},
-    {nullptr, nullptr},
+    inline const uint8_t* ptr() const
+    {
+        return m_data;
+    }
+
+private:
+    size_t   m_size, m_capacity;
+    uint8_t* m_data;
 };
 
-
-SYM_API SYM_EXPORT SymbolTable* std_init()
-{
-    return (SymbolTable*)stdlib;
-}
+#endif  //_MemoryStream_h_

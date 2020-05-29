@@ -23,6 +23,7 @@ set(CommonSource
     BinaryWriter.cpp
     Parser.cpp
     BlockReader.cpp
+    MemoryStream.cpp
     Program.cpp
     SharedLib.cpp
     SymbolUtils.cpp
@@ -35,6 +36,7 @@ set(CommonHeader
     Parser.h
     Declarations.h
     BlockReader.h
+    MemoryStream.h
     Program.h
     Keywords.inl
     SharedLib.h

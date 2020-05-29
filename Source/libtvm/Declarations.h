@@ -77,6 +77,7 @@ struct Token
     uint8_t  op;
     uint8_t  reg;
     uint16_t regtype;
+    uint16_t sectype;
     Register ival;
     int32_t  type;
     str_t    value;
@@ -102,6 +103,7 @@ enum ParserState
     ST_INITIAL = PS_MAX + 1,
     ST_ID,
     ST_DIGIT,
+    ST_ASCII,
     ST_SECTION,
     ST_CONTINUE,
     ST_MAX,
@@ -113,6 +115,7 @@ enum TokenCode
     TOK_REGISTER,
     TOK_IDENTIFIER,
     TOK_DIGIT,
+    TOK_ASCII,
     TOK_LABEL,
     TOK_SECTION,
     TOK_MAX,
@@ -144,6 +147,7 @@ enum Opcode
     OP_DIV,      // div r(n), src
     OP_SHR,      // shr r(n), src
     OP_SHL,      // shl r(n), src
+    OP_ADRP,     // adrp r(n), addr 
                  // ---- debugging ----
     OP_PRG,      // print register
     OP_PRI,      // print all registers
@@ -172,9 +176,17 @@ struct KeywordMap
 
 enum SectionCodes
 {
+    // File sections
     SEC_DAT = 0xFF,
     SEC_TXT,
-    SEC_STR,
+
+    // Data sections
+    SEC_ASCII, // .asciz
+    SEC_BYTE,  // .byte 
+    SEC_WORD,  // .word
+    SEC_LONG,  // .long
+    SEC_QUAD,  // .quad | .xword
+    SEC_ZERO,  // Reserve a block of zeroed memory
 };
 
 enum InstructionFlags
@@ -183,14 +195,15 @@ enum InstructionFlags
     IF_REG1 = 0x002,  // ..
     IF_REG2 = 0x004,  // ..
     IF_ADDR = 0x008,  // the rest refer to a type...
-    IF_SYMU = 0x010,
-    IF_STKP = 0x020,  // stack pointer
-    IF_INSP = 0x040,  // instruction pointer
-    IF_BTEB = 0x080,  // b uint8_t
-    IF_BTEW = 0x100,  // w uint16_t
-    IF_BTEL = 0x200,  // l uint32_t
+    IF_ADRD = 0x010,  // 
+    IF_SYMU = 0x020,
+    IF_STKP = 0x040,  // stack pointer
+    IF_INSP = 0x080,  // instruction pointer
+    IF_BTEB = 0x100,  // b uint8_t
+    IF_BTEW = 0x200,  // w uint16_t
+    IF_BTEL = 0x400,  // l uint32_t
                       // x = default, if not present
-    IF_MAXF = 0x400,  // needs an uint16_t
+    IF_MAXF = 0x800,  // needs an uint16_t
 };
 
 struct TVMHeader
@@ -246,7 +259,8 @@ using Instructions     = std::vector<Instruction>;
 using IndexToPosition  = std::unordered_map<size_t, size_t>;
 using LabelMap         = std::unordered_map<str_t, size_t>;
 using SymbolMap        = std::unordered_map<str_t, Symbol>;
-using SymbolLookup     = std::unordered_map<str_t, str_t>;
+using StringLookup     = std::unordered_map<str_t, str_t>;
+using AddressLookup    = std::unordered_map<str_t, uint64_t>;
 using DynamicLib       = std::vector<void*>;
 using StringMap        = std::unordered_map<str_t, size_t>;
 using ExecInstructions = std::vector<ExecInstruction>;

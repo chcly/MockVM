@@ -28,6 +28,9 @@
 #include <vector>
 #include "BlockReader.h"
 #include "Declarations.h"
+#include "MemoryStream.h"
+
+
 
 class Program
 {
@@ -50,6 +53,7 @@ private:
     str_t            m_modpath;
     DynamicLib       m_dynlib;
     SymbolMap        m_symbols;
+    MemoryStream     m_dataTable;
 
     const static InstructionTable OPCodeTable;
     const static size_t           OPCodeTableSize;
@@ -75,6 +79,7 @@ private:
     void handle_OP_DIV(const ExecInstruction& inst);
     void handle_OP_SHR(const ExecInstruction& inst);
     void handle_OP_SHL(const ExecInstruction& inst);
+    void handle_OP_ADRP(const ExecInstruction& inst);
     void handle_OP_PRG(const ExecInstruction& inst);
     void handle_OP_PRGI(const ExecInstruction& inst);
 
@@ -82,6 +87,7 @@ private:
 
     int  loadStringTable(BlockReader& reader);
     int  loadSymbolTable(BlockReader& reader);
+    int  loadDataTable(BlockReader& reader);
     int  loadCode(BlockReader& reader);
     bool testInstruction(const ExecInstruction& exec);
 

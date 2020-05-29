@@ -28,15 +28,18 @@
 class Parser
 {
 private:
-    BlockReader  m_reader;
-    int32_t      m_state;
-    int32_t      m_section;
-    int32_t      m_label;
-    int32_t      m_lineNo;
-    LabelMap     m_labels;
-    Instructions m_instructions;
-    str_t        m_fname;
-    bool         m_disableErrorFormat;
+    BlockReader   m_reader;
+    int32_t       m_state;
+    int32_t       m_section;
+    int32_t       m_label;
+    int32_t       m_lineNo;
+    LabelMap      m_labels;
+    Instructions  m_instructions;
+    str_t         m_fname;
+    bool          m_disableErrorFormat;
+    StringLookup  m_asciiDecl;
+    AddressLookup m_integerDecl;
+
 public:
     Parser();
     ~Parser();
@@ -46,14 +49,24 @@ public:
     int32_t open(const char* fname);
     int32_t scan(Token& tok);
 
-    inline const Instructions& getInstructions(void)
+    const Instructions& getInstructions(void)
     {
         return m_instructions;
     }
 
-    inline const LabelMap& getLabels(void)
+    const LabelMap& getLabels(void)
     {
         return m_labels;
+    }
+
+    const StringLookup& getStringDeclarations(void)
+    {
+        return m_asciiDecl;
+    }
+
+    const AddressLookup getIntegerDeclarations(void)
+    {
+        return m_integerDecl;
     }
 
     inline void disableErrorFormat(bool v)
@@ -71,8 +84,16 @@ private:
     int32_t handleInitialState(Token& dest);
     int32_t handleIdState(Token& dest);
     int32_t handleDigitState(Token& dest);
+    int32_t handleAsciiState(Token& tok);
     int32_t handleSectionState(Token& dest);
     uint8_t eatWhiteSpace(uint8_t ch);
+
+
+    // section states
+    int32_t parseTextState(void);
+    int32_t parseDataState(void);
+
+    bool hasDataDeclaration(const str_t &str);
 
     void markArgumentAsRegister(Instruction& ins, const Token& tok, int idx);
     void countNewLine(uint8_t ch);
@@ -80,7 +101,7 @@ private:
     void errorTokenType(int tok);
     void errorArgType(int idx, int tok, const char* inst);
 
-    int32_t           getSection(const std::string& val);
+    int32_t           getSection(const str_t& val);
     int32_t           getKeywordIndex(const uint8_t& val);
     const KeywordMap& getKeyword(const int32_t& val);
 
