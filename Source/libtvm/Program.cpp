@@ -22,10 +22,10 @@
 #include "Program.h"
 #include <stdint.h>
 #include <string.h>
-#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <stack>
+#include <sstream>
 #include <vector>
 #include "BlockReader.h"
 #include "Declarations.h"
@@ -33,6 +33,10 @@
 #include "SymbolUtils.h"
 
 using namespace std;
+
+const size_t MaxRegisterSize = sizeof(Register) * (MAX_REG -1);
+
+
 
 Program::Program(const str_t& modpath) :
     m_flags(0),
@@ -356,7 +360,6 @@ int Program::launch(void)
     size_t tinst = m_ins.size();
 
     const ExecInstruction* basePtr = m_ins.data();
-
     m_callStack.push(m_curinst);
 
     while (m_curinst < tinst)
@@ -387,15 +390,14 @@ void Program::forceExit(int returnCode)
 
 Register* Program::clone(void)
 {
-    Register* reg = new Register[10];
-    memcpy(reg, m_regi, sizeof(Register) * 10);
+    Register* reg = new Register[MAX_REG];
+    memcpy(reg, m_regi, MaxRegisterSize);
     return reg;
 }
 
 void Program::release(Register* reg)
 {
-    const size_t RegiLen = sizeof(Register) * 10;
-    memcpy(m_regi, reg, RegiLen);
+    memcpy(m_regi, reg, MaxRegisterSize);
     delete[] reg;
 }
 
@@ -410,7 +412,7 @@ void Program::handle_OP_RET(const ExecInstruction& inst)
     if (m_callStack.empty())
         m_curinst = m_ins.size();
 
-    m_return = (int32_t)m_regi[0].x;
+    m_return = (int32_t)m_regi[0].w[0];
 }
 
 void Program::handle_OP_MOV(const ExecInstruction& inst)
@@ -429,7 +431,16 @@ void Program::handle_OP_MOV(const ExecInstruction& inst)
             if (inst.flags & IF_REG1)
                 m_regi[inst.argv[0]].x = m_regi[inst.argv[1]].x;
             else
-                m_regi[inst.argv[0]].x = inst.argv[1];
+            {
+                if (inst.flags & IF_BTEB)
+                    m_regi[inst.argv[0]].b[0] = (uint8_t)inst.argv[1];
+                else if (inst.flags & IF_BTEW)
+                    m_regi[inst.argv[0]].w[0] = (uint16_t)inst.argv[1];
+                else if (inst.flags & IF_BTEL)
+                    m_regi[inst.argv[0]].l[0] = (uint32_t)inst.argv[1];
+                else
+                    m_regi[inst.argv[0]].x = inst.argv[1];
+            }
         }
     }
 }
@@ -485,10 +496,9 @@ void Program::handle_OP_CMP(const ExecInstruction& inst)
         b = m_regi[b].x;
 
     m_flags = 0;
-
     int64_t r = (int64_t)a - (int64_t)b;
     if (r == 0)
-        m_flags |= PF_E;
+        m_flags |= PF_Z;
     else if (r < 0)
         m_flags |= PF_L;
     else if (r > 0)
@@ -502,27 +512,27 @@ void Program::handle_OP_JMP(const ExecInstruction& inst)
 
 void Program::handle_OP_JEQ(const ExecInstruction& inst)
 {
-    if (m_flags & PF_E)
+    if (m_flags & PF_Z)
     {
-        m_flags &= ~PF_E;
+        m_flags &= ~PF_Z;
         m_curinst = inst.argv[0];
     }
 }
 
 void Program::handle_OP_JNE(const ExecInstruction& inst)
 {
-    if ((m_flags & PF_E) == 0)
+    if ((m_flags & PF_Z) == 0)
     {
-        m_flags &= ~PF_E;
+        m_flags &= ~PF_Z;
         m_curinst = inst.argv[0];
     }
 }
 
 void Program::handle_OP_JLE(const ExecInstruction& inst)
 {
-    if (m_flags & PF_E)
+    if (m_flags & PF_Z)
     {
-        m_flags &= ~PF_E;
+        m_flags &= ~PF_Z;
         m_curinst = inst.argv[0];
     }
     else if (m_flags & PF_L)
@@ -534,9 +544,9 @@ void Program::handle_OP_JLE(const ExecInstruction& inst)
 
 void Program::handle_OP_JGE(const ExecInstruction& inst)
 {
-    if (m_flags & PF_E)
+    if (m_flags & PF_Z)
     {
-        m_flags &= ~PF_E;
+        m_flags &= ~PF_Z;
         m_curinst = inst.argv[0];
     }
     else if (m_flags & PF_G)
@@ -632,7 +642,6 @@ void Program::handle_OP_MUL(const ExecInstruction& inst)
                 b = m_regi[b].x;
             if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
-
             m_regi[x0].x = b * c;
         }
         else
@@ -757,7 +766,7 @@ void Program::handle_OP_ADRP(const ExecInstruction& inst)
     {
         if (inst.argv[1] < m_dataTable.capacity())
         {
-            uint8_t* base          = m_dataTable.ptr();
+            uint8_t* base = m_dataTable.ptr();
             m_regi[inst.argv[0]].x = (size_t)(&base[inst.argv[1]]);
         }
     }
@@ -766,32 +775,31 @@ void Program::handle_OP_ADRP(const ExecInstruction& inst)
 void Program::handle_OP_PRG(const ExecInstruction& inst)
 {
     if (inst.flags & IF_REG0)
+    {
         cout << (int64_t)m_regi[inst.argv[0]].x << std::endl;
+    }
     else
+    {
         cout << (int64_t)inst.argv[0] << std::endl;
+    }
 }
 
 void Program::handle_OP_PRGI(const ExecInstruction& inst)
 {
     int i;
-    for (i = 0; i < 10; ++i)
+
+    stringstream ss;
+    for (i = 0; i < MAX_REG; ++i)
     {
-        cout << setw(4) << ' ' << 'x' << i << ' ';
-        cout << setw(22);
-        cout << m_regi[i].x << setw(4) << ' ';
-        cout << setfill('0');
-        cout << hex;
-        cout << setw(2) << (int)m_regi[i].b[7] << ' ';
-        cout << setw(2) << (int)m_regi[i].b[6] << ' ';
-        cout << setw(2) << (int)m_regi[i].b[5] << ' ';
-        cout << setw(2) << (int)m_regi[i].b[4] << ' ';
-        cout << setw(2) << (int)m_regi[i].b[3] << ' ';
-        cout << setw(2) << (int)m_regi[i].b[2] << ' ';
-        cout << setw(2) << (int)m_regi[i].b[1] << ' ';
-        cout << setw(2) << (int)m_regi[i].b[0] << ' ';
+        ss << "0x" << setfill('0') << uppercase << hex << m_regi[i].x;
+        cout << ' ' << 'x' << left << setw(4) <<  i << ' ';
+        cout << right << setw(17) << ss.str();
+        cout << ' ';
         cout << dec;
-        cout << setfill(' ');
-        cout << '\n';
+        cout << setw(22);
+        cout << m_regi[i].x;
+        cout << endl;
+        ss.str("");
     }
 }
 
@@ -868,25 +876,25 @@ bool Program::testInstruction(const ExecInstruction& exec)
         break;
     case OP_PRG:
         if (exec.flags & IF_REG0)
-            pass = exec.argv[0] < 10;
+            pass = exec.argv[0] < MAX_REG;
         break;
     case OP_DEC:
     case OP_INC:
         pass = (exec.flags & IF_REG0) != 0;
         if (pass)
-            pass = exec.argv[0] < 10;
+            pass = exec.argv[0] < MAX_REG;
         break;
     case OP_CMP:
         if (exec.flags & IF_REG0)
-            pass = exec.argv[0] < 10;
+            pass = exec.argv[0] < MAX_REG;
         if (exec.flags & IF_REG1)
-            pass = exec.argv[1] < 10;
+            pass = exec.argv[1] < MAX_REG;
         break;
     case OP_ADRP:
         pass = (exec.flags & IF_REG0) != 0;
         if (pass)
         {
-            pass = exec.argv[0] < 10;
+            pass = exec.argv[0] < MAX_REG;
             if (pass)
                 pass = (exec.flags & IF_ADRD) != 0;
         }
@@ -901,16 +909,16 @@ bool Program::testInstruction(const ExecInstruction& exec)
         pass = (exec.flags & IF_REG0) != 0;
         if (pass)
         {
-            pass = exec.argv[0] < 10;
+            pass = exec.argv[0] < MAX_REG;
             if (pass)
             {
                 if (exec.flags & IF_REG1)
-                    pass = exec.argv[1] < 10;
+                    pass = exec.argv[1] < MAX_REG;
             }
             if (pass)
             {
                 if (exec.flags & IF_REG2)
-                    pass = exec.argv[2] < 10;
+                    pass = exec.argv[2] < MAX_REG;
             }
         }
         break;

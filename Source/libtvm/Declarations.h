@@ -32,6 +32,7 @@
 
 #define INS_ARG 3
 #define MAX_KWD 5
+#define MAX_REG 31
 
 typedef std::string        str_t;
 typedef std::vector<str_t> strvec_t;
@@ -44,7 +45,7 @@ typedef union Register {
     uint64_t x;
 } Register;
 
-typedef Register Registers[10];
+typedef Register Registers[MAX_REG];
 
 enum RegisterArg
 {
@@ -67,7 +68,7 @@ const uint16_t SizeFlags[3][3] = {
 
 enum ProgramFlags
 {
-    PF_E = 1 << 0,
+    PF_Z = 1 << 0,
     PF_G = 1 << 1,
     PF_L = 1 << 2,
 };
@@ -264,6 +265,7 @@ struct ExecInstruction
     uint8_t  op;
     uint8_t  argc;
     uint16_t flags;
+    uint16_t type;
     uint64_t argv[INS_ARG];
     Symbol   call;
 };
@@ -280,12 +282,12 @@ using ExecInstructions = std::vector<ExecInstruction>;
 using Stack            = std::stack<uint64_t>;
 using DataLookup       = std::unordered_map<str_t, DataDeclaration>;
 
-#define _RELITAVE_TIME_CHECK_BEGIN                                    \
+#define _TIME_CHECK_BEGIN                                    \
     {                                                                 \
         chrono::high_resolution_clock::time_point begintick, endtick; \
         begintick = chrono::high_resolution_clock().now();            \
         {
-#define _RELITAVE_TIME_CHECK_END                                      \
+#define _TIME_CHECK_END                                      \
     }                                                                 \
     endtick = chrono::high_resolution_clock().now();                  \
     cout << __FUNCTION__ << " exec("                                  \

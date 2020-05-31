@@ -10,7 +10,6 @@ bl exported_symbol
 
 As of right now, there are two main programs in the repo.
 
-
 * tcom
 * tvm
 
@@ -53,43 +52,47 @@ done:
 
 ### Registers
 
-It has a total of ten 64 bit registers that it can use.
+It has a total of 30 64 bit registers that may be used.
 
-| Registers | Size   | Offset | status |
-|:----------|--------|--------|--------|
-| x(n)      | 64-bit | 0      | done   |
-| l(n)      | 32-bit | 2      | todo   |
-| w(n)      | 16-bit | 4      | todo   |
-| b(n)      | 8-bit  | 8      | todo   |
-
-Each register is a union, so for ten 64 bit registers, there are a total of 20 32-bit registers,
-40 16 bit registers, and 80 8-bit registers.
+| Registers | Size   | Offset |
+|:----------|--------|--------|
+| b(n)      | 8-bit  | 8      |
+| l(n)      | 32-bit | 2      |
+| w(n)      | 16-bit | 4      |
+| x(n)      | 64-bit | 0      |
 
 #### Current op codes
 
-| Opcode | Usage            | o1  | o2  | o3(Ex) | Description                                          |
-|:-------|:-----------------|:---:|:---:|:------:|------------------------------------------------------|
-| mov    | mov dest, source |  R  | R/V |        | moves the source value into the destination register |
-| ret    | ret              |     |     |        | return values should be placed in the x0 register    |
-| cmp    | cmp o1, o2       | R/V | R/V |        | does a logical comparison of o1, and o2              |
-| inc    | inc o1           |  R  |     |        | increments o1 by 1                                   |
-| dec    | dec o1           |  R  |     |        | decrements o1 by 1                                   |
-| b      | b label          |  A  |     |        | branch to label.                                     |
-| bl     | bl label         |  A  |     |        | branch with link.                                    |
-| beq    | beq label        |  A  |     |        | branch if the E flag is set.                         |
-| bne    | bne label        |  A  |     |        | branch if the E flag is not set.                     |
-| bgt    | bgt label        |  A  |     |        | branch if the G flag is set.                         |
-| blt    | blt label        |  A  |     |        | branch if the L flag is set.                         |
-| bge    | bge label        |  A  |     |        | branch if the G or E flags are set.                  |
-| ble    | ble label        |  A  |     |        | branch if the L or E flags are set.                  |
-| add    | add o1, o2, o3   |  R  | R/V |  R/V   | add o1 and o2 and store the result in o1             |
-| sub    | sub o1, o2, o3   |  R  | R/V |  R/V   | subtract o1 and o2 and store the result in o1        |
-| mul    | mul o1, o2, o3   |  R  | R/V |  R/V   | multiply o1 and o2 and store the result in o1        |
-| div    | div o1, o2, o3   |  R  | R/V |  R/V   | divide o1 and o2 and store the result in o1          |
-| shr    | shr o1, o2, o3   |  R  | R/V |  R/V   | shift o1 right by o2 and store the result in o1      |
-| shl    | shl o1, o2, o3   |  R  | R/V |  R/V   | shift o1 left by o2 and store the result in o1       |
-| prg    | prg o1           | R/V |     |        | prints the operand to stdout.                        |
-| prgi   | prgi             |     |     |        | prints the contents of all registers to stdout.      |
+| Opcode | Usage          | o1  | o2  | o3(Ex) | Description                                                                                                             |
+|:-------|:---------------|:---:|:---:|:------:|-------------------------------------------------------------------------------------------------------------------------|
+| mov    | mov o1, o2     |  R  | R/V |        | Moves the o2 into the o1 register.                                                                                      |
+| ret    | ret            |     |     |        | Returns to the calling branch or exits the program if the call stack is empty.                                          |
+| cmp    | cmp o1, o2     | R/V | R/V |        | Subtracts o1 and o2 and sets the Z, G, L flags.                                                                         |
+| inc    | inc o1         |  R  |     |        | Increments o1 by 1.                                                                                                     |
+| dec    | dec o1         |  R  |     |        | Decrements o1 by 1.                                                                                                     |
+| b      | b label        |  A  |     |        | Branch to local label (will not work for calls and does not store the location that it branched from).                  |
+| bl     | bl label       |  A  |     |        | Branch with link (used to call symbols or branch to labels. Returns to previous branch location when ret is processed). |
+| beq    | beq label      |  A  |     |        | Branch if the Z flag is set.                                                                                            |
+| bne    | bne label      |  A  |     |        | Branch if the Z flag is not set.                                                                                        |
+| bgt    | bgt label      |  A  |     |        | Branch if the G flag is set.                                                                                            |
+| blt    | blt label      |  A  |     |        | Branch if the L flag is set.                                                                                            |
+| bge    | bge label      |  A  |     |        | Branch if the G or Z flags are set.                                                                                     |
+| ble    | ble label      |  A  |     |        | Branch if the L or Z flags are set.                                                                                     |
+| add    | add o1, o2, o3 |  R  | R/V |  R/V   | Add o1 and o2 and store the result in o1.                                                                               |
+| sub    | sub o1, o2, o3 |  R  | R/V |  R/V   | Subtract o1 and o2 and store the result in o1.                                                                          |
+| mul    | mul o1, o2, o3 |  R  | R/V |  R/V   | Multiply o1 and o2 and store the result in o1.                                                                          |
+| div    | div o1, o2, o3 |  R  | R/V |  R/V   | Divide o1 and o2 and store the result in o1.                                                                            |
+| shr    | shr o1, o2, o3 |  R  | R/V |  R/V   | Shift o1 right by o2 and store the result in o1.                                                                        |
+| shl    | shl o1, o2, o3 |  R  | R/V |  R/V   | Shift o1 left by o2 and store the result in o1.                                                                         |
+| adrp   | adrp o1, label |  R  |  A  |        | Loads the base address of the label into the specified register.                                                        |
+| prg    | prg o1         | R/V |     |        | Prints the operand to stdout.                                                                                           |
+| prgi   | prgi           |     |     |        | Prints the contents of all registers to stdout.                                                                         |
+
+| Flags | Meaning    |  |
+|:------|------------|--|
+| Z     | o1-o2 == 0 |  |
+| G     | o1-o2 > 0  |  |
+| L     | o1-o2 < 0  |  |
 
 ## tvm
 

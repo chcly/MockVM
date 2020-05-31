@@ -334,12 +334,10 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
     if (shlib != nullptr)
     {
         str_t lookup = lib + "_init";
-
         LibSymbol sym = GetSymbolAddress(shlib, lookup.c_str());
         if (sym != nullptr)
         {
             SymbolTable* avail = ((ModuleInit)sym)();
-
             if (avail == nullptr)
             {
                 printf("symbol initialization failed in %s\n",
@@ -386,14 +384,11 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
 
 int BinaryWriter::resolve(strvec_t& modules)
 {
-    int                status = PS_OK;
-    strvec_t::iterator it     = modules.begin();
-    while (it != modules.end() && status == PS_OK)
-    {
-        const str_t& mod = (*it++);
+    int status = PS_OK;
 
-        status = loadSharedLibrary(mod);
-    }
+    strvec_t::iterator it = modules.begin();
+    while (it != modules.end() && status == PS_OK)
+        status = loadSharedLibrary(*it++);
     return status;
 }
 
@@ -416,7 +411,7 @@ int BinaryWriter::writeHeader()
     m_sizeOfCode = calculateInstructionSize();
     if (m_sizeOfCode == 0)
     {
-        printf("nothing to write\n");
+        printf("no instructions to write\n");
         return PS_ERROR;
     }
 
@@ -453,6 +448,7 @@ size_t BinaryWriter::writeDataSection(void)
     sec.size       = (uint32_t)m_sizeOfData;
     sec.entry      = m_header.dat;
     sec.align      = getAlignment(m_sizeOfData);
+  
     write(&sec, sizeof(TVMSection));
     write(m_dataTable.ptr(), m_dataTable.size());
 
@@ -472,20 +468,24 @@ size_t BinaryWriter::writeCodeSection(void)
     size_t entry = findLabel("main");
     if (entry == -1)
     {
-        printf("failed to find main entry point.\n");
+        printf("failed to find main entry point\n");
         return PS_ERROR;
     }
     sec.entry = (uint32_t)entry;
-    write(&sec, sizeof(TVMSection));
 
-    for (Instruction ins : m_ins)
+    write(&sec, sizeof(TVMSection));
+    int i;
+
+    Instructions::iterator it = m_ins.begin(), end = m_ins.end();
+    while (it != end)
     {
+        const Instruction& ins = (*it++);
+
         write8(ins.op);
         write8(ins.argc);
         write16(ins.flags);
         write16(ins.sizes);
 
-        int i;
         for (i = 0; i < ins.argc; ++i)
         {
             if (ins.sizes & SizeFlags[i][0])

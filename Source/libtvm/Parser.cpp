@@ -385,7 +385,7 @@ int32_t Parser::handleAsciiState(Token& tok)
 {
     int32_t st = ST_CONTINUE;
 
-    uint8_t ch = m_reader.next();
+    int32_t ch = m_reader.next();
     if (ch == '"')
     {
         ch = m_reader.next();
@@ -425,14 +425,17 @@ int32_t Parser::handleTermination(Token& tok, uint8_t ch)
     m_state = ST_INITIAL;
 
     size_t sz = tok.value.size();
-    if (sz == 2)
+    if (sz > 1)
     {
-        if (tok.value[1] >= '0' && tok.value[1] <= '9')
+        uint8_t v0 = tok.value[0];
+        uint8_t v1 = tok.value[1];
+        uint8_t v2 = sz > 2 ? tok.value[2] : 0;
+
+        if (isDigit(v1))
         {
-            char ch = tok.value[0];
-            if (ch == 'x' || ch == 'b' || ch == 'w' || ch == 'l')
+            if (v0 == 'x' || v0 == 'b' || v0 == 'w' || v0 == 'l')
             {
-                switch (ch)
+                switch (v0)
                 {
                 case 'b':
                     tok.regtype = IF_BTEB;
@@ -447,13 +450,20 @@ int32_t Parser::handleTermination(Token& tok, uint8_t ch)
                 default:
                     break;
                 }
+
                 tok.type = TOK_REGISTER;
-                tok.reg  = tok.value[1] - '0';
+                tok.reg  = v1 - '0';
+
+                if (isDigit(v2))
+                {
+                    tok.reg *= 10;
+                    tok.reg += v2 - '0';
+                }
                 tok.value.clear();
                 return ST_MAX;
             }
         }
-        else if (tok.value[0] == 's' && tok.value[1] == 'p')
+        else if (v0 == 's' && v1 == 'p')
         {
             tok.type    = TOK_REGISTER;
             tok.reg     = 0;
@@ -461,7 +471,7 @@ int32_t Parser::handleTermination(Token& tok, uint8_t ch)
             tok.value.clear();
             return ST_MAX;
         }
-        else if (tok.value[0] == 'p' && tok.value[1] == 'c')
+        else if (v0 == 'p' && v1 == 'c')
         {
             tok.type    = TOK_REGISTER;
             tok.reg     = 0;
@@ -687,10 +697,27 @@ void Parser::markArgumentAsRegister(Instruction& ins, const Token& tok, int idx)
         ins.flags |= IF_REG2;
         break;
     }
-    if (tok.regtype == IF_STKP)
+
+    switch (tok.regtype)
+    {
+    case IF_STKP:
         ins.flags |= IF_STKP;
-    else if (tok.regtype == IF_INSP)
+        break;
+    case IF_INSP:
         ins.flags |= IF_INSP;
+        break;
+    case IF_BTEB:
+        ins.flags |= IF_BTEB;
+        break;
+    case IF_BTEW:
+        ins.flags |= IF_BTEW;
+        break;
+    case IF_BTEL:
+        ins.flags |= IF_BTEL;
+        break;
+    default:
+        break;
+    }
 }
 
 int32_t Parser::handleArgument(Instruction&      ins,

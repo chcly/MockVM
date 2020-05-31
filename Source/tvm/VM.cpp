@@ -49,6 +49,7 @@ int main(int argc, char **argv)
 
     ProgramInfo ctx = {};
     int         i;
+
     for (i = 1; i < argc; ++i)
     {
         if (argv[i][0] != '-')
@@ -82,14 +83,14 @@ int main(int argc, char **argv)
 
     Program prog(ctx.modulePath);
     if (prog.load(ctx.file.c_str()) != PS_OK)
-        return -1;
+        return 1;
 
     int rc = 0;
     if (ctx.time)
     {
-        _RELITAVE_TIME_CHECK_BEGIN
+        _TIME_CHECK_BEGIN
         rc = prog.launch();
-        _RELITAVE_TIME_CHECK_END;
+        _TIME_CHECK_END;
     }
     else
         rc = prog.launch();

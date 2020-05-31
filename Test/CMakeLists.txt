@@ -29,44 +29,46 @@ macro(add_compile_tests OUT Group)
         get_filename_component(ASMNAME ${it}      NAME)
 
         set(GEN_FILE     ${CMAKE_BINARY_DIR}/${GENNAME})
+        set(CMP_FILE     ${CMAKE_BINARY_DIR}/${GENNAME}.txt)
         set(GEN_FILE_ANS ${CMAKE_BINARY_DIR}/${GENNAME}.ans)
         set(GEN_FILE_EXP ${CMAKE_CURRENT_SOURCE_DIR}/${Group}/${GENNAME}.ans)
 
-        list(APPEND ${OUT} ${GEN_FILE})
+        list(APPEND ${OUT} ${GEN_FILE} ${CMP_FILE})
         list(APPEND ${OUT} ${ASMFILE})
         list(APPEND ${OUT} ${GEN_FILE_EXP})
         list(APPEND ${OUT} ${GEN_FILE_ANS})
 
         set_source_files_properties(${GEN_FILE_ANS} GENERATED)
+        set_source_files_properties(${CMP_FILE} GENERATED)
+        
         source_group("Test\\${Group}\\Input"    FILES ${ASMFILE})
-        source_group("Test\\${Group}\\Output"   FILES ${GEN_FILE})
+        source_group("Test\\${Group}\\Output"   FILES ${GEN_FILE} ${CMP_FILE})
         source_group("Test\\${Group}\\Expected" FILES ${GEN_FILE_EXP})
         source_group("Test\\${Group}\\Actual"   FILES ${GEN_FILE_ANS})
 
-
         add_custom_command(
-            OUTPUT ${GEN_FILE}
+            OUTPUT ${GEN_FILE} ${GEN_FILE_ANS}
+            MAIN_DEPENDENCY ${ASMFILE}
             COMMAND ${tcom} -o ${GEN_FILE} ${ASMFILE}
             COMMAND ${tvm} ${GEN_FILE} > ${GEN_FILE_ANS}
-            MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm fcmp std
             COMMENT "${ASMNAME}"
             VERBATIM
         )
 
         add_custom_command(
-            OUTPUT ${GEN_FILE}.txt
+            OUTPUT ${CMP_FILE}
             MAIN_DEPENDENCY ${GEN_FILE_ANS}
-            COMMAND ${fcmp} ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${GEN_FILE}.txt
             DEPENDS tcom tvm fcmp std ${GEN_FILE}
+            COMMAND ${fcmp} ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${CMP_FILE}
             VERBATIM
-            COMMENT ""
+            COMMENT "${GENNAME}.ans"
         )
     endforeach(it)
 endmacro(add_compile_tests)
 
 
-macro(add_temp_test OUT Group)
+macro(add_temp_test OUT)
     foreach (it IN ITEMS ${ARGN})
         get_filename_component(ASMFILE ${it}      ABSOLUTE)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
@@ -78,8 +80,8 @@ macro(add_temp_test OUT Group)
         list(APPEND ${OUT} ${GEN_FILE})
         list(APPEND ${OUT} ${ASMFILE})
 
-        source_group("Test\\${Group}\\Input"  FILES ${ASMFILE})
-        source_group("Test\\${Group}\\Output" FILES ${GEN_FILE})
+        source_group("WorkingTests\\Input"  FILES ${ASMFILE})
+        source_group("WorkingTests\\Output" FILES ${GEN_FILE})
 
         add_custom_command(
             OUTPUT ${GEN_FILE}
@@ -101,22 +103,24 @@ macro(add_test_dump_err OUT Group)
 
         set(GEN_FILE_ANS ${CMAKE_BINARY_DIR}/${GENNAME}.ans)
         set(GEN_FILE_EXP ${CMAKE_CURRENT_SOURCE_DIR}/${Group}/${GENNAME}.ans)
+        set(CMP_FILE     ${CMAKE_BINARY_DIR}/${GENNAME}.txt)
 
-        list(APPEND ${OUT} ${GEN_FILE_ANS})
+        list(APPEND ${OUT} ${GEN_FILE_ANS} ${CMP_FILE})
         list(APPEND ${OUT} ${ASMFILE})
         list(APPEND ${OUT} ${GEN_FILE_EXP})
         list(APPEND ${OUT} ${GEN_FILE_ANS})
         set_source_files_properties(${GEN_FILE_ANS} GENERATED)
+        set_source_files_properties(${CMP_FILE} GENERATED)
 
         source_group("Test\\${Group}\\Input"    FILES ${ASMFILE})
-        source_group("Test\\${Group}\\Output"   FILES ${GEN_FILE})
+        source_group("Test\\${Group}\\Output"   FILES ${GEN_FILE} ${CMP_FILE})
         source_group("Test\\${Group}\\Expected" FILES ${GEN_FILE_EXP})
         source_group("Test\\${Group}\\Actual"   FILES ${GEN_FILE_ANS})
 
         add_custom_command(
             OUTPUT ${GEN_FILE_ANS}
             COMMAND ${tcom} -d -o ${GEN_FILE} ${ASMFILE} > ${GEN_FILE_ANS}  ||
-                    ${fcmp} ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${GEN_FILE}.txt
+                    ${fcmp} ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${CMP_FILE}
             MAIN_DEPENDENCY ${ASMFILE}
             DEPENDS tcom tvm fcmp std
             COMMENT "${ASMNAME}"
@@ -164,6 +168,12 @@ set(TestFiles_3
     Errors/Err3.asm
 )
 
+set(TestFiles_0
+    Test.asm
+)
+
+#add_temp_test(Outfiles_0 ${TestFiles_0})
+
 add_compile_tests(OutFiles_1 Basic  ${TestFiles_1})
 add_compile_tests(OutFiles_2 Exec   ${TestFiles_2})
 add_test_dump_err(OutFiles_3 Errors ${TestFiles_3})
@@ -175,6 +185,7 @@ set(SRC_ALL
     Parser.cpp
     MemoryStream.cpp
     BlockReader.cpp
+    ${Outfiles_0}
     ${OutFiles_1}
     ${OutFiles_2}
     ${OutFiles_3}
