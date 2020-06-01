@@ -161,6 +161,7 @@ set(TestFiles_2
     Exec/Mul1.asm
     Exec/Div1.asm
     Exec/Fib1.asm
+    Exec/Base.asm
 )
 
 set(TestFiles_3

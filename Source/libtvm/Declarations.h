@@ -165,8 +165,10 @@ enum Opcode
     OP_SHR,      // shr r(n), src
     OP_SHL,      // shl r(n), src
     OP_ADRP,     // adrp r(n), addr
-    OP_STR,      // str r(n), [sp, index]
-    OP_LDR,      // ldr r(n), [sp, index]
+    OP_STR,      // str r(n),  [r(n), index]
+    OP_LDR,      // ldr  r(n), [r(n), index]
+    OP_LDRS,     // ldsr r(n), [r(n), index]
+    OP_STRS,     // strs r(n), [r(n), index]
     OP_STP,      // stp r(n), val
     OP_LDP,      // ldp r(n), val
     // ---- debugging ----

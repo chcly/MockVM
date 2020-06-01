@@ -81,6 +81,8 @@ private:
     void handle_OP_LDP(const ExecInstruction& inst);
     void handle_OP_STR(const ExecInstruction& inst);
     void handle_OP_LDR(const ExecInstruction& inst);
+    void handle_OP_LDRS(const ExecInstruction& inst);
+    void handle_OP_STRS(const ExecInstruction& inst);
     void handle_OP_PRG(const ExecInstruction& inst);
     void handle_OP_PRGI(const ExecInstruction& inst);
 

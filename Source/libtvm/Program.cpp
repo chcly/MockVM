@@ -631,6 +631,7 @@ void Program::handle_OP_SUB(const ExecInstruction& inst)
                 b = m_regi[b].x;
             if (inst.flags & IF_REG2)
                 c = m_regi[c].x;
+
             m_regi[x0].x = b - c;
         }
         else
@@ -819,7 +820,7 @@ void Program::handle_OP_LDP(const ExecInstruction& inst)
 {
     if (inst.flags & IF_STKP)
     {
-        uint64_t nrel = inst.argv[1] / 8; 
+        uint64_t nrel = inst.argv[1] / 8;
         if (nrel > 32)
         {
             // stp sp, > 256
@@ -849,15 +850,16 @@ void Program::handle_OP_STR(const ExecInstruction& inst)
         {
             // o1 -> o2
 
-            size_t stk = m_stack.size();
-            size_t idx = (inst.index / 8);
-            size_t rem = (inst.index % 8);
+            uint32_t stk = m_stack.size();
+            uint32_t idx = (inst.index / 8);
+            uint32_t rem = (inst.index % 8);
 
             if (inst.flags & IF_REG0)
             {
                 if (idx < stk)
                 {
                     uint64_t& dest = m_stack.peek(idx);
+
                     if (rem == 0)
                         dest = m_regi[inst.argv[0]].x;
                     else
@@ -923,6 +925,57 @@ void Program::handle_OP_LDR(const ExecInstruction& inst)
         }
         else
             dest.x = m_regi[inst.argv[1]].x;
+    }
+}
+
+
+
+void Program::handle_OP_LDRS(const ExecInstruction& inst)
+{
+    if (inst.flags & IF_REG1)
+    {
+        // o1 <- o2
+
+        Register& dreg = m_regi[inst.argv[0]];
+        const Register& src = m_regi[inst.argv[1]];
+
+        size_t sptr = src.x;
+        uint8_t* ptr  = (uint8_t*)sptr;
+
+        if (ptr)
+        {
+            if (inst.index < MAX_REG)
+            {
+                size_t i = m_regi[inst.index].x;
+                if (i < m_dataTable.capacity())
+                    dreg.x   = ptr[i];
+            }
+        }
+    }
+}
+
+
+
+void Program::handle_OP_STRS(const ExecInstruction& inst)
+{
+    if (inst.flags & IF_REG1)
+    {
+        // o1 -> o2
+
+        const Register& dreg = m_regi[inst.argv[0]];
+        Register&       src  = m_regi[inst.argv[1]];
+
+        size_t   sptr = src.x;
+        uint8_t* ptr  = (uint8_t*)sptr;
+        if (ptr)
+        {
+            if (inst.index < MAX_REG)
+            {
+                size_t i = m_regi[inst.index].x;
+                if (i < m_dataTable.capacity())
+                    ptr[i] = (uint8_t)dreg.x;
+            }
+        }
     }
 }
 
@@ -992,6 +1045,8 @@ bool Program::testInstruction(const ExecInstruction& exec)
     case OP_LDR:
     case OP_STP:
     case OP_LDP:
+    case OP_LDRS:
+    case OP_STRS:
         pass = exec.argc == 2;
         break;
     case OP_ADD:
@@ -1068,6 +1123,8 @@ bool Program::testInstruction(const ExecInstruction& exec)
     case OP_LDR:
     case OP_STP:
     case OP_LDP:
+    case OP_LDRS:
+    case OP_STRS:
         pass = (exec.flags & IF_REG0) != 0;
         if (pass)
         {
@@ -1123,6 +1180,8 @@ const Program::Operation Program::OPCodeTable[] = {
     &Program::handle_OP_ADRP,
     &Program::handle_OP_STR,
     &Program::handle_OP_LDR,
+    &Program::handle_OP_LDRS,
+    &Program::handle_OP_STRS,
     &Program::handle_OP_STP,
     &Program::handle_OP_LDP,
     &Program::handle_OP_PRG,

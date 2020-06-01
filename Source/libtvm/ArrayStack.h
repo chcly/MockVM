@@ -55,7 +55,7 @@ public:
         }
     }
 
-    void reserve(int32_t nr)
+    void reserve(uint32_t nr)
     {
         if (nr > m_capacity)
         {
@@ -63,7 +63,7 @@ public:
 
             if (m_size > 0 && m_data != nullptr)
             {
-                int32_t i;
+                uint32_t i;
                 for (i = 0; i < m_size; i++)
                     dt[i] = m_data[i];
             }
@@ -91,7 +91,7 @@ public:
 
     const uint64_t& peek(const size_t& idx) const
     {
-        int32_t iv = (m_size - 1) - (int32_t)idx;
+        int32_t iv = (int32_t)(m_size - 1) - (int32_t)idx;
         if (iv >= 0)
             return m_data[iv];
         return m_data[m_capacity];
@@ -99,7 +99,7 @@ public:
 
     uint64_t& peek(const size_t& idx)
     {
-        int32_t iv = (m_size - 1) - (int32_t)idx;
+        int32_t iv = (int32_t)(m_size - 1) - (int32_t)idx;
         if (iv >= 0)
             return m_data[iv];
         return m_data[m_capacity];
@@ -115,19 +115,19 @@ public:
         return m_size <= 0;
     }
 
-    inline const int32_t& size(void) const
+    inline const uint32_t& size(void) const
     {
         return m_size;
     }
 
-    inline const int32_t& capacity(void) const
+    inline const uint32_t& capacity(void) const
     {
         return m_capacity;
     }
 
 private:
-    int32_t m_size;
-    int32_t m_capacity;
+    uint32_t m_size;
+    uint32_t m_capacity;
     Data*   m_data;
 };
 

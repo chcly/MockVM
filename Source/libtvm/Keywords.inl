@@ -61,6 +61,8 @@ const KeywordMap KeywordTable[] = {
     {"ldp\0 ", OP_LDP, 2, ArgTypeStd8},
     {"str\0 ", OP_STR, 2, ArgTypeStd7},
     {"ldr\0 ", OP_LDR, 2, ArgTypeStd7},
+    {"ldrs\0", OP_LDRS, 2, ArgTypeStd7},
+    {"strs\0", OP_STRS, 2, ArgTypeStd7},
     //  ---- debugging ----
     {"prgi\0", OP_PRI, 0, ArgTypeAdr1},
     {"prg\0 ", OP_PRG, 1, ArgTypeStd3},
