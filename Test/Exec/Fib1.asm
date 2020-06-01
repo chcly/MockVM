@@ -21,20 +21,15 @@ retn:
     ret
 
 main:
-    stp  sp, 8
-    mov  x0, 0 
-    str  x0, [sp, 0]
+    mov  x9, 0 
 top:
-    cmp  x0, 25
+    cmp  x9, 25
     beq  done
-    inc  x0
-    str  x0, [sp, 0]
-    dec  x0
+    mov  x0, x9
     bl   fib
     prg  x3
-    ldr  x0, [sp, 0]
+    inc  x9
     b    top
 done:
-    ldp  sp, 8
     mov  x0, 0
     ret
