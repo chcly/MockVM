@@ -29,10 +29,14 @@
 #include <unordered_map>
 #include <vector>
 #include "SharedLib.h"
+#include "ArrayStack.h"
 
 #define INS_ARG 3
 #define MAX_KWD 5
 #define MAX_REG 10
+
+// Maximum number of branches present at one time
+#define MAX_STK 256 
 
 typedef std::string        str_t;
 typedef std::vector<str_t> strvec_t;
@@ -287,9 +291,7 @@ using AddressLookup    = std::unordered_map<str_t, uint64_t>;
 using DynamicLib       = std::vector<void*>;
 using StringMap        = std::unordered_map<str_t, size_t>;
 using ExecInstructions = std::vector<ExecInstruction>;
-using Stack            = std::stack<uint64_t>;
 using DataLookup       = std::unordered_map<str_t, DataDeclaration>;
-using RegisterStack    = std::vector<Register>;
 
 #define _TIME_CHECK_BEGIN                                             \
     {                                                                 \

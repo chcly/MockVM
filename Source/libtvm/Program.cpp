@@ -464,6 +464,11 @@ void Program::handle_OP_CALL(const ExecInstruction& inst)
     {
         m_callStack.push(m_curinst);
         m_curinst = inst.argv[0];
+        if (m_callStack.size() > MAX_STK)
+        {
+            printf("maximum number of branches exceeded.\n");
+            forceExit(-1);
+        }
     }
     else
     {
@@ -789,12 +794,13 @@ void Program::handle_OP_STP(const ExecInstruction& inst)
         uint64_t nrel = inst.argv[1] / 8;
         if (nrel > 32)
         {
+            // stp sp, > 256
             printf("Stack size exceeded\n");
             forceExit(-1);
         }
         else
         {
-            if (m_stack.size() >= 512)
+            if (m_stack.size() >= MAX_STK)
             {
                 printf("stack overflow.\n");
                 forceExit(-2);
@@ -813,10 +819,11 @@ void Program::handle_OP_LDP(const ExecInstruction& inst)
 {
     if (inst.flags & IF_STKP)
     {
-        uint64_t nrel = inst.argv[1] / 8;
+        uint64_t nrel = inst.argv[1] / 8; 
         if (nrel > 32)
         {
-            printf("Stack size exceeded\n");
+            // stp sp, > 256
+            printf("stack size exceeded\n");
             forceExit(-1);
         }
         else

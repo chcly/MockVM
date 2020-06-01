@@ -29,7 +29,6 @@
 #include "BlockReader.h"
 #include "Declarations.h"
 #include "MemoryStream.h"
-#include "ArrayStack.h"
 
 class Program
 {
