@@ -43,6 +43,8 @@ Program::Program(const str_t& modpath) :
     m_modpath(modpath)
 {
     memset(m_regi, 0, sizeof(Registers));
+    m_stack.reserve(256);
+    m_callStack.reserve(256);
 }
 
 Program::~Program()
@@ -286,6 +288,7 @@ int Program::loadCode(BlockReader& reader)
                 i += reader.read(&exec.argv[a], 8);
             }
         }
+
         if (exec.flags & IF_SYMU)
         {
             if (findDynamic(exec) != PS_OK)
@@ -345,6 +348,7 @@ int Program::findDynamic(ExecInstruction& ins)
                     m_symbols[name] = search;
                 }
             }
+
             ins.call = search;
         }
         else
@@ -594,6 +598,7 @@ void Program::handle_OP_ADD(const ExecInstruction& inst)
                     b = m_regi[b].x;
                 if (inst.flags & IF_REG2)
                     c = m_regi[c].x;
+
                 m_regi[x0].x = b + c;
             }
         }
@@ -771,7 +776,7 @@ void Program::handle_OP_ADRP(const ExecInstruction& inst)
     {
         if (inst.argv[1] < m_dataTable.capacity())
         {
-            uint8_t* base = m_dataTable.ptr();
+            uint8_t* base          = m_dataTable.ptr();
             m_regi[inst.argv[0]].x = (size_t)(&base[inst.argv[1]]);
         }
     }
@@ -796,11 +801,9 @@ void Program::handle_OP_STP(const ExecInstruction& inst)
             }
             else
             {
-                m_stack.reserve(nrel);
-
                 uint64_t i;
                 for (i = 0; i < nrel; ++i)
-                    m_stack.push_back({0});
+                    m_stack.push(0);
             }
         }
     }
@@ -820,7 +823,7 @@ void Program::handle_OP_LDP(const ExecInstruction& inst)
         {
             uint64_t i;
             for (i = 0; i < nrel && !m_stack.empty(); ++i)
-                m_stack.pop_back();
+                m_stack.pop();
         }
     }
 }
@@ -847,11 +850,9 @@ void Program::handle_OP_STR(const ExecInstruction& inst)
             {
                 if (idx < stk)
                 {
-                    idx = (stk - 1) - idx;
-
-                    Register& dest = m_stack.at(idx);
+                    uint64_t& dest = m_stack.peek(idx);
                     if (rem == 0)
-                        dest.x = m_regi[inst.argv[0]].x;
+                        dest = m_regi[inst.argv[0]].x;
                     else
                     {
                         // place elsewhere in the register
@@ -883,11 +884,9 @@ void Program::handle_OP_LDR(const ExecInstruction& inst)
             {
                 if (idx < stk)
                 {
-                    idx = (stk - 1) - idx;
-
-                    const Register& src = m_stack.at(idx);
+                    const uint64_t& src = m_stack.peek(idx);
                     if (rem == 0)
-                        m_regi[inst.argv[0]].x = src.x;
+                        m_regi[inst.argv[0]].x = src;
                     else
                     {
                         // place elsewhere in the register
@@ -915,9 +914,8 @@ void Program::handle_OP_LDR(const ExecInstruction& inst)
             if (inst.index < 2)
                 dest.l[inst.index] = m_regi[inst.argv[1]].l[inst.index];
         }
-        else 
+        else
             dest.x = m_regi[inst.argv[1]].x;
-
     }
 }
 

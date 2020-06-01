@@ -29,6 +29,7 @@
 #include "BlockReader.h"
 #include "Declarations.h"
 #include "MemoryStream.h"
+#include "ArrayStack.h"
 
 class Program
 {
@@ -45,12 +46,12 @@ private:
     uint64_t         m_curinst;
     LabelMap         m_strtab;
     strvec_t         m_strtablist;
-    Stack            m_callStack;
+    ArrayStack       m_callStack;
     str_t            m_modpath;
     DynamicLib       m_dynlib;
     SymbolMap        m_symbols;
     MemoryStream     m_dataTable;
-    RegisterStack    m_stack;
+    ArrayStack       m_stack;
 
     const static InstructionTable OPCodeTable;
     const static size_t           OPCodeTableSize;

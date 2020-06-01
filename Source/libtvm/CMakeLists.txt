@@ -31,6 +31,7 @@ set(CommonSource
 
 
 set(CommonHeader
+    ArrayStack.h
     BlockReader.h
     BinaryWriter.h
     Parser.h

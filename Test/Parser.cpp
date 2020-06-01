@@ -133,9 +133,74 @@ TEST_CASE("Scan5")
 {
     const std::string TestFile = std::string(TestDirectory) + "/Scan/Scan5.asm";
 
+    Token  tok;
     Parser p;
-    int    sr = p.parse(TestFile.c_str());
+    int    sr = p.open(TestFile.c_str());
     EXPECT_EQ(sr, PS_OK);
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_SECTION);
+    EXPECT_EQ(tok.value, "data");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_LABEL);
+    EXPECT_EQ(tok.value, "message1");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_SECTION);
+    EXPECT_EQ(tok.value, "asciz");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_ASCII);
+    EXPECT_EQ(tok.value, "Hello World #1");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_LABEL);
+    EXPECT_EQ(tok.value, "message2");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_SECTION);
+    EXPECT_EQ(tok.value, "asciz");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_ASCII);
+    EXPECT_EQ(tok.value, "Hello World #2");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_LABEL);
+    EXPECT_EQ(tok.value, "message3");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_SECTION);
+    EXPECT_EQ(tok.value, "asciz");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_ASCII);
+    EXPECT_EQ(tok.value, "Hello World #3");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_LABEL);
+    EXPECT_EQ(tok.value, "message4");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_SECTION);
+    EXPECT_EQ(tok.value, "asciz");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_ASCII);
+    EXPECT_EQ(tok.value, "Hello World #4");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_LABEL);
+    EXPECT_EQ(tok.value, "message5");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_SECTION);
+    EXPECT_EQ(tok.value, "asciz");
+
+    p.scan(tok);
+    EXPECT_EQ(tok.type, TOK_ASCII);
+    EXPECT_EQ(tok.value, "Hello World #5");
 }
 
 TEST_CASE("Scan6")
