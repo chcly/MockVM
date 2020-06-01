@@ -29,34 +29,42 @@ const uint8_t ArgTypeStd2[3] = {AT_RVAL, AT_RVAL, AT_NULL};
 const uint8_t ArgTypeStd3[3] = {AT_RVAL, AT_NULL, AT_NULL};
 const uint8_t ArgTypeStd4[3] = {AT_REGI, AT_RVAL, AT_RVAL};
 const uint8_t ArgTypeStd5[3] = {AT_REGI, AT_ADDR, AT_NULL};
+const uint8_t ArgTypeStd6[3] = {AT_REGI, AT_RVAL, AT_RVAA};
+const uint8_t ArgTypeStd7[3] = {AT_REGI, AT_RIDX, AT_NULL};
+const uint8_t ArgTypeStd8[3] = {AT_REGI, AT_SVAL, AT_NULL};
 const uint8_t ArgTypeReg1[3] = {AT_REGI, AT_NULL, AT_NULL};
 const uint8_t ArgTypeAdr1[3] = {AT_ADDR, AT_NULL, AT_NULL};
 const uint8_t ArgTypeNone[3] = {AT_REGI, AT_RVAL, AT_NULL};
 
 const KeywordMap KeywordTable[] = {
     {"mov\0 ", OP_MOV, 2, ArgTypeStd1},
-    {"bl\0", OP_GTO, 1, ArgTypeAdr1},
+    {"bl\0  ", OP_GTO, 1, ArgTypeAdr1},
     {"ret\0 ", OP_RET, 0, ArgTypeNone},
     {"inc\0 ", OP_INC, 1, ArgTypeReg1},
     {"dec\0 ", OP_DEC, 1, ArgTypeReg1},
     {"cmp\0 ", OP_CMP, 2, ArgTypeStd2},
-    {"b\0 ", OP_JMP, 1, ArgTypeAdr1},
+    {"b\0   ", OP_JMP, 1, ArgTypeAdr1},
     {"beq\0 ", OP_JEQ, 1, ArgTypeAdr1},
     {"bne\0 ", OP_JNE, 1, ArgTypeAdr1},
     {"blt\0 ", OP_JLT, 1, ArgTypeAdr1},
     {"bgt\0 ", OP_JGT, 1, ArgTypeAdr1},
     {"ble\0 ", OP_JLE, 1, ArgTypeAdr1},
     {"bge\0 ", OP_JGE, 1, ArgTypeAdr1},
-    {"add\0 ", OP_ADD, 2, ArgTypeStd4},
+    {"add\0 ", OP_ADD, 2, ArgTypeStd6},
     {"sub\0 ", OP_SUB, 2, ArgTypeStd4},
     {"mul\0 ", OP_MUL, 2, ArgTypeStd4},
     {"div\0 ", OP_DIV, 2, ArgTypeStd4},
     {"shr\0 ", OP_SHR, 2, ArgTypeStd4},
     {"shl\0 ", OP_SHL, 2, ArgTypeStd4},
     {"adrp\0", OP_ADRP, 2, ArgTypeStd5},
-    //  -- debugging
+    {"stp\0 ", OP_STP, 2, ArgTypeStd8},
+    {"ldp\0 ", OP_LDP, 2, ArgTypeStd8},
+    {"str\0 ", OP_STR, 2, ArgTypeStd7},
+    {"ldr\0 ", OP_LDR, 2, ArgTypeStd7},
+    //  ---- debugging ----
     {"prgi\0", OP_PRI, 0, ArgTypeAdr1},
     {"prg\0 ", OP_PRG, 1, ArgTypeStd3},
+    //  ---- debugging ----
 };
 
 const size_t KeywordTableSize = sizeof(KeywordTable) / sizeof(KeywordMap);

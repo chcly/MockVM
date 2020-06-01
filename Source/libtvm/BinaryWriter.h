@@ -25,7 +25,6 @@
 #include "Declarations.h"
 #include "MemoryStream.h"
 
-
 class BinaryWriter
 {
 private:
@@ -39,6 +38,7 @@ private:
     IndexToPosition m_addrMap;
     LabelMap        m_labels;
     LabelMap        m_strtab;
+    LabelMap        m_datatab;
     strvec_t        m_orderedString;
     strset_t        m_linkedLibraries;
     StringLookup    m_symbols;
@@ -46,7 +46,6 @@ private:
     str_t           m_modpath;
     DataLookup      m_dataDecl;
     MemoryStream    m_dataTable;
-
 
     void write(const void* v, size_t size);
     void write8(uint8_t v);
@@ -59,13 +58,12 @@ private:
     size_t writeSymbolSection(void);
     size_t writeStringSection(void);
 
-
     int mapInstructions(void);
 
     size_t calculateInstructionSize(void);
 
     size_t findLabel(const str_t& name);
-    
+
     size_t addToStringTable(const str_t& symname);
     size_t addToDataTable(const DataDeclaration& dt);
 

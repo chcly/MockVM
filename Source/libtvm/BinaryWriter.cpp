@@ -59,9 +59,10 @@ BinaryWriter::~BinaryWriter()
 
 void BinaryWriter::mergeInstructions(const Instructions& insl)
 {
-    m_ins.reserve(insl.size());
-    for (Instruction ins : insl)
-        m_ins.push_back(ins);
+    m_ins.reserve(m_ins.size() + insl.size());
+    Instructions::const_iterator it = insl.begin(), end = insl.end();
+    while (it != end)
+        m_ins.push_back(*it++);
 }
 
 int BinaryWriter::mergeDataDeclarations(const DataLookup& data)
@@ -71,16 +72,18 @@ int BinaryWriter::mergeDataDeclarations(const DataLookup& data)
     // before execution reaches this step.
     int status = PS_OK;
 
-    DataLookup::const_iterator it = data.begin();
-    while (it != data.end() && status == PS_OK)
+    DataLookup::const_iterator it = data.begin(), end = data.end();
+    while (it != end && status == PS_OK)
     {
-        if (m_dataDecl.find(it->first) != m_dataDecl.end())
+        const str_t& name = it->first;
+        if (m_dataDecl.find(name) != m_dataDecl.end())
         {
-            printf("duplicate label '%s'\n", it->first.c_str());
+            printf("duplicate label '%s'\n", name.c_str());
             status = PS_ERROR;
         }
         else
-            m_dataDecl[it->first] = it->second;
+            m_dataDecl[name] = it->second;
+
         ++it;
     }
     return status;
@@ -169,6 +172,12 @@ size_t BinaryWriter::addToDataTable(const DataDeclaration& dt)
 {
     size_t startAddr = m_sizeOfData;
 
+    LabelMap::iterator it = m_datatab.find(dt.lname);
+    if (it != m_datatab.end())
+        return it->second;
+    else
+        m_datatab[dt.lname] = startAddr;
+
     if (dt.type == SEC_ASCII)
     {
         m_sizeOfData += m_dataTable.writeString(dt.sval.c_str(),
@@ -249,7 +258,10 @@ int BinaryWriter::mapInstructions(void)
             if (it != m_dataDecl.end())
             {
                 // It points to a data entry
-                irp->argv[1] = addToDataTable(it->second);
+                if (irp->flags & IF_REG2)
+                    irp->argv[2] = addToDataTable(it->second);
+                else
+                    irp->argv[1] = addToDataTable(it->second);
                 irp->flags |= IF_ADRD;
             }
             else
@@ -285,6 +297,9 @@ size_t BinaryWriter::calculateInstructionSize(void)
         ins.sizes        = 0;
 
         size += 6;  // op, nr, flags, sizes
+        if (ins.flags & IF_RIDX)
+            size += 1;
+
         for (i = 0; i < ins.argc; ++i)
         {
             if (ins.argv[i] < 0xFF)
@@ -333,8 +348,8 @@ int BinaryWriter::loadSharedLibrary(const str_t& lib)
     LibHandle shlib = LoadSharedLibrary(lib, m_modpath);
     if (shlib != nullptr)
     {
-        str_t lookup = lib + "_init";
-        LibSymbol sym = GetSymbolAddress(shlib, lookup.c_str());
+        str_t     lookup = lib + "_init";
+        LibSymbol sym    = GetSymbolAddress(shlib, lookup.c_str());
         if (sym != nullptr)
         {
             SymbolTable* avail = ((ModuleInit)sym)();
@@ -448,7 +463,7 @@ size_t BinaryWriter::writeDataSection(void)
     sec.size       = (uint32_t)m_sizeOfData;
     sec.entry      = m_header.dat;
     sec.align      = getAlignment(m_sizeOfData);
-  
+
     write(&sec, sizeof(TVMSection));
     write(m_dataTable.ptr(), m_dataTable.size());
 
@@ -485,6 +500,9 @@ size_t BinaryWriter::writeCodeSection(void)
         write8(ins.argc);
         write16(ins.flags);
         write16(ins.sizes);
+
+        if (ins.flags & IF_RIDX)
+            write8(ins.index);
 
         for (i = 0; i < ins.argc; ++i)
         {

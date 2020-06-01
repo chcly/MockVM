@@ -148,6 +148,7 @@ set(TestFiles_1
     Basic/Reg3.asm
     Basic/Data1.asm
     Basic/Data2.asm
+    Basic/Rec1.asm
 )
 
 set(TestFiles_2

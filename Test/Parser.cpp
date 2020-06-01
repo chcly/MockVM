@@ -137,3 +137,12 @@ TEST_CASE("Scan5")
     int    sr = p.parse(TestFile.c_str());
     EXPECT_EQ(sr, PS_OK);
 }
+
+TEST_CASE("Scan6")
+{
+    const std::string TestFile = std::string(TestDirectory) + "/Scan/Scan6.asm";
+
+    Parser p;
+    int    sr = p.parse(TestFile.c_str());
+    EXPECT_EQ(sr, PS_OK);
+}

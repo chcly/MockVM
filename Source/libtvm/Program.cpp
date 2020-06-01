@@ -22,10 +22,11 @@
 #include "Program.h"
 #include <stdint.h>
 #include <string.h>
+#include <cassert>
 #include <iomanip>
 #include <iostream>
-#include <stack>
 #include <sstream>
+#include <stack>
 #include <vector>
 #include "BlockReader.h"
 #include "Declarations.h"
@@ -34,9 +35,7 @@
 
 using namespace std;
 
-const size_t MaxRegisterSize = sizeof(Register) * (MAX_REG -1);
-
-
+const size_t MaxRegisterSize = sizeof(Register) * (MAX_REG - 1);
 
 Program::Program(const str_t& modpath) :
     m_flags(0),
@@ -262,6 +261,9 @@ int Program::loadCode(BlockReader& reader)
         i += reader.read(&exec.flags, 2);
         i += reader.read(&sizes, 2);
 
+        if (exec.flags & IF_RIDX)
+            i += reader.read(&exec.index, 1);
+
         for (a = 0; a < exec.argc && a < INS_ARG; ++a)
         {
             if (sizes & SizeFlags[a][0])
@@ -283,16 +285,16 @@ int Program::loadCode(BlockReader& reader)
             {
                 i += reader.read(&exec.argv[a], 8);
             }
-
-            if (exec.flags & IF_SYMU)
+        }
+        if (exec.flags & IF_SYMU)
+        {
+            if (findDynamic(exec) != PS_OK)
             {
-                if (findDynamic(exec) != PS_OK)
-                {
-                    printf("failed to locate symbol\n");
-                    return PS_ERROR;
-                }
+                printf("failed to locate symbol\n");
+                return PS_ERROR;
             }
         }
+
         if (testInstruction(exec))
             m_ins.push_back(exec);
         else
@@ -370,13 +372,7 @@ int Program::launch(void)
             if (OPCodeTable[inst.op] != nullptr)
                 (this->*OPCodeTable[inst.op])(inst);
         }
-        else
-        {
-            printf("invalid code\n");
-            forceExit(-1);
-        }
     }
-
     if (m_return == -1)
         printf("an error occurred\n");
     return m_return;
@@ -411,7 +407,6 @@ void Program::handle_OP_RET(const ExecInstruction& inst)
 
     if (m_callStack.empty())
         m_curinst = m_ins.size();
-
     m_return = (int32_t)m_regi[0].w[0];
 }
 
@@ -495,7 +490,7 @@ void Program::handle_OP_CMP(const ExecInstruction& inst)
     if (inst.flags & IF_REG1)
         b = m_regi[b].x;
 
-    m_flags = 0;
+    m_flags   = 0;
     int64_t r = (int64_t)a - (int64_t)b;
     if (r == 0)
         m_flags |= PF_Z;
@@ -579,18 +574,28 @@ void Program::handle_OP_ADD(const ExecInstruction& inst)
     if (inst.flags & IF_REG0)
     {
         const uint64_t& x0 = inst.argv[0];
-
         if (inst.argc > 2)
         {
             uint64_t b = inst.argv[1];
-            uint64_t c = inst.argv[2];
-
-            if (inst.flags & IF_REG1)
-                b = m_regi[b].x;
-            if (inst.flags & IF_REG2)
-                c = m_regi[c].x;
-
-            m_regi[x0].x = b + c;
+            if (inst.flags & IF_ADRD)
+            {
+                // meaning the address in b, should be dereferenced
+                uint8_t* ptr = (uint8_t*)(size_t)m_regi[b].x;
+                if (ptr)
+                {
+                    uint64_t* c  = (uint64_t*)ptr;
+                    m_regi[x0].x = *c;
+                }
+            }
+            else
+            {
+                uint64_t c = inst.argv[2];
+                if (inst.flags & IF_REG1)
+                    b = m_regi[b].x;
+                if (inst.flags & IF_REG2)
+                    c = m_regi[c].x;
+                m_regi[x0].x = b + c;
+            }
         }
         else
         {
@@ -772,6 +777,150 @@ void Program::handle_OP_ADRP(const ExecInstruction& inst)
     }
 }
 
+void Program::handle_OP_STP(const ExecInstruction& inst)
+{
+    if (inst.flags & IF_STKP)
+    {
+        uint64_t nrel = inst.argv[1] / 8;
+        if (nrel > 32)
+        {
+            printf("Stack size exceeded\n");
+            forceExit(-1);
+        }
+        else
+        {
+            if (m_stack.size() >= 256)
+            {
+                printf("stack overflow.\n");
+                forceExit(-2);
+            }
+            else
+            {
+                m_stack.reserve(nrel);
+
+                uint64_t i;
+                for (i = 0; i < nrel; ++i)
+                    m_stack.push_back({0});
+            }
+        }
+    }
+}
+
+void Program::handle_OP_LDP(const ExecInstruction& inst)
+{
+    if (inst.flags & IF_STKP)
+    {
+        uint64_t nrel = inst.argv[1] / 8;
+        if (nrel > 32)
+        {
+            printf("Stack size exceeded\n");
+            forceExit(-1);
+        }
+        else
+        {
+            uint64_t i;
+            for (i = 0; i < nrel && !m_stack.empty(); ++i)
+                m_stack.pop_back();
+        }
+    }
+}
+
+void Program::handle_OP_STR(const ExecInstruction& inst)
+{
+    if (inst.flags & IF_STKP)
+    {
+        uint64_t nrel = inst.argv[1] / 8;
+        if (nrel > 32)
+        {
+            printf("Stack size exceeded\n");
+            forceExit(-1);
+        }
+        else
+        {
+            // o1 -> o2
+
+            size_t stk = m_stack.size();
+            size_t idx = (inst.index / 8);
+            size_t rem = (inst.index % 8);
+
+            if (inst.flags & IF_REG0)
+            {
+                if (idx < stk)
+                {
+                    idx = (stk - 1) - idx;
+
+                    Register& dest = m_stack.at(idx);
+                    if (rem == 0)
+                        dest.x = m_regi[inst.argv[0]].x;
+                    else
+                    {
+                        // place elsewhere in the register
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Program::handle_OP_LDR(const ExecInstruction& inst)
+{
+    if (inst.flags & IF_STKP)
+    {
+        uint64_t nrel = inst.argv[1] / 8;
+        if (nrel > 32)
+        {
+            printf("Stack size exceeded\n");
+            forceExit(-1);
+        }
+        else
+        {
+            // o1 <- o2
+            size_t stk = m_stack.size();
+            size_t idx = (inst.index / 8);
+            size_t rem = (inst.index % 8);
+
+            if (inst.flags & IF_REG0)
+            {
+                if (idx < stk)
+                {
+                    idx = (stk - 1) - idx;
+
+                    const Register& src = m_stack.at(idx);
+                    if (rem == 0)
+                        m_regi[inst.argv[0]].x = src.x;
+                    else
+                    {
+                        // place elsewhere in the register
+                    }
+                }
+            }
+        }
+    }
+    else if (inst.flags & IF_REG1)
+    {
+        // o1 <- o2
+        Register& dest = m_regi[inst.argv[0]];
+        if (inst.flags & IF_BTEB)
+        {
+            if (inst.index < 8)
+                dest.b[inst.index] = m_regi[inst.argv[1]].b[inst.index];
+        }
+        else if (inst.flags & IF_BTEW)
+        {
+            if (inst.index < 4)
+                dest.w[inst.index] = m_regi[inst.argv[1]].w[inst.index];
+        }
+        else if (inst.flags & IF_BTEL)
+        {
+            if (inst.index < 2)
+                dest.l[inst.index] = m_regi[inst.argv[1]].l[inst.index];
+        }
+        else 
+            dest.x = m_regi[inst.argv[1]].x;
+
+    }
+}
+
 void Program::handle_OP_PRG(const ExecInstruction& inst)
 {
     if (inst.flags & IF_REG0)
@@ -792,7 +941,7 @@ void Program::handle_OP_PRGI(const ExecInstruction& inst)
     for (i = 0; i < MAX_REG; ++i)
     {
         ss << "0x" << setfill('0') << uppercase << hex << m_regi[i].x;
-        cout << ' ' << 'x' << left << setw(4) <<  i << ' ';
+        cout << ' ' << 'x' << left << setw(4) << i << ' ';
         cout << right << setw(17) << ss.str();
         cout << ' ';
         cout << dec;
@@ -834,6 +983,10 @@ bool Program::testInstruction(const ExecInstruction& exec)
     case OP_MOV:
     case OP_CMP:
     case OP_ADRP:
+    case OP_STR:
+    case OP_LDR:
+    case OP_STP:
+    case OP_LDP:
         pass = exec.argc == 2;
         break;
     case OP_ADD:
@@ -906,18 +1059,25 @@ bool Program::testInstruction(const ExecInstruction& exec)
     case OP_DIV:
     case OP_SHR:
     case OP_SHL:
+    case OP_STR:
+    case OP_LDR:
+    case OP_STP:
+    case OP_LDP:
         pass = (exec.flags & IF_REG0) != 0;
         if (pass)
         {
             pass = exec.argv[0] < MAX_REG;
             if (pass)
             {
-                if (exec.flags & IF_REG1)
+                if (exec.flags & IF_REG1 || exec.flags & IF_RIDX)
                     pass = exec.argv[1] < MAX_REG;
             }
+
             if (pass)
             {
-                if (exec.flags & IF_REG2)
+                if (exec.flags & IF_ADRD)
+                    pass = exec.argv[2] < m_dataTable.capacity();
+                else if (exec.flags & IF_REG2)
                     pass = exec.argv[2] < MAX_REG;
             }
         }
@@ -956,6 +1116,10 @@ const Program::Operation Program::OPCodeTable[] = {
     &Program::handle_OP_SHR,
     &Program::handle_OP_SHL,
     &Program::handle_OP_ADRP,
+    &Program::handle_OP_STR,
+    &Program::handle_OP_LDR,
+    &Program::handle_OP_STP,
+    &Program::handle_OP_LDP,
     &Program::handle_OP_PRG,
     &Program::handle_OP_PRGI,
 };

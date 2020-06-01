@@ -24,7 +24,6 @@
 
 #include "Declarations.h"
 
-
 class MemoryStream
 {
 public:
@@ -45,7 +44,7 @@ public:
     {
         return m_size;
     }
-    
+
     inline size_t capacity(void) const
     {
         return m_capacity;
@@ -62,10 +61,8 @@ public:
     }
 
 private:
-
     size_t findAllocLen(size_t nr);
-    size_t write(const void *ptr, size_t nr, bool pad);
-
+    size_t write(const void* ptr, size_t nr, bool pad);
 
     size_t m_size;
     size_t m_capacity;

@@ -125,7 +125,9 @@ void FindModuleDirectory(str_t& dest)
     else
         printf("failed to get the executable path.\n");
 }
+
 #else
+
 void FindModuleDirectory(str_t& dest)
 {
     dest.clear();

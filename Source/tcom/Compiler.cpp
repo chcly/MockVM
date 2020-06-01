@@ -19,12 +19,12 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <algorithm>
 #include "BinaryWriter.h"
 #include "BlockReader.h"
 #include "Declarations.h"
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 
         if (w.mergeLabels(p.getLabels()) != PS_OK)
             return PS_ERROR;
-        
+
         if (w.mergeDataDeclarations(p.getDataDeclarations()) != PS_OK)
             return PS_ERROR;
 

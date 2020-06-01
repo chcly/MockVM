@@ -79,6 +79,7 @@ private:
     int32_t handleIdState(Token& dest);
     int32_t handleDigitState(Token& dest);
     int32_t handleAsciiState(Token& tok);
+    int32_t handleIndexState(Token& tok);
     int32_t handleSectionState(Token& dest);
     uint8_t eatWhiteSpace(uint8_t ch);
 

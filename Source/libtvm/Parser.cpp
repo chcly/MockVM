@@ -160,7 +160,7 @@ int32_t Parser::parseDataState(void)
     scan(t2);
     if (t2.type != TOK_SECTION)
     {
-        error("expected a data type\n");
+        error("expected a data type to follow a data declaration label\n");
         return PS_ERROR;
     }
     else if (t2.sectype < SEC_DECL_ST && t2.sectype > SEC_DECL_EN)
@@ -223,6 +223,9 @@ int32_t Parser::scan(Token& tok)
         case ST_ASCII:
             res = handleAsciiState(tok);
             break;
+        case ST_INDEX:
+            res = handleIndexState(tok);
+            break;
         default:
             break;
         }
@@ -266,6 +269,8 @@ int32_t Parser::handleInitialState(Token& tok)
             m_state = ST_DIGIT;
         else if (ch == '.')
             m_state = ST_SECTION;
+        else if (ch == '[')
+            m_state = ST_INDEX;
         else if (ch == '"')
             m_state = ST_ASCII;
         else if (!isNewLine(ch) && ch != 0 && !isComment(ch))
@@ -413,6 +418,66 @@ int32_t Parser::handleAsciiState(Token& tok)
     else
     {
         error("error character '%c' was not handled\n", ch);
+        st = PS_ERROR;
+    }
+    return st;
+}
+
+int32_t Parser::handleIndexState(Token& tok)
+{
+    int32_t st = ST_CONTINUE;
+    int32_t ch = m_reader.next();
+
+    Token t1, t2;
+    if (ch == '[')
+    {
+        m_state = ST_INITIAL;
+        scan(t1);
+
+        if (t1.type != TOK_REGISTER)
+        {
+            error("expected the first index argument to be a register\n");
+            st = PS_ERROR;
+        }
+        else
+        {
+            tok.reg     = t1.reg;
+            tok.regtype = t1.regtype;
+
+            if (t1.hasComma)
+            {
+                // parse the optional index into t2
+                m_state = ST_INITIAL;
+                scan(t2);
+                if (t2.type != TOK_DIGIT && t2.type != TOK_REGISTER)
+                {
+                    error("expected the second index argument to be a register or a value\n");
+                    st = PS_ERROR;
+                }
+                else
+                {
+                    if (t2.type == TOK_DIGIT)
+                        tok.ival.x = t2.ival.x;
+                    else
+                        tok.ival.x = t2.reg;
+                }
+            }
+        }
+        int32_t ch = m_reader.next();
+        if (ch != ']')
+        {
+            error("expected a close brace\n");
+            st = PS_ERROR;
+        }
+        else
+        {
+            tok.type = TOK_REGINDEX;
+            st       = ST_MAX;
+        }
+    }
+    else
+    {
+        error("internal error, parser entered into an index state without an open brace\n");
         st = PS_ERROR;
     }
     return st;
@@ -636,6 +701,8 @@ void Parser::prepNextCall(Token& tok, uint8_t ch)
         m_reader.offset(-1);
     else if (isNewLine(ch))
         m_reader.offset(-1);
+    else if (ch == ']')
+        m_reader.offset(-1);
     else if (ch == ',')
         tok.hasComma = true;
 }
@@ -725,25 +792,33 @@ int32_t Parser::handleArgument(Instruction&      ins,
                                const Token&      tok,
                                const int32_t     idx)
 {
+    int32_t st = PS_OK;
+
     if (kwd.argv[idx] == AT_REGI)
     {
         if (tok.type != TOK_REGISTER)
         {
             errorArgType(idx, tok.type, kwd.word);
-            return PS_ERROR;
+            st = PS_ERROR;
         }
-        markArgumentAsRegister(ins, tok, idx);
+        else
+        {
+            markArgumentAsRegister(ins, tok, idx);
+        }
     }
     else if (kwd.argv[idx] == AT_SVAL)
     {
         if (tok.type != TOK_DIGIT)
         {
             errorArgType(idx, tok.type, kwd.word);
-            return PS_ERROR;
+            st = PS_ERROR;
         }
-        ins.argv[idx] = tok.ival.x;
+        else
+        {
+            ins.argv[idx] = tok.ival.x;
+        }
     }
-    else if (kwd.argv[idx] == AT_RVAL)
+    else if (kwd.argv[idx] == AT_RVAL || kwd.argv[idx] == AT_RVAA)
     {
         if (tok.type == TOK_DIGIT)
         {
@@ -753,10 +828,31 @@ int32_t Parser::handleArgument(Instruction&      ins,
         {
             markArgumentAsRegister(ins, tok, idx);
         }
+        else if (kwd.argv[idx] == AT_RVAA && tok.type == TOK_IDENTIFIER)
+        {
+            markArgumentAsRegister(ins, tok, idx);
+            ins.flags |= IF_ADRD;
+            ins.lname = tok.value;
+        }
         else
         {
             errorArgType(idx, tok.type, kwd.word);
-            return PS_ERROR;
+            st = PS_ERROR;
+        }
+    }
+    else if (kwd.argv[idx] == AT_RIDX)
+    {
+        if (tok.type != TOK_REGINDEX)
+        {
+            error("unknown operand type for %s\n", kwd.word);
+            errorTokenType(tok.type);
+            st = PS_ERROR;
+        }
+        else
+        {
+            markArgumentAsRegister(ins, tok, idx);
+            ins.flags |= IF_RIDX;
+            ins.index = (uint8_t)tok.ival.x;
         }
     }
     else if (kwd.argv[idx] == AT_ADDR)
@@ -770,10 +866,9 @@ int32_t Parser::handleArgument(Instruction&      ins,
     {
         error("unknown operand type for %s\n", kwd.word);
         errorTokenType(tok.type);
-        return PS_ERROR;
+        st = PS_ERROR;
     }
-
-    return PS_OK;
+    return st;
 }
 
 int32_t Parser::handleOpCode(const Token& tok)
@@ -942,6 +1037,7 @@ bool Parser::isTerminator(uint8_t ch)
            ch == ',' ||
            isNewLine(ch) ||
            isComment(ch) ||
+           ch == ']' ||
            ch == 0;
 }
 
@@ -967,6 +1063,9 @@ void Parser::getTokenName(str_t& name, int tok)
         break;
     case TOK_REGISTER:
         name = "register";
+        break;
+    case TOK_REGINDEX:
+        name = "[register]";
         break;
     case TOK_IDENTIFIER:
         name = "identifier";

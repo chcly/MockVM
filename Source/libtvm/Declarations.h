@@ -32,7 +32,7 @@
 
 #define INS_ARG 3
 #define MAX_KWD 5
-#define MAX_REG 31
+#define MAX_REG 10
 
 typedef std::string        str_t;
 typedef std::vector<str_t> strvec_t;
@@ -114,6 +114,7 @@ enum ParserState
     ST_DIGIT,
     ST_ASCII,
     ST_SECTION,
+    ST_INDEX,
     ST_CONTINUE,
     ST_MAX,
 };
@@ -122,6 +123,7 @@ enum TokenCode
 {
     TOK_OPCODE = ST_MAX + 1,
     TOK_REGISTER,
+    TOK_REGINDEX,
     TOK_IDENTIFIER,
     TOK_DIGIT,
     TOK_ASCII,
@@ -139,32 +141,35 @@ enum Opcode
     // change, the offset can also be found by subtracting
     // off the difference then using that as the index.
     OP_BEG = 0,  // unused padding
-
-    OP_RET,   // ret
-    OP_MOV,   // mov r(n), src
-    OP_GTO,   // call address
-    OP_INC,   // inc, r(n)
-    OP_DEC,   // dec, r(n)
-    OP_CMP,   // cmp, r(n), src
-    OP_JMP,   // jump
-    OP_JEQ,   // jump ==
-    OP_JNE,   // jump !
-    OP_JLT,   // jump <
-    OP_JGT,   // jump >
-    OP_JLE,   // jump <=
-    OP_JGE,   // jump >=
-    OP_ADD,   // add r(n), src
-    OP_SUB,   // sub r(n), src
-    OP_MUL,   // mul r(n), src
-    OP_DIV,   // div r(n), src
-    OP_SHR,   // shr r(n), src
-    OP_SHL,   // shl r(n), src
-    OP_ADRP,  // adrp r(n), addr
-              // ---- debugging ----
-    OP_PRG,   // print register
-    OP_PRI,   // print all registers
-              // ---- debugging ----
-    OP_MAX,   // uint8_t
+    OP_RET,      // ret
+    OP_MOV,      // mov r(n), src
+    OP_GTO,      // call address
+    OP_INC,      // inc, r(n)
+    OP_DEC,      // dec, r(n)
+    OP_CMP,      // cmp, r(n), src
+    OP_JMP,      // jump
+    OP_JEQ,      // jump ==
+    OP_JNE,      // jump !
+    OP_JLT,      // jump <
+    OP_JGT,      // jump >
+    OP_JLE,      // jump <=
+    OP_JGE,      // jump >=
+    OP_ADD,      // add r(n), src
+    OP_SUB,      // sub r(n), src
+    OP_MUL,      // mul r(n), src
+    OP_DIV,      // div r(n), src
+    OP_SHR,      // shr r(n), src
+    OP_SHL,      // shl r(n), src
+    OP_ADRP,     // adrp r(n), addr
+    OP_STR,      // str r(n), [sp, index]
+    OP_LDR,      // ldr r(n), [sp, index]
+    OP_STP,      // stp r(n), val
+    OP_LDP,      // ldp r(n), val
+    // ---- debugging ----
+    OP_PRG,  // print register
+    OP_PRI,  // print all registers
+             // ---- debugging ----
+    OP_MAX,  // uint8_t
 };
 
 enum ArgType
@@ -174,6 +179,8 @@ enum ArgType
     AT_SVAL,
     AT_ADDR,
     AT_RVAL,
+    AT_RVAA,
+    AT_RIDX,
 };
 
 typedef char Keyword[MAX_KWD + 1];
@@ -191,7 +198,6 @@ enum SectionCodes
     // File sections
     SEC_DAT = 0xFF,
     SEC_TXT,
-
     // Data sections
     SEC_DECL_ST,
     SEC_ASCII,  // .asciz
@@ -205,19 +211,20 @@ enum SectionCodes
 
 enum InstructionFlags
 {
-    IF_REG0 = 0x001,  // actual flags
-    IF_REG1 = 0x002,  // ..
-    IF_REG2 = 0x004,  // ..
-    IF_ADDR = 0x008,  // the rest refer to a type...
-    IF_ADRD = 0x010,  //
-    IF_SYMU = 0x020,
-    IF_STKP = 0x040,  // stack pointer
-    IF_INSP = 0x080,  // instruction pointer
-    IF_BTEB = 0x100,  // b uint8_t
-    IF_BTEW = 0x200,  // w uint16_t
-    IF_BTEL = 0x400,  // l uint32_t
-                      // x = default, if not present
-    IF_MAXF = 0x800,  // needs an uint16_t
+    IF_REG0 = 0x0001,
+    IF_REG1 = 0x0002,
+    IF_REG2 = 0x0004,
+    IF_ADDR = 0x0008,
+    IF_ADRD = 0x0010,
+    IF_SYMU = 0x0020,
+    IF_STKP = 0x0040,  // stack pointer
+    IF_INSP = 0x0080,  // instruction pointer
+    IF_BTEB = 0x0100,  // b uint8_t
+    IF_BTEW = 0x0200,  // w uint16_t
+    IF_BTEL = 0x0400,  // l uint32_t
+                       // x = default, if not present
+    IF_RIDX = 0x0800,  // [r(n), idx < 256] 
+    IF_MAXF = 0x1000,  // needs an uint16_t
 };
 
 struct TVMHeader
@@ -244,6 +251,7 @@ struct Instruction
     uint8_t  argc;
     uint16_t flags;
     uint16_t sizes;
+    uint8_t  index;
     uint64_t argv[INS_ARG];
     uint64_t label;
     uint64_t sym;
@@ -265,8 +273,8 @@ struct ExecInstruction
     uint8_t  op;
     uint8_t  argc;
     uint16_t flags;
-    uint16_t type;
     uint64_t argv[INS_ARG];
+    uint16_t index;
     Symbol   call;
 };
 
@@ -281,13 +289,14 @@ using StringMap        = std::unordered_map<str_t, size_t>;
 using ExecInstructions = std::vector<ExecInstruction>;
 using Stack            = std::stack<uint64_t>;
 using DataLookup       = std::unordered_map<str_t, DataDeclaration>;
+using RegisterStack    = std::vector<Register>;
 
-#define _TIME_CHECK_BEGIN                                    \
+#define _TIME_CHECK_BEGIN                                             \
     {                                                                 \
         chrono::high_resolution_clock::time_point begintick, endtick; \
         begintick = chrono::high_resolution_clock().now();            \
         {
-#define _TIME_CHECK_END                                      \
+#define _TIME_CHECK_END                                               \
     }                                                                 \
     endtick = chrono::high_resolution_clock().now();                  \
     cout << __FUNCTION__ << " exec("                                  \
