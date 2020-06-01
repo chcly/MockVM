@@ -789,7 +789,7 @@ void Program::handle_OP_STP(const ExecInstruction& inst)
         }
         else
         {
-            if (m_stack.size() >= 256)
+            if (m_stack.size() >= 512)
             {
                 printf("stack overflow.\n");
                 forceExit(-2);
