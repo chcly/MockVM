@@ -249,43 +249,42 @@ int Program::loadCode(BlockReader& reader)
     if (code.size <= 0)
         return PS_OK;
 
-    uint16_t sizes = 0;
-    uint8_t  v8;
-    uint16_t v16;
+    uint8_t  v8, i;
+    uint16_t v16, sizes = 0;
     uint32_t v32;
-    int      a;
-    size_t   i = 0;
-    while (i < code.size && !reader.eof())
+    size_t   br = 0;
+
+    while (br < code.size && !reader.eof())
     {
         ExecInstruction exec = {};
 
-        i += reader.read(&exec.op, 2);
-        i += reader.read(&exec.flags, 2);
-        i += reader.read(&sizes, 2);
+        br += reader.read(&exec.op, 2);
+        br += reader.read(&exec.flags, 2);
+        br += reader.read(&sizes, 2);
 
         if (exec.flags & IF_RIDX)
-            i += reader.read(&exec.index, 1);
+            br += reader.read(&exec.index, 1);
 
-        for (a = 0; a < exec.argc && a < INS_ARG; ++a)
+        for (i = 0; i < exec.argc && i < INS_ARG; ++i)
         {
-            if (sizes & SizeFlags[a][0])
+            if (sizes & SizeFlags[i][0])
             {
-                i += reader.read(&v8, 1);
-                exec.argv[a] = (uint64_t)v8;
+                br += reader.read(&v8, 1);
+                exec.argv[i] = (uint64_t)v8;
             }
-            else if (sizes & SizeFlags[a][1])
+            else if (sizes & SizeFlags[i][1])
             {
-                i += reader.read(&v16, 2);
-                exec.argv[a] = (uint64_t)v16;
+                br += reader.read(&v16, 2);
+                exec.argv[i] = (uint64_t)v16;
             }
-            else if (sizes & SizeFlags[a][2])
+            else if (sizes & SizeFlags[i][2])
             {
-                i += reader.read(&v32, 4);
-                exec.argv[a] = (uint64_t)v32;
+                br += reader.read(&v32, 4);
+                exec.argv[i] = (uint64_t)v32;
             }
             else
             {
-                i += reader.read(&exec.argv[a], 8);
+                br += reader.read(&exec.argv[i], 8);
             }
         }
 
@@ -304,8 +303,7 @@ int Program::loadCode(BlockReader& reader)
             return PS_ERROR;
     }
 
-    // assert the calculated size with the reported size
-    if (i != code.size)
+    if (br != code.size)
     {
         printf("misaligned instructions\n");
         return PS_ERROR;
@@ -314,7 +312,6 @@ int Program::loadCode(BlockReader& reader)
     m_curinst = 0;
     if (code.entry < m_ins.size())
         m_curinst = code.entry;
-
     return PS_OK;
 }
 
@@ -377,8 +374,10 @@ int Program::launch(void)
                 (this->*OPCodeTable[inst.op])(inst);
         }
     }
+
     if (m_return == -1)
         printf("an error occurred\n");
+
     return m_return;
 }
 
@@ -401,6 +400,50 @@ void Program::release(Register* reg)
     delete[] reg;
 }
 
+void Program::derefRegister(
+    const uint64_t& x0,
+    const uint32_t& flags,
+    uint8_t*        ptr)
+{
+    if (ptr)
+    {
+        if (flags & IF_BTEB)
+        {
+            m_regi[x0].b[0] = (*ptr);
+        }
+        else if (flags & IF_BTEW)
+        {
+            uint16_t* wptr  = (uint16_t*)ptr;
+            m_regi[x0].w[0] = (*wptr);
+        }
+        else if (flags & IF_BTEL)
+        {
+            uint32_t* lptr  = (uint32_t*)ptr;
+            m_regi[x0].l[0] = (*lptr);
+        }
+        else
+        {
+            uint64_t* qptr = (uint64_t*)ptr;
+            m_regi[x0].x   = (*qptr);
+        }
+    }
+}
+
+void Program::copyIntoRegister(
+    const uint64_t& x0,
+    const uint64_t& flags,
+    const uint64_t& val)
+{
+    if (flags & IF_BTEB)
+        m_regi[x0].b[0] = (uint8_t)val;
+    else if (flags & IF_BTEW)
+        m_regi[x0].w[0] = (uint16_t)val;
+    else if (flags & IF_BTEL)
+        m_regi[x0].l[0] = (uint32_t)val;
+    else
+        m_regi[x0].x = val;
+}
+
 void Program::handle_OP_RET(const ExecInstruction& inst)
 {
     if (!m_callStack.empty())
@@ -416,30 +459,26 @@ void Program::handle_OP_RET(const ExecInstruction& inst)
 
 void Program::handle_OP_MOV(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
+    if (inst.flags & IF_INSP)
     {
-        if (inst.flags & IF_INSP)
+        if (inst.flags & IF_REG1)
+            m_curinst = m_regi[inst.argv[1]].x;
+        else
+            m_curinst = inst.argv[1];
+    }
+    else
+    {
+        if (inst.flags & IF_REG1)
         {
-            if (inst.flags & IF_REG1)
-                m_curinst = m_regi[inst.argv[1]].x;
-            else
-                m_curinst = inst.argv[1];
+            copyIntoRegister(inst.argv[0],
+                             inst.flags,
+                             m_regi[inst.argv[1]].x);
         }
         else
         {
-            if (inst.flags & IF_REG1)
-                m_regi[inst.argv[0]].x = m_regi[inst.argv[1]].x;
-            else
-            {
-                if (inst.flags & IF_BTEB)
-                    m_regi[inst.argv[0]].b[0] = (uint8_t)inst.argv[1];
-                else if (inst.flags & IF_BTEW)
-                    m_regi[inst.argv[0]].w[0] = (uint16_t)inst.argv[1];
-                else if (inst.flags & IF_BTEL)
-                    m_regi[inst.argv[0]].l[0] = (uint32_t)inst.argv[1];
-                else
-                    m_regi[inst.argv[0]].x = inst.argv[1];
-            }
+            copyIntoRegister(inst.argv[0],
+                             inst.flags,
+                             inst.argv[1]);
         }
     }
 }
@@ -450,7 +489,7 @@ void Program::handle_OP_CALL(const ExecInstruction& inst)
     {
         if (inst.call != nullptr)
         {
-            // This does not guard against corrupting this
+            // This does not guard against corrupting the cl
             // pointer, but it allows access to the registers
             // without passing the address of m_regi
             // which can then be used to access internal
@@ -479,14 +518,12 @@ void Program::handle_OP_CALL(const ExecInstruction& inst)
 
 void Program::handle_OP_INC(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
-        m_regi[inst.argv[0]].x += 1;
+    m_regi[inst.argv[0]].x += 1;
 }
 
 void Program::handle_OP_DEC(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
-        m_regi[inst.argv[0]].x -= 1;
+    m_regi[inst.argv[0]].x -= 1;
 }
 
 void Program::handle_OP_CMP(const ExecInstruction& inst)
@@ -496,6 +533,7 @@ void Program::handle_OP_CMP(const ExecInstruction& inst)
 
     if (inst.flags & IF_REG0)
         a = m_regi[a].x;
+
     if (inst.flags & IF_REG1)
         b = m_regi[b].x;
 
@@ -580,114 +618,118 @@ void Program::handle_OP_JGT(const ExecInstruction& inst)
 
 void Program::handle_OP_ADD(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
+    const uint64_t& x0 = inst.argv[0];
+    if (inst.argc > 2)
     {
-        const uint64_t& x0 = inst.argv[0];
-        if (inst.argc > 2)
+        if (inst.flags & IF_ADRD)
         {
-            uint64_t b = inst.argv[1];
-            if (inst.flags & IF_ADRD)
+            if (inst.flags & IF_REG1)
             {
-                // meaning the address in b, should be dereferenced
-                uint8_t* ptr = (uint8_t*)(size_t)m_regi[b].x;
-                if (ptr)
-                {
-                    uint64_t* c  = (uint64_t*)ptr;
-                    m_regi[x0].x = *c;
-                }
-            }
-            else
-            {
-                uint64_t c = inst.argv[2];
-                if (inst.flags & IF_REG1)
-                    b = m_regi[b].x;
-                if (inst.flags & IF_REG2)
-                    c = m_regi[c].x;
-
-                m_regi[x0].x = b + c;
+                // This is dangerous because it has to assume
+                // that the address loaded into inst.argv[1]
+                // really does point to a memory location.
+                //
+                // TODO: add an address lookup for data elements
+                // then and an extra check here  to make sure
+                uint8_t* unchecked = (uint8_t*)(size_t)m_regi[inst.argv[1]].x;
+                derefRegister(x0, inst.flags, unchecked);
             }
         }
         else
         {
+            uint64_t b = inst.argv[1];
+            uint64_t c = inst.argv[2];
             if (inst.flags & IF_REG1)
-                m_regi[x0].x += m_regi[inst.argv[1]].x;
-            else
-                m_regi[x0].x += inst.argv[1];
+                b = m_regi[b].x;
+            if (inst.flags & IF_REG2)
+                c = m_regi[c].x;
+
+            m_regi[x0].x = b + c;
         }
+    }
+    else
+    {
+        if (inst.flags & IF_REG1)
+            m_regi[x0].x += m_regi[inst.argv[1]].x;
+        else
+            m_regi[x0].x += inst.argv[1];
     }
 }
 
 void Program::handle_OP_SUB(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
+    const uint64_t& x0 = inst.argv[0];
+    if (inst.argc > 2)
     {
-        const uint64_t& x0 = inst.argv[0];
-        if (inst.argc > 2)
-        {
-            uint64_t b = inst.argv[1];
-            uint64_t c = inst.argv[2];
+        uint64_t b = inst.argv[1];
+        uint64_t c = inst.argv[2];
 
-            if (inst.flags & IF_REG1)
-                b = m_regi[b].x;
-            if (inst.flags & IF_REG2)
-                c = m_regi[c].x;
+        if (inst.flags & IF_REG1)
+            b = m_regi[b].x;
+        if (inst.flags & IF_REG2)
+            c = m_regi[c].x;
 
-            m_regi[x0].x = b - c;
-        }
+        m_regi[x0].x = b - c;
+    }
+    else
+    {
+        if (inst.flags & IF_REG1)
+            m_regi[x0].x -= m_regi[inst.argv[1]].x;
         else
-        {
-            if (inst.flags & IF_REG1)
-                m_regi[x0].x -= m_regi[inst.argv[1]].x;
-            else
-                m_regi[x0].x -= inst.argv[1];
-        }
+            m_regi[x0].x -= inst.argv[1];
     }
 }
 
 void Program::handle_OP_MUL(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
+    const uint64_t& x0 = inst.argv[0];
+    if (inst.argc > 2)
     {
-        const uint64_t& x0 = inst.argv[0];
-        if (inst.argc > 2)
-        {
-            uint64_t b = inst.argv[1];
-            uint64_t c = inst.argv[2];
+        uint64_t b = inst.argv[1];
+        uint64_t c = inst.argv[2];
 
-            if (inst.flags & IF_REG1)
-                b = m_regi[b].x;
-            if (inst.flags & IF_REG2)
-                c = m_regi[c].x;
-            m_regi[x0].x = b * c;
-        }
+        if (inst.flags & IF_REG1)
+            b = m_regi[b].x;
+        if (inst.flags & IF_REG2)
+            c = m_regi[c].x;
+        m_regi[x0].x = b * c;
+    }
+    else
+    {
+        if (inst.flags & IF_REG1)
+            m_regi[x0].x *= m_regi[inst.argv[1]].x;
         else
-        {
-            if (inst.flags & IF_REG1)
-                m_regi[x0].x *= m_regi[inst.argv[1]].x;
-            else
-                m_regi[x0].x *= inst.argv[1];
-        }
+            m_regi[x0].x *= inst.argv[1];
     }
 }
 
 void Program::handle_OP_DIV(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
+    const uint64_t& x0 = inst.argv[0];
+    if (inst.argc > 2)
     {
-        const uint64_t& x0 = inst.argv[0];
+        uint64_t b = inst.argv[1];
+        uint64_t c = inst.argv[2];
 
-        if (inst.argc > 2)
+        if (inst.flags & IF_REG1)
+            b = m_regi[b].x;
+        if (inst.flags & IF_REG2)
+            c = m_regi[c].x;
+
+        if (c != 0)
+            m_regi[x0].x = b / c;
+        else
         {
-            uint64_t b = inst.argv[1];
-            uint64_t c = inst.argv[2];
-
-            if (inst.flags & IF_REG1)
-                b = m_regi[b].x;
-            if (inst.flags & IF_REG2)
-                c = m_regi[c].x;
-
-            if (c != 0)
-                m_regi[x0].x = b / c;
+            printf("divide by zero\n");
+            forceExit(-1);
+        }
+    }
+    else
+    {
+        if (inst.flags & IF_REG1)
+        {
+            if (m_regi[inst.argv[1]].x != 0)
+                m_regi[x0].x /= m_regi[inst.argv[1]].x;
             else
             {
                 printf("divide by zero\n");
@@ -696,25 +738,12 @@ void Program::handle_OP_DIV(const ExecInstruction& inst)
         }
         else
         {
-            if (inst.flags & IF_REG1)
-            {
-                if (m_regi[inst.argv[1]].x != 0)
-                    m_regi[x0].x /= m_regi[inst.argv[1]].x;
-                else
-                {
-                    printf("divide by zero\n");
-                    forceExit(-1);
-                }
-            }
+            if (inst.argv[1] != 0)
+                m_regi[x0].x /= inst.argv[1];
             else
             {
-                if (inst.argv[1] != 0)
-                    m_regi[x0].x /= inst.argv[1];
-                else
-                {
-                    printf("divide by zero\n");
-                    forceExit(-1);
-                }
+                printf("divide by zero\n");
+                forceExit(-1);
             }
         }
     }
@@ -722,63 +751,55 @@ void Program::handle_OP_DIV(const ExecInstruction& inst)
 
 void Program::handle_OP_SHR(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
+    const uint64_t& x0 = inst.argv[0];
+    if (inst.argc > 2)
     {
-        const uint64_t& x0 = inst.argv[0];
+        uint64_t b = inst.argv[1];
+        uint64_t c = inst.argv[2];
 
-        if (inst.argc > 2)
-        {
-            uint64_t b = inst.argv[1];
-            uint64_t c = inst.argv[2];
+        if (inst.flags & IF_REG1)
+            b = m_regi[b].x;
+        if (inst.flags & IF_REG2)
+            c = m_regi[c].x;
 
-            if (inst.flags & IF_REG1)
-                b = m_regi[b].x;
-            if (inst.flags & IF_REG2)
-                c = m_regi[c].x;
-
-            m_regi[x0].x = b >> c;
-        }
+        m_regi[x0].x = b >> c;
+    }
+    else
+    {
+        if (inst.flags & IF_REG1)
+            m_regi[x0].x >>= m_regi[inst.argv[1]].x;
         else
-        {
-            if (inst.flags & IF_REG1)
-                m_regi[x0].x >>= m_regi[inst.argv[1]].x;
-            else
-                m_regi[x0].x >>= inst.argv[1];
-        }
+            m_regi[x0].x >>= inst.argv[1];
     }
 }
 
 void Program::handle_OP_SHL(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
+    const uint64_t& x0 = inst.argv[0];
+    if (inst.argc > 2)
     {
-        const uint64_t& x0 = inst.argv[0];
+        uint64_t b = inst.argv[1];
+        uint64_t c = inst.argv[2];
 
-        if (inst.argc > 2)
-        {
-            uint64_t b = inst.argv[1];
-            uint64_t c = inst.argv[2];
+        if (inst.flags & IF_REG1)
+            b = m_regi[b].x;
+        if (inst.flags & IF_REG2)
+            c = m_regi[c].x;
 
-            if (inst.flags & IF_REG1)
-                b = m_regi[b].x;
-            if (inst.flags & IF_REG2)
-                c = m_regi[c].x;
-
-            m_regi[x0].x = b << c;
-        }
+        m_regi[x0].x = b << c;
+    }
+    else
+    {
+        if (inst.flags & IF_REG1)
+            m_regi[x0].x <<= m_regi[inst.argv[1]].x;
         else
-        {
-            if (inst.flags & IF_REG1)
-                m_regi[x0].x <<= m_regi[inst.argv[1]].x;
-            else
-                m_regi[x0].x <<= inst.argv[1];
-        }
+            m_regi[x0].x <<= inst.argv[1];
     }
 }
 
 void Program::handle_OP_ADRP(const ExecInstruction& inst)
 {
-    if (inst.flags & IF_REG0)
+    if (inst.flags & IF_REG0 && inst.flags & IF_ADRD)
     {
         if (inst.argv[1] < m_dataTable.capacity())
         {
@@ -928,18 +949,16 @@ void Program::handle_OP_LDR(const ExecInstruction& inst)
     }
 }
 
-
-
 void Program::handle_OP_LDRS(const ExecInstruction& inst)
 {
     if (inst.flags & IF_REG1)
     {
         // o1 <- o2
 
-        Register& dreg = m_regi[inst.argv[0]];
-        const Register& src = m_regi[inst.argv[1]];
+        Register&       dreg = m_regi[inst.argv[0]];
+        const Register& src  = m_regi[inst.argv[1]];
 
-        size_t sptr = src.x;
+        size_t   sptr = src.x;
         uint8_t* ptr  = (uint8_t*)sptr;
 
         if (ptr)
@@ -948,20 +967,17 @@ void Program::handle_OP_LDRS(const ExecInstruction& inst)
             {
                 size_t i = m_regi[inst.index].x;
                 if (i < m_dataTable.capacity())
-                    dreg.x   = ptr[i];
+                    dreg.x = ptr[i];
             }
         }
     }
 }
-
-
 
 void Program::handle_OP_STRS(const ExecInstruction& inst)
 {
     if (inst.flags & IF_REG1)
     {
         // o1 -> o2
-
         const Register& dreg = m_regi[inst.argv[0]];
         Register&       src  = m_regi[inst.argv[1]];
 
