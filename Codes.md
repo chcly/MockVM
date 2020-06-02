@@ -5,7 +5,7 @@
         1. [Registers](#registers)
         2. [Syntax](#syntax)
     2. [Sections](#sections)
-        1. [Data sections](#data-sections)
+        1. [Data types](#data-types)
     3. [Basic Operations](#basic-operations)
         1. [ret](#ret)
         2. [mov R0, R1](#mov-r0-r1)
@@ -36,6 +36,9 @@
         2. [ldp  SP, V](#ldp-sp-v)
         3. [str R0, [SP, V|R1]](#str-r0-sp-vr1)
         4. [ldr R0, [SP, V|R1]](#ldr-r0-sp-vr1)
+    8. [Data access](#data-access)
+        1. [adrp R0, ADDR](#adrp-r0-addr)
+        2. [add R0, R1, ADDR](#add-r0-r1-addr)
 
 ## Definitions
 
@@ -89,13 +92,14 @@ done:
 
 ## Sections
 
-The code currently uses two sections for grouping declarations. Then the .data section uses section names for declaring data types to write to the data table.  
-By default everything is in the text section and does not have to be supplied. The compiler will toggle between states every time a data section is found.
+The code currently uses two section types for grouping declarations.
 
 + .data
 + .text
 
-### Data sections
+By default everything is in the text section and does not have to be supplied. The compiler will toggle between states every time a data section is found.
+
+### Data types
 
 + .asciz - Represents an ASCII sequence.
 + .zero  - Writes a zeroed filled block of memory to the file's data section.
@@ -368,4 +372,24 @@ If V is used, then the maximum value is truncated at 255.
     mov x0, 0
     ldr x0, [sp, 0]
     ldp sp, 8
+```
+
+## Data access
+
+### adrp R0, ADDR
+
+Loads the memory address found at ADDR and puts it into RO
+
+```asm
+    adrp x0, string
+```
+
+### add R0, R1, ADDR
+
+Dereferences the memory address in R1 that was previously loaded from ADDR then places it in RO.
+
+```asm
+    adrp x0, string
+    add  x0, x0, string
+    bl   puts
 ```
