@@ -338,7 +338,6 @@ Stores V bytes of stack space.
 *V should be less than or equal to 256 bytes.
 Stack objects are also stored in an 8 byte integer.*
 
-
 ### ldp  SP, V
 
 Pops V bytes off the stack.
@@ -378,7 +377,7 @@ If V is used, then the maximum value is truncated at 255.
 
 ### adrp R0, ADDR
 
-Loads the memory address found at ADDR and puts it into RO
+Loads the memory address found at ADDR and puts it into R0.
 
 ```asm
     adrp x0, string
@@ -386,7 +385,7 @@ Loads the memory address found at ADDR and puts it into RO
 
 ### add R0, R1, ADDR
 
-Dereferences the memory address in R1 that was previously loaded from ADDR then places it in RO.
+Dereferences the memory address in R1 that was previously loaded from ADDR then places it in R0.
 
 ```asm
     adrp x0, string
