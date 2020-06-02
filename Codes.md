@@ -37,7 +37,7 @@
 ## Definitions
 
 | Name | Description                                                                    |
-|------|--------------------------------------------------------------------------------|
+|:-----|:-------------------------------------------------------------------------------|
 | R(n) | Is any value with the prefix b,w,l or x followed by a single digit [0-9]       |
 | V    | Is any integer value in base 10, hexadecimal, binary, or a character constant. |
 | PC   | Is the program counter.                                                        |
@@ -50,15 +50,26 @@
 There are a total of 10 64 bit registers that can be used.
 
 | Registers | Size   | Offset | C/C++    |
-|:----------|--------|--------|----------|
-| b(n)      | 8-bit  | 8      | char[8]  |
-| l(n)      | 32-bit | 2      | short[4] |
-| w(n)      | 16-bit | 4      | int[2]   |
-| x(n)      | 64-bit | 0      | int64_t  |
+|:----------|:-------|-------:|:---------|
+| b(n)      | 8-bit  |      8 | char[8]  |
+| w(n)      | 16-bit |      4 | short[4] |
+| l(n)      | 32-bit |      2 | int[2]   |
+| x(n)      | 64-bit |      0 | int64_t  |
 
 ### Syntax
 
 ```asm
+;----------------------------------------
+             .data
+;----------------------------------------
+string:   .asciz  "Hello World"
+var1:     .byte   'a'
+var2:     .word   0xFFFF
+var3:     .long   0xFFFFFFFF
+var4     .xword   0xFFFFFFFFFFFFFFFF
+;----------------------------------------
+             .text
+;----------------------------------------
                 ; comment
 main:           ; label
    mov x0, 0    ; op dest, src
@@ -66,7 +77,7 @@ top:
    cmp x0, 10
    bge done
    inc x0
-   b top
+   b   top
 done:
    mov x0, 0    ; return value is in x0
    ret
