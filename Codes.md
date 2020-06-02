@@ -1,5 +1,4 @@
 # ToyVM Instructions
-
 1. [ToyVM Instructions](#toyvm-instructions)
     1. [Definitions](#definitions)
         1. [Registers](#registers)
@@ -29,6 +28,11 @@
     5. [Math operations](#math-operations)
         1. [op R0, R1|V](#op-r0-r1v)
         2. [op R0, R1|V, R2|V](#op-r0-r1v-r2v)
+    6. [Stack operations](#stack-operations)
+        1. [stp  SP, V](#stp-sp-v)
+        2. [ldp  SP, V](#ldp-sp-v)
+        3. [str R0, [SP, V]](#str-r0-sp-v)
+        4. [ldr R0, [SP, V]](#ldr-r0-sp-v)
 
 ## Definitions
 
@@ -36,14 +40,14 @@
 |------|-----------------------------------------------------------------------------|
 | R(n) | Is any value with the prefix b,w,l or x followed by a single digit [0-9]    |
 | V    | Is any integer value in base 10, hexadecimal binary, or character constant. |
-| PC   | Is The program counter.                                                     |
+| PC   | Is the program counter.                                                     |
 | SP   | The stack pointer.                                                          |
 | SYM  | Refers to a symbol loaded from a dynamic library.                           |
 | ADDR | Is a local address in the file referring to a label.                        |
 
 ### Registers
 
-There is a total of 10 64 bit registers that can be used.
+There are a total of 10 64 bit registers that can be used.
 
 | Registers | Size   | Offset | C/C++    |
 |:----------|--------|--------|----------|
@@ -222,7 +226,7 @@ Branch to the location found in ADDR if the Z flag is not set.
 ```asm
     mov x0, 0
     cmp x0, 0
-    bne L1:
+    bne L1
     b   L2
 L1:
     mov x0, -1
@@ -280,4 +284,47 @@ Preforms the operation on the R1 and R2 registers into R0
     add x3, x0, x1
     add x4, x0, 2
     ret
+```
+
+## Stack operations
+
+### stp  SP, V
+
+Stores V bytes of stack space.
+
+```asm
+    stp sp, 16
+```
+
+### ldp  SP, V
+
+Pops V bytes off the stack.
+
+```asm
+    ldp sp, 16
+```
+
+### str R0, [SP, V]
+
+Stores R0 on the stack at the supplied offset found in V.
+
+```asm
+    stp sp, 8
+    mov x0, 100
+    str x0, [sp, 0]
+    mov x0, 0
+    ldp sp, 8
+```
+
+### ldr R0, [SP, V]
+
+Loads into R0 the value found on the stack at the offset found in V.
+
+```asm
+    stp sp, 8
+    mov x0, 100
+    str x0, [sp, 0]
+    mov x0, 0
+    ldr x0, [sp, 0]
+    ldp sp, 8
 ```
