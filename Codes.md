@@ -36,14 +36,14 @@
 
 ## Definitions
 
-| Name | Description                                                                 |
-|------|-----------------------------------------------------------------------------|
-| R(n) | Is any value with the prefix b,w,l or x followed by a single digit [0-9]    |
-| V    | Is any integer value in base 10, hexadecimal binary, or character constant. |
-| PC   | Is the program counter.                                                     |
-| SP   | The stack pointer.                                                          |
-| SYM  | Refers to a symbol loaded from a dynamic library.                           |
-| ADDR | Is a local address in the file referring to a label.                        |
+| Name | Description                                                                    |
+|------|--------------------------------------------------------------------------------|
+| R(n) | Is any value with the prefix b,w,l or x followed by a single digit [0-9]       |
+| V    | Is any integer value in base 10, hexadecimal, binary, or a character constant. |
+| PC   | Is the program counter.                                                        |
+| SP   | The stack pointer.                                                             |
+| SYM  | Refers to a symbol loaded from a dynamic library.                              |
+| ADDR | Is a local address in the file referring to a label.                           |
 
 ### Registers
 

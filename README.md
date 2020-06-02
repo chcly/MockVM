@@ -45,7 +45,7 @@ tvm <options> <program_path>
 
 ### Current instructions
 
-Instruction documentation can be found [here.](Codes.md)
+Documentation can be found [here.](Codes.md)
 
 ## Building
 
