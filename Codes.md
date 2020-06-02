@@ -1,9 +1,12 @@
 # ToyVM Instructions
+
 1. [ToyVM Instructions](#toyvm-instructions)
     1. [Definitions](#definitions)
         1. [Registers](#registers)
         2. [Syntax](#syntax)
-    2. [Basic Operations](#basic-operations)
+    2. [Sections](#sections)
+        1. [Data sections](#data-sections)
+    3. [Basic Operations](#basic-operations)
         1. [ret](#ret)
         2. [mov R0, R1](#mov-r0-r1)
         3. [mov R0, V](#mov-r0-v)
@@ -11,11 +14,11 @@
         5. [mov PC, R0](#mov-pc-r0)
         6. [inc R0](#inc-r0)
         7. [dec R0](#dec-r0)
-    3. [Unconditional Branching](#unconditional-branching)
+    4. [Unconditional Branching](#unconditional-branching)
         1. [bl SYM](#bl-sym)
         2. [bl ADDR](#bl-addr)
         3. [b ADDR](#b-addr)
-    4. [Conditional branching](#conditional-branching)
+    5. [Conditional branching](#conditional-branching)
         1. [cmp R0, R1](#cmp-r0-r1)
         2. [cmp R0, V](#cmp-r0-v)
         3. [cmp V, R0](#cmp-v-r0)
@@ -25,14 +28,14 @@
         7. [bge ADDR](#bge-addr)
         8. [blt ADDR](#blt-addr)
         9. [bgt ADDR](#bgt-addr)
-    5. [Math operations](#math-operations)
+    6. [Math operations](#math-operations)
         1. [op R0, R1|V](#op-r0-r1v)
         2. [op R0, R1|V, R2|V](#op-r0-r1v-r2v)
-    6. [Stack operations](#stack-operations)
+    7. [Stack operations](#stack-operations)
         1. [stp  SP, V](#stp-sp-v)
         2. [ldp  SP, V](#ldp-sp-v)
-        3. [str R0, [SP, V]](#str-r0-sp-v)
-        4. [ldr R0, [SP, V]](#ldr-r0-sp-v)
+        3. [str R0, [SP, V|R1]](#str-r0-sp-vr1)
+        4. [ldr R0, [SP, V|R1]](#ldr-r0-sp-vr1)
 
 ## Definitions
 
@@ -83,6 +86,26 @@ done:
    mov x0, 0    ; return value is in x0
    ret
 ```
+
+## Sections
+
+The code currently uses two sections for grouping declarations. Then the .data section uses section names for declaring data types to write to the data table.  
+By default everything is in the text section and does not have to be supplied. The compiler will toggle between states every time a data section is found.
+
++ .data
++ .text
+
+### Data sections
+
++ .asciz - Represents an ASCII sequence.
++ .zero  - Writes a zeroed filled block of memory to the file's data section.
++ .byte  - 1-byte integer.
++ .word  - 2-byte integer.
++ .long  - 4-byte integer.
++ .xword - 8-byte integer.
++ .quad  - Same as .xword.
+
+  *At the moment all integers are written to the file as an 8-byte integer.*
 
 ## Basic Operations
 
@@ -265,7 +288,7 @@ Branch to the location found in ADDR if G flag is set.
 
 ## Math operations
 
-Where op is one of the following:
+Where **op** is one of the following:
 
 * add
 * sub
@@ -308,6 +331,10 @@ Stores V bytes of stack space.
     stp sp, 16
 ```
 
+*V should be less than or equal to 256 bytes.
+Stack objects are also stored in an 8 byte integer.*
+
+
 ### ldp  SP, V
 
 Pops V bytes off the stack.
@@ -316,9 +343,10 @@ Pops V bytes off the stack.
     ldp sp, 16
 ```
 
-### str R0, [SP, V]
+### str R0, [SP, V|R1]
 
-Stores R0 on the stack at the supplied offset found in V.
+Stores R0 on the stack at the supplied offset found in V or R1.
+If V is used, then the maximum value is truncated at 255.
 
 ```asm
     stp sp, 8
@@ -328,9 +356,10 @@ Stores R0 on the stack at the supplied offset found in V.
     ldp sp, 8
 ```
 
-### ldr R0, [SP, V]
+### ldr R0, [SP, V|R1]
 
-Loads into R0 the value found on the stack at the offset found in V.
+Loads into R0 the value found on the stack at the offset found in V or R1.
+If V is used, then the maximum value is truncated at 255.
 
 ```asm
     stp sp, 8
