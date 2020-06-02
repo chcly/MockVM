@@ -66,7 +66,8 @@ string:   .asciz  "Hello World"
 var1:     .byte   'a'
 var2:     .word   0xFFFF
 var3:     .long   0xFFFFFFFF
-var4     .xword   0xFFFFFFFFFFFFFFFF
+var4:     .xword  0xFFFFFFFFFFFFFFFF
+
 ;----------------------------------------
              .text
 ;----------------------------------------
