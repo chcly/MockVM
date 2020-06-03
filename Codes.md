@@ -1,6 +1,6 @@
-# ToyVM Instructions
+# Manual
 
-1. [ToyVM Instructions](#toyvm-instructions)
+1. [Manual](#manual)
     1. [Definitions](#definitions)
         1. [Registers](#registers)
         2. [Syntax](#syntax)
@@ -14,7 +14,7 @@
         5. [mov PC, R0](#mov-pc-r0)
         6. [inc R0](#inc-r0)
         7. [dec R0](#dec-r0)
-    4. [Unconditional Branching](#unconditional-branching)
+    4. [Branching](#branching)
         1. [bl SYM](#bl-sym)
         2. [bl ADDR](#bl-addr)
         3. [b ADDR](#b-addr)
@@ -39,6 +39,11 @@
     8. [Data access](#data-access)
         1. [adrp R0, ADDR](#adrp-r0-addr)
         2. [add R0, R1, ADDR](#add-r0-r1-addr)
+        3. [strs R0, [R1:ADDR, R2|V]](#strs-r0-r1addr-r2v)
+        4. [ldrs R0, [R1:ADDR, R2|V]](#ldrs-r0-r1addr-r2v)
+    9. [Debugging](#debugging)
+        1. [prg R0](#prg-r0)
+        2. [prgi](#prgi)
 
 ## Definitions
 
@@ -184,7 +189,7 @@ The data section supports the following types:
     bl putchar
 ```
 
-## Unconditional Branching
+## Branching
 
 ### bl SYM
 
@@ -228,7 +233,7 @@ L1:
 
 ### cmp R0, R1
 
-+ Subtracts R1 from R0 then then marks a flag based on the sign.
++ Subtracts R1 from R0 then marks a flag based on the sign.
 
 | Result | Flag |
 |--------|------|
@@ -396,3 +401,32 @@ Stack objects are also stored in an 8 byte integer.*
     add  x0, x1, string
     bl   puts
 ```
+
+### strs R0, [R1:ADDR, R2|V]
+
++ Stores the R0 register value in the R1 memory address at the supplied index found in R2 or V.
+
+```asm
+    adrp x0, buffer
+    mov  x1, 'A'
+    strs x1, [x0, 0]
+```
+
+### ldrs R0, [R1:ADDR, R2|V]
+
++ Loads the value in the R1 memory address at the supplied index found in R2 or V into the R0 register.
+
+```asm
+    adrp x0, string
+    ldrs x1, [x0, 0]
+```
+
+## Debugging
+
+### prg R0
+
++ Prints the value in R0 to stdout.
+  
+### prgi
+
++ Prints contents of all registers to stdout.
