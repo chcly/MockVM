@@ -101,13 +101,17 @@ By default everything is in the text section and does not have to be supplied. T
 
 ### Data types
 
-+ .asciz - Represents an ASCII sequence.
-+ .zero  - Writes a zeroed filled block of memory to the file's data section.
-+ .byte  - 1-byte integer.
-+ .word  - 2-byte integer.
-+ .long  - 4-byte integer.
-+ .xword - 8-byte integer.
-+ .quad  - Same as .xword.
+The data section supports the following types:
+
+| Type   | Description                         |
+|:-------|:------------------------------------|
+| .asciz | Represents an ASCII sequence.       |
+| .zero  | Is a zeroed filled block of memory. |
+| .byte  | 1-byte integer.                     |
+| .word  | 2-byte integer.                     |
+| .long  | 4-byte integer.                     |
+| .xword | 8-byte integer.                     |
+| .quad  | Same as .xword.                     |
 
   *At the moment all integers are written to the file as an 8-byte integer.*
 
@@ -115,7 +119,7 @@ By default everything is in the text section and does not have to be supplied. T
 
 ### ret
 
-Removes a branch off the call stack and assigns an internal return code from register 0.
++ Removes a branch from call stack and assigns an internal return code from register 0.
 
 ```asm
     mov x0, 0
@@ -124,8 +128,7 @@ Removes a branch off the call stack and assigns an internal return code from reg
 
 ### mov R0, R1
 
-* R0 Is the destination register.  
-* R1 Is the source register.  
++ Sets the value in R0 to the value in R1.
 
 ```asm
     mov x0, x1
@@ -133,8 +136,7 @@ Removes a branch off the call stack and assigns an internal return code from reg
 
 ### mov R0, V
 
-* R0 Is the destination register.  
-* V Is the value to place in the register.  
++ Sets the value in R0 to the constant V.
 
 ```asm
     mov x0, 123
@@ -145,7 +147,7 @@ Removes a branch off the call stack and assigns an internal return code from reg
 
 ### mov PC, V
 
-* Explicitly sets the value of the program counter.
++ Explicitly sets the value of the program counter.
 
 ```asm
     mov pc, 1
@@ -154,7 +156,7 @@ Removes a branch off the call stack and assigns an internal return code from reg
 
 ### mov PC, R0
 
-* Sets the value of the program counter to the value in R0.
++ Sets the value of the program counter to the value in R0.
 
 ```asm
     mov x0, 2
@@ -164,7 +166,7 @@ Removes a branch off the call stack and assigns an internal return code from reg
 
 ### inc R0
 
-Increments the register value by 1
++ Increments the R0 register value by 1.
 
 ```asm
     mov x0, 'A'
@@ -174,7 +176,7 @@ Increments the register value by 1
 
 ### dec R0
 
-Decrements the register value by 1
++ Decrements the R0 register value by 1.
 
 ```asm
     mov x0, 'B'
@@ -186,7 +188,7 @@ Decrements the register value by 1
 
 ### bl SYM
 
-Branches to a symbol defined in C/C++.
++ Branches to a symbol defined in C/C++.
 
 ```asm
     mov x0, 'A'
@@ -195,7 +197,7 @@ Branches to a symbol defined in C/C++.
 
 ### bl ADDR
 
-Branches to a local label and stores a link back to the calling instruction.
++ Branches to label ADDR and stores a link back to the calling instruction.
 
 ```asm
 fn1:
@@ -211,7 +213,7 @@ main:
 
 ### b ADDR
 
-Moves the current instruction to the location found in ADDR
++ Moves the current instruction to the location found in ADDR.
 
 ```asm
 
@@ -226,7 +228,7 @@ L1:
 
 ### cmp R0, R1
 
-Subtracts R1 from R0 then then marks a flag based on the sign.
++ Subtracts R1 from R0 then then marks a flag based on the sign.
 
 | Result | Flag |
 |--------|------|
@@ -236,15 +238,15 @@ Subtracts R1 from R0 then then marks a flag based on the sign.
 
 ### cmp R0, V
 
-Compares R0 with a constant.
++ Compares R0 with a constant.
 
 ### cmp V, R0
 
-Compares a constant with R0.
++ Compares a constant with R0.
 
 ### beq ADDR
 
-Branch to the location found in ADDR if the Z flag is set.
++ Branch to the location found in ADDR if the Z flag is set.
 
 ```asm
     mov x0, 0
@@ -260,7 +262,7 @@ L2:
 
 ### bne ADDR
 
-Branch to the location found in ADDR if the Z flag is not set.
++ Branch to the location found in ADDR if the Z flag is not set.
 
 ```asm
     mov x0, 0
@@ -276,34 +278,34 @@ L2:
 
 ### ble ADDR
 
-Branch to the location found in ADDR if the Z flag is or the L flag is set.
++ Branch to the location found in ADDR if the Z flag is or the L flag is set.
 
 ### bge ADDR
 
-Branch to the location found in ADDR if the Z flag is or the G flag is set.
++ Branch to the location found in ADDR if the Z flag is or the G flag is set.
 
 ### blt ADDR
 
-Branch to the location found in ADDR if L flag is set.
++ Branch to the location found in ADDR if L flag is set.
 
 ### bgt ADDR
 
-Branch to the location found in ADDR if G flag is set.
++ Branch to the location found in ADDR if G flag is set.
 
 ## Math operations
 
-Where **op** is one of the following:
++ Where **op** is one of the following:
 
-* add
-* sub
-* mul
-* div
-* shr
-* shl
++ add
++ sub
++ mul
++ div
++ shr
++ shl
 
 ### op R0, R1|V
 
-Preforms the operation on R0 and R1 into R0.
++ Preforms the operation on R0 and R1 and stores the result in R0.
 
 ```asm
     mov x0, 2
@@ -315,7 +317,7 @@ Preforms the operation on R0 and R1 into R0.
 
 ### op R0, R1|V, R2|V
 
-Preforms the operation on the R1 and R2 registers into R0
++ Preforms the operation on the R1 and R2 registers and stores the result in R0.
 
 ```asm
     mov x0, 2
@@ -329,7 +331,7 @@ Preforms the operation on the R1 and R2 registers into R0
 
 ### stp  SP, V
 
-Stores V bytes of stack space.
++ Stores V bytes of stack space.
 
 ```asm
     stp sp, 16
@@ -340,7 +342,7 @@ Stack objects are also stored in an 8 byte integer.*
 
 ### ldp  SP, V
 
-Pops V bytes off the stack.
++ Pops V bytes off the stack.
 
 ```asm
     ldp sp, 16
@@ -348,8 +350,7 @@ Pops V bytes off the stack.
 
 ### str R0, [SP, V|R1]
 
-Stores R0 on the stack at the supplied offset found in V or R1.
-If V is used, then the maximum value is truncated at 255.
++ Stores R0 on the stack at the supplied offset found in V or R1.
 
 ```asm
     stp sp, 8
@@ -359,10 +360,11 @@ If V is used, then the maximum value is truncated at 255.
     ldp sp, 8
 ```
 
+*If V is used, then the maximum value is truncated at 255.*
+
 ### ldr R0, [SP, V|R1]
 
-Loads into R0 the value found on the stack at the offset found in V or R1.
-If V is used, then the maximum value is truncated at 255.
++ Loads into R0 the value found on the stack at the offset found in V or R1.
 
 ```asm
     stp sp, 8
@@ -373,11 +375,13 @@ If V is used, then the maximum value is truncated at 255.
     ldp sp, 8
 ```
 
+*If V is used, then the maximum value is truncated at 255.*
+
 ## Data access
 
 ### adrp R0, ADDR
 
-Loads the memory address found at ADDR and puts it into R0.
++ Loads the memory address found at ADDR and puts it into R0.
 
 ```asm
     adrp x0, string
@@ -385,10 +389,10 @@ Loads the memory address found at ADDR and puts it into R0.
 
 ### add R0, R1, ADDR
 
-Dereferences the memory address in R1 that was previously loaded from ADDR then places it in R0.
++ Dereferences the memory address in R1 then places it in R0.
 
 ```asm
-    adrp x0, string
-    add  x0, x0, string
+    adrp x1, string
+    add  x0, x1, string
     bl   puts
 ```
