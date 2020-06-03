@@ -49,12 +49,13 @@ Documentation can be found [here.](Codes.md)
 
 ## Building
 
-Building with CMAKE.
+Building with CMAKE and make.
 
 ```txt
 mkdir Build
 cd Build
 cmake ..
+make
 ```
 
 Testing and Installing.
@@ -63,6 +64,6 @@ Testing and Installing.
 mkdir Build
 cd Build
 cmake -DToyVM_INSTALL_PATH=<some install directory> -DBUILD_TEST=ON ..
+make
+make install
 ```
-
-By default the executables are copied into ${CMAKE_BINARY_DIR}/bin and tested from that directory.
