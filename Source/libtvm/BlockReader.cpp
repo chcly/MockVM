@@ -70,10 +70,15 @@ uint8_t BlockReader::current(void)
 
 size_t BlockReader::read(void *blk, size_t nr)
 {
-    size_t i = 0;
-    while (i < nr && i < m_fileLen)
-        ((uint8_t *)blk)[i++] = next();
-    return i;
+    if (eof() || nr == 0)
+        return 0;
+
+    if (m_loc + nr > m_fileLen)
+        nr = m_fileLen - m_loc;
+
+    memcpy(blk, &m_block[m_loc], nr);
+    m_loc += nr;
+    return nr;
 }
 
 void BlockReader::offset(int32_t nr)

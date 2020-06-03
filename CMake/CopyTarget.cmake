@@ -26,18 +26,15 @@ macro(copy_install_target TARNAME)
 
     if (NOT ${ToyVM_INSTALL_PATH} STREQUAL "")
         if (NOT ${ARGN} STREQUAL "")
-            add_custom_command(TARGET ${TARNAME} 
-                               POST_BUILD
-                               COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${TARNAME}> 
-                               "${ToyVM_INSTALL_PATH}/${ARGN}/$<TARGET_FILE_NAME:${TARNAME}>"
-                               )
+            install(TARGETS ${TARNAME}
+                    DESTINATION "${ToyVM_INSTALL_PATH}/${ARGN}/"
+	        )
         else()
-            add_custom_command(TARGET ${TARNAME} 
-                               POST_BUILD
-                               COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${TARNAME}> 
-                               "${ToyVM_INSTALL_PATH}/$<TARGET_FILE_NAME:${TARNAME}>"
-                               )
+            install(TARGETS ${TARNAME}
+                    DESTINATION "${ToyVM_INSTALL_PATH}"
+	        )
         endif()
     endif()
+
 
 endmacro(copy_install_target)

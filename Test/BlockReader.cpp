@@ -52,3 +52,42 @@ TEST_CASE("BlockReader1")
     EXPECT_EQ(memcmp(tmp, r.ptr(), size), 0);
     delete[] tmp;
 }
+
+TEST_CASE("BlockReader2")
+{
+    BlockReader r;
+    r.open(KeywordsFile.c_str());
+    EXPECT_FALSE(r.eof());
+
+
+    char buf[1024];
+    while (!r.eof())
+        r.read(buf, 127);
+
+    EXPECT_EQ(r.tell(), r.size());
+
+    r.moveTo(0);
+    r.read(buf, 0);
+    r.read(buf, 50);
+    r.read(buf, 1023);
+
+    EXPECT_EQ(r.tell(), r.size());
+
+    r.moveTo(0);
+    while (!r.eof())
+        r.read(buf, 5);
+
+    EXPECT_EQ(r.tell(), r.size());
+
+    r.moveTo(0);
+    while (!r.eof())
+        r.read(buf, -1);
+
+    EXPECT_EQ(r.tell(), r.size());
+
+    r.moveTo(0);
+    while (!r.eof())
+        r.read(buf, -5745);
+
+    EXPECT_EQ(r.tell(), r.size());
+}
