@@ -28,6 +28,10 @@
 class ConsoleCurses : public Console
 {
 public:
+    uint8_t *m_buffer;
+    uint8_t *m_colorBuffer;
+    size_t   m_size;
+
     FILE*   m_stdout;
     bool    m_supportsColor;
     uint8_t m_colorTable[16][16];
@@ -36,13 +40,12 @@ public:
                           ColorSpace bg);
 
     void mapEnumColor(int mapping, int fg, int bg);
-    
+    void writeChar(char ch, uint32_t col, size_t k);
+
 public:
     ConsoleCurses();
     virtual ~ConsoleCurses();
 
-    size_t getWidth();
-    size_t getHeight();
     size_t getNextCmd();
     void   clear();
     void   flush();

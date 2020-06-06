@@ -27,8 +27,6 @@
 #endif  // _WIN32
 
 Console::Console() :
-    m_buffer(nullptr),
-    m_colorBuffer(nullptr),
     m_width(0),
     m_height(0),
     m_curColor(CS_WHITE)
@@ -37,8 +35,6 @@ Console::Console() :
 
 Console::~Console()
 {
-    delete[] m_buffer;
-    delete[] m_colorBuffer;
 }
 
 void Console::displayString(const str_t &string, int16_t x, int16_t y)
@@ -68,10 +64,7 @@ void Console::displayString(const str_t &string, int16_t x, int16_t y)
         k += y * m_width;
 
         if (k <= b)
-        {
-            m_buffer[k]      = ptr[i];
-            m_colorBuffer[k] = m_curColor;
-        }
+            writeChar(ptr[i], m_curColor, k);
     }
 }
 
@@ -84,10 +77,7 @@ void Console::displayChar(char ch, int16_t x, int16_t y)
 
     int16_t k = x + y * m_width;
     if (k < m_width * m_height)
-    {
-        m_buffer[k]      = ch;
-        m_colorBuffer[k] = m_curColor;
-    }
+        writeChar(ch, m_curColor, k);
 }
 
 void Console::displayLineHorz(int16_t st, int16_t en, int16_t y)
@@ -111,7 +101,7 @@ void Console::displayOutput(int16_t x, int16_t y)
     for (i = 0; i < len; i++)
     {
         char ch = m_std.at(i);
-        if (ch == '\n')
+        if (ch == '\n' || x + 1 > m_width)
         {
             x = st;
             ++y;
@@ -125,6 +115,29 @@ void Console::clearOutput()
 {
     m_std.clear();
 }
+
+
+void Console::readRedirectedOutput(const str_t &_path)
+{
+    FILE *fp = fopen(_path.c_str(), "r");
+    if (fp)
+    {
+        fseek(fp, 0L, SEEK_END);
+        long len = ftell(fp);
+        if (len > 0)
+        {
+            fseek(fp, 0L, SEEK_SET);
+            char buffer[256] = {};
+
+            len = fread(buffer, 1, 255, fp);
+            if (len > 0)
+                m_std += str_t(buffer, len);
+        }
+
+        fclose(fp);
+    }
+}
+
 
 void Console::setColor(ColorSpace fg, ColorSpace bg)
 {

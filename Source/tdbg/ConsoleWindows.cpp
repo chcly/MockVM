@@ -19,46 +19,104 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
+#include "SymbolUtils.h"
 #include "ConsoleWindows.h"
 #include <stdio.h>
 #include <string.h>
-#include <windows.h>
+#include <conio.h>
 
-void ClearConsole(void *stdhandle);
+const CHAR_INFO NullChar = {' ', CS_WHITE};
+
+void ZeroBufferMemory(CHAR_INFO *dest, size_t size);
 
 ConsoleWindows::ConsoleWindows() :
+    m_buffer(nullptr),
+    m_startBuf(nullptr),
+    m_startRect({0, 0, 0, 0}),
+    m_size(0),
     m_stdout(nullptr),
-    m_stdin(nullptr),
-    m_lastSize({0, 0}),
-    m_lastParm(0)
+    m_redirect(nullptr),
+    m_tmpFile("")
 {
+    makeTempFileName();
 }
 
 ConsoleWindows::~ConsoleWindows()
 {
+    delete[] m_buffer;
+
     if (m_stdout)
-        ClearConsole(m_stdout);
+    {
+        SetConsoleCursorPosition(m_stdout, m_startCurs);
+        CONSOLE_CURSOR_INFO cinf;
+        cinf.bVisible = 1;
+        cinf.dwSize   = 1;
+        SetConsoleCursorInfo(m_stdout, &cinf);
+
+
+        // Restore the contents of the start screen.
+        WriteConsoleOutput(
+            m_stdout,
+            m_startBuf,
+            {m_width, m_height},
+            {0, 0},
+            &m_startRect);
+
+        delete[] m_startBuf;
+
+        if (DeleteFile(m_tmpFile.c_str())==0)
+        {
+            printf("Failed to delete temp file\n");
+        }
+    }
 }
 
-size_t ConsoleWindows::getWidth()
+void ConsoleWindows::makeTempFileName()
 {
-    return m_width;
+    char  tmp[270];
+    DWORD len;
+    len = GetTempPath(270, tmp);
+    if (len > 0)
+    {
+        tmp[len] = 0;
+        m_tmpFile = str_t(tmp, len);
+        m_tmpFile += "tdbg_stdout";
+    }
+
+    // fall back
+    if (m_tmpFile.empty())
+    {
+        FindModuleDirectory(m_tmpFile);
+        m_tmpFile += "tdbg_stdout";
+    }
 }
 
-size_t ConsoleWindows::getHeight()
-{
-    return m_height;
-}
 
 void ConsoleWindows::clear()
 {
-    size_t size = (size_t)m_width * (size_t)m_height;
-    memset(m_buffer, ' ', size);
-    memset(m_colorBuffer, CS_WHITE, size);
+    ZeroBufferMemory(m_buffer, m_size);
 }
 
 void ConsoleWindows::switchOutput(bool on)
 {
+    if (on)
+    {
+        fclose(stdout);
+        m_redirect = freopen(m_tmpFile.c_str(), "w", stdout);
+        m_stdout = nullptr;
+    }
+    else
+    {
+        fclose(stdout);
+        m_redirect = nullptr;
+        freopen("CONOUT$", "w", stdout);
+
+        m_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (m_stdout == INVALID_HANDLE_VALUE)
+            printf("failed to acquire stdout\n");
+
+        readRedirectedOutput(m_tmpFile);
+    }
 }
 
 size_t ConsoleWindows::getNextCmd()
@@ -66,12 +124,12 @@ size_t ConsoleWindows::getNextCmd()
     if (GetAsyncKeyState(VK_ESCAPE))
         return 27;
 
-    if (GetAsyncKeyState(VK_DOWN))
-    {
-        Sleep(100);
+    while (!_kbhit())
+        Sleep(1);
+
+    int ch = _getch();
+    if (ch == 224)
         return 13;
-    }
-    Sleep(100);
     return 0;
 }
 
@@ -88,43 +146,29 @@ void ConsoleWindows::showCursor(bool doit)
     SetConsoleCursorInfo(m_stdout, &cinf);
 }
 
+void ConsoleWindows::writeChar(char ch, uint32_t col, size_t k)
+{
+    if (k < m_size)
+    {
+        m_buffer[k].Char.AsciiChar = ch;
+        m_buffer[k].Attributes     = col;
+    }
+}
+
 void ConsoleWindows::flush()
 {
+    if (!m_stdout)
+        return;
+    setCursorPosition(0, 0);
+
     ConsoleWindows::showCursor(false);
-    ConsoleWindows::setCursorPosition(0, 0);
-
-    uint32_t   color = ConsoleWindows::getColorImpl(ColorSpace::CS_WHITE, ColorSpace::CS_TRANSPARENT);
-    const char nl    = '\n';
-
-    int16_t i, j, k;
-    for (i = 0; i < m_height; ++i)
-    {
-        for (j = 0; j < m_width; ++j)
-        {
-            k = j + (i * m_width);
-
-            if (m_colorBuffer[k] != color)
-            {
-                color = m_colorBuffer[k];
-                ::SetConsoleTextAttribute(m_stdout, color);
-            }
-
-            ::WriteConsole(
-                m_stdout,
-                &m_buffer[k],
-                1,
-                nullptr,
-                nullptr);
-        }
-        ::WriteConsole(
-            m_stdout,
-            &nl,
-            1,
-            nullptr,
-            nullptr);
-    }
-
-    ConsoleWindows::setCursorPosition(0, 0);
+    SMALL_RECT sr = {0, 0, m_width, m_height};
+    WriteConsoleOutput(
+        m_stdout,
+        m_buffer,
+        {m_width, m_height},
+        {0, 0},
+        &sr);
 }
 
 int ConsoleWindows::create()
@@ -140,23 +184,24 @@ int ConsoleWindows::create()
     if (GetConsoleScreenBufferInfo(m_stdout, &info) == 0)
         return -1;
 
-    CONSOLE_CURSOR_INFO cinf;
-    cinf.bVisible = 0;
-    cinf.dwSize   = 1;
-    SetConsoleCursorInfo(m_stdout, &cinf);
+    m_width  = info.srWindow.Right;
+    m_height = info.srWindow.Bottom;
+    m_size   = (size_t)m_width * (size_t)m_height;
 
-    if (m_width == 0)
-        m_width = info.srWindow.Right;
-    if (m_height == 0)
-        m_height = info.srWindow.Bottom;
-    if (m_height > 30)
-        m_height = 30;
+    m_buffer = new CHAR_INFO[m_size];
 
-    size_t size   = (size_t)m_width * (size_t)m_height;
-    m_buffer      = new uint8_t[size + 1];
-    m_colorBuffer = new uint8_t[size + 1];
-    memset(m_colorBuffer, CS_WHITE, size);
+    ZeroBufferMemory(m_buffer, m_size);
 
+    showCursor(false);
+
+
+
+    m_startBuf  = new CHAR_INFO[m_size];
+    m_startRect = {0, 0, m_width, m_height};
+    m_startCurs = info.dwCursorPosition;
+    
+
+    ReadConsoleOutput(m_stdout, m_startBuf, {m_width, m_height}, {0, 0}, &m_startRect);
     return 0;
 }
 
@@ -200,37 +245,9 @@ uint32_t ConsoleWindows::getColorImpl(ColorSpace fg, ColorSpace bg)
     }
 }
 
-void ClearConsole(void *stdhandle)
+void ZeroBufferMemory(CHAR_INFO *dest, size_t size)
 {
-    CONSOLE_SCREEN_BUFFER_INFO info;
-    if (GetConsoleScreenBufferInfo(stdhandle, &info) == 0)
-        return;
-    SetConsoleCursorPosition(stdhandle, {0, 0});
-
-    const char spc   = ' ';
-    const char nl    = '\n';
-    uint8_t    color = COLOR_TABLE[CS_BLACK][CS_WHITE];
-
-    DWORD tmp;
-
-    int16_t i, j;
-    for (i = 0; i < info.srWindow.Bottom; ++i)
-    {
-        for (j = 0; j < info.srWindow.Right; ++j)
-        {
-            FillConsoleOutputCharacter(stdhandle,
-                                       spc,
-                                       1,
-                                       {j, i},
-                                       &tmp);
-
-            FillConsoleOutputAttribute(stdhandle,
-                                       color,
-                                       1,
-                                       {j, i},
-                                       &tmp);
-        }
-    }
-
-    SetConsoleCursorPosition(stdhandle, {0, 0});
+    CHAR_INFO *end = dest + size;
+    while (dest != end)
+        *dest++ = NullChar;
 }

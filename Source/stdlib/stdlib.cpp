@@ -38,6 +38,7 @@ SYM_API SYM_EXPORT void __puts(tvmregister_t regi)
     size_t ptr = (size_t)prog_get_register64(regi, 0);
     if (ptr)
     {
+
         puts((char*)ptr);
         fflush(stdout);
     }
@@ -57,5 +58,6 @@ const SymbolTable stdlib[] = {
 
 SYM_API SYM_EXPORT SymbolTable* std_init()
 {
+
     return (SymbolTable*)stdlib;
 }

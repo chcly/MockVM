@@ -28,16 +28,17 @@
 class Console
 {
 protected:
-    uint8_t *m_buffer;
-    uint8_t *m_colorBuffer;
     str_t    m_std;
-
     int16_t  m_width;
     int16_t  m_height;
     uint32_t m_curColor;
 
     virtual uint32_t getColorImpl(ColorSpace fg,
                                   ColorSpace bg) = 0;
+
+    virtual void writeChar(char ch, uint32_t col, size_t k) = 0;
+
+    void readRedirectedOutput(const str_t&_path);
 
 public:
     Console();
@@ -55,9 +56,6 @@ public:
 
     virtual size_t getNextCmd() = 0;
 
-    virtual size_t getWidth()  = 0;
-    virtual size_t getHeight() = 0;
-
     virtual void clear()  = 0;
     virtual void flush()  = 0;
     virtual int  create() = 0;
@@ -66,6 +64,17 @@ public:
 
     virtual void setCursorPosition(int x, int y) = 0;
     virtual void showCursor(bool doit)           = 0;
+
+
+    inline size_t getWidth()
+    {
+        return m_width;
+    }
+
+    inline size_t getHeight()
+    {
+        return m_height;
+    }
 };
 
 extern Console *GetPlatformConsole();

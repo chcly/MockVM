@@ -28,24 +28,20 @@
 
 ConsoleCurses::ConsoleCurses() :
     m_stdout(nullptr),
-    m_supportsColor(false)
+    m_supportsColor(false),
+    m_buffer(nullptr),
+    m_colorBuffer(nullptr),
+    m_size(0)
 {
     memset(m_colorTable, 0, 256);
 }
 
 ConsoleCurses ::~ConsoleCurses()
 {
+    delete []m_buffer;
+    delete[] m_colorBuffer;
+
     endwin();
-}
-
-size_t ConsoleCurses::getWidth()
-{
-    return m_width;
-}
-
-size_t ConsoleCurses::getHeight()
-{
-    return m_height;
 }
 
 void ConsoleCurses::clear()
@@ -68,23 +64,7 @@ void ConsoleCurses::switchOutput(bool on)
         freopen("/dev/tty", "w", stdout);
     }
 
-    m_stdout = fopen("/tmp/tdbg_stdout", "r");
-    if (m_stdout)
-    {
-        fseek(m_stdout, 0L, SEEK_END);
-        long len = ftell(m_stdout);
-        if (len > 0)
-        {
-            fseek(m_stdout, 0L, SEEK_SET);
-            char buffer[256] = {};
-
-            len = fread(buffer, 1, 255, m_stdout);
-            if (len > 0)
-                m_std += str_t(buffer, len);
-        }
-        fclose(m_stdout);
-        m_stdout = nullptr;
-    }
+    readRedirectedOutput("/tmp/tdbg_stdout");
 }
 
 size_t ConsoleCurses::getNextCmd()
@@ -146,6 +126,16 @@ uint32_t ConsoleCurses::getColorImpl(ColorSpace fg, ColorSpace bg)
 
     return m_colorTable[bg][fg % 16];
 }
+
+void ConsoleCurses::writeChar(char ch, uint32_t col, size_t k)
+{
+    if (k < m_size)
+    {
+        m_buffer[k]      = ch;
+        m_colorBuffer[k] = (uint8_t)col;
+    }
+}
+
 
 void ConsoleCurses::mapEnumColor(int mapping, int fg, int bg)
 {
@@ -279,13 +269,12 @@ int ConsoleCurses::create()
     m_width  = c;
     m_height = r;
 
-    size_t size = r * c;
+    m_size  = r * c;
+    m_buffer      = new uint8_t[m_size];
+    m_colorBuffer = new uint8_t[m_size];
 
-    m_buffer      = new uint8_t[size];
-    m_colorBuffer = new uint8_t[size];
-
-    memset(m_buffer, ' ', size);
-    memset(m_colorBuffer, 0, size);
+    memset(m_buffer, ' ', m_size);
+    memset(m_colorBuffer, 0, m_size);
 
     return 0;
 }

@@ -104,8 +104,9 @@ void Debugger::render(void)
 void Debugger::displayInstructions(void)
 {
     int16_t start = (int16_t)m_curinst, i;
-    int16_t ma    = 25;
+    int16_t ma    = 20;
     int16_t hs    = ma >> 1;
+    hs+=4;
 
     for (i = 0; i < hs && start > 1; ++i)
         start--;
@@ -128,13 +129,18 @@ void Debugger::step(void)
 {
     if (m_curinst < m_ins.size())
     {
-        m_console->switchOutput(true);
 
         const ExecInstruction& inst = m_ins.at((size_t)m_curinst++);
         if (OPCodeTable[inst.op] != nullptr)
+        {
+            if (inst.op == OP_GTO && inst.call || inst.op >= OP_PRG)
+                m_console->switchOutput(true);
+
             (this->*OPCodeTable[inst.op])(inst);
 
-        m_console->switchOutput(false);
+            if (inst.op == OP_GTO && inst.call || inst.op >= OP_PRG)
+                m_console->switchOutput(false);
+        }
     }
     else
         m_exit = true;
