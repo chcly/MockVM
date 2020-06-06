@@ -28,6 +28,7 @@
 class ConsoleCurses : public Console
 {
 public:
+    FILE*   m_stdout;
     bool    m_supportsColor;
     uint8_t m_colorTable[16][16];
 
@@ -35,7 +36,7 @@ public:
                           ColorSpace bg);
 
     void mapEnumColor(int mapping, int fg, int bg);
-
+    
 public:
     ConsoleCurses();
     virtual ~ConsoleCurses();
@@ -46,8 +47,13 @@ public:
     void   clear();
     void   flush();
     int    create();
-    void   setCursorPosition(int x, int y);
-    void   showCursor(bool doit);
+
+    void switchOutput(bool on);
+    void setCursorPosition(int x, int y);
+    void showCursor(bool doit);
+
+
+
 };
 
 #endif  //_ConsoleCurses_h_

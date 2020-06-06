@@ -57,6 +57,10 @@ void ConsoleWindows::clear()
     memset(m_colorBuffer, CS_WHITE, size);
 }
 
+void ConsoleWindows::switchOutput(bool on)
+{
+}
+
 size_t ConsoleWindows::getNextCmd()
 {
     if (GetAsyncKeyState(VK_ESCAPE))
@@ -152,7 +156,6 @@ int ConsoleWindows::create()
     m_buffer      = new uint8_t[size + 1];
     m_colorBuffer = new uint8_t[size + 1];
     memset(m_colorBuffer, CS_WHITE, size);
-
 
     return 0;
 }

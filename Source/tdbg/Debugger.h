@@ -28,6 +28,7 @@ class Console;
 class Debugger : public Program
 {
 private:
+    int      m_fd;
     str_t    m_file;
     Console* m_console;
     bool     m_exit;

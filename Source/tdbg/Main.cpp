@@ -23,26 +23,6 @@
 #include "Debugger.h"
 #include "SymbolUtils.h"
 
-#ifndef _WIN32
-#include <fcntl.h>
-#include <signal.h>
-#include <unistd.h>
-volatile static sig_atomic_t exit_hook = 0;
-
-void exithook(int)
-{
-    putchar('\n');
-    exit_hook = 1;
-    fflush(stdout);
-}
-
-void exit_program(int pid)
-{
-    kill(pid, SIGUSR1);
-    kill(pid, SIGUSR2);
-}
-#endif
-
 void usage(void);
 
 int main(int argc, char **argv)
@@ -78,77 +58,12 @@ int main(int argc, char **argv)
         return 0;
     }
 
-#ifdef _WIN32
-
     FindModuleDirectory(mod);
     Debugger prog(mod, file);
     if (prog.load(file.c_str()) != PS_OK)
         return 1;
 
     return prog.debug();
-
-#else
-
-    signal(SIGUSR1, exithook);
-    signal(SIGUSR2, exithook);
-
-    int p[2];
-    if (pipe(p) == -1)
-    {
-        puts("failed to create pipe");
-        return -1;
-    }
-
-    int pid = fork(), rc = 0;
-    if (pid == -1)
-    {
-        puts("failed to fork process");
-        return 1;
-    }
-    else if (pid == 0)
-    {
-        if (dup2(p[1], 1) == -1)
-        {
-            puts("failed to duplicate file descriptor");
-            exit_program(pid);
-            return 1;
-        }
-
-        stdout = fdopen(0, "wb");
-
-        while (!exit_hook)
-            usleep(1);
-        puts("exited.\n");
-        rc = 0;
-    }
-    else
-    {
-        FILE *pstd = stdout;
-        if (dup2(p[1], 1) == -1)
-        {
-            puts("failed to duplicate file descriptor");
-            exit_program(pid);
-            return 1;
-        }
-        stdout = fdopen(0, "wb");
-
-        FindModuleDirectory(mod);
-        Debugger prog(mod, file);
-        if (prog.load(file.c_str()) != PS_OK)
-        {
-            exit_program(pid);
-            return 1;
-        }
-        else
-        {
-            rc = prog.debug();
-            exit_program(pid);
-        }
-
-        stdout = pstd;
-    }
-    return rc;
-#endif
 }
 
 void usage(void)

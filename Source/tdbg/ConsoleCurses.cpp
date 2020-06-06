@@ -20,13 +20,14 @@
 -------------------------------------------------------------------------------
 */
 #include "ConsoleCurses.h"
+#include <fcntl.h>
 #include <ncurses.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
-
 ConsoleCurses::ConsoleCurses() :
+    m_stdout(nullptr),
     m_supportsColor(false)
 {
     memset(m_colorTable, 0, 256);
@@ -53,6 +54,36 @@ void ConsoleCurses::clear()
     {
         memset(m_buffer, ' ', m_width * m_height);
         memset(m_colorBuffer, 0, m_width * m_height);
+    }
+}
+
+void ConsoleCurses::switchOutput(bool on)
+{
+    if (on)
+        m_stdout = freopen("/tmp/tdbg_stdout", "w", stdout);
+    else
+    {
+        if (m_stdout != nullptr)
+            fclose(m_stdout);
+        freopen("/dev/tty", "w", stdout);
+    }
+
+    m_stdout = fopen("/tmp/tdbg_stdout", "r");
+    if (m_stdout)
+    {
+        fseek(m_stdout, 0L, SEEK_END);
+        long len = ftell(m_stdout);
+        if (len > 0)
+        {
+            fseek(m_stdout, 0L, SEEK_SET);
+            char buffer[256] = {};
+
+            len = fread(buffer, 1, 255, m_stdout);
+            if (len > 0)
+                m_std += str_t(buffer, len);
+        }
+        fclose(m_stdout);
+        m_stdout = nullptr;
     }
 }
 
@@ -113,8 +144,6 @@ uint32_t ConsoleCurses::getColorImpl(ColorSpace fg, ColorSpace bg)
     if (bg == CS_TRANSPARENT)
         bg = CS_BLACK;
 
-
-    
     return m_colorTable[bg][fg % 16];
 }
 
@@ -210,7 +239,6 @@ void ConsoleCurses::mapEnumColor(int mapping, int fg, int bg)
             bgcol = COLOR_YELLOW;
             break;
         }
-  
     }
     else
         bgcol = -1;
@@ -230,7 +258,6 @@ int ConsoleCurses::create()
     m_supportsColor = has_colors() != 0;
 
     use_default_colors();
-  
 
     if (m_supportsColor)
     {

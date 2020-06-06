@@ -27,12 +27,12 @@
 
 using namespace std;
 
-#define COL1_ST  2
-#define COL2_ST  41
+#define COL1_ST 2
+#define COL2_ST 41
 #define COL1_LAB 10
 #define COL2_LAB 55
 #define MAX_RIGHT 80
-#define MIN_Y     0
+#define MIN_Y 0
 
 const ExecInstruction nop = {0, 0, 0, {0, 0, 0}, 0, 0};
 
@@ -120,15 +120,21 @@ void Debugger::displayInstructions(void)
     }
     displayRegisters();
     displayStack();
+    m_console->setColor(CS_DARKCYAN);
+    m_console->displayOutput(MAX_RIGHT + 1, 1);
 }
 
 void Debugger::step(void)
 {
     if (m_curinst < m_ins.size())
     {
+        m_console->switchOutput(true);
+
         const ExecInstruction& inst = m_ins.at((size_t)m_curinst++);
         if (OPCodeTable[inst.op] != nullptr)
             (this->*OPCodeTable[inst.op])(inst);
+
+        m_console->switchOutput(false);
     }
     else
         m_exit = true;

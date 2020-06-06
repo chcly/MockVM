@@ -104,6 +104,28 @@ void Console::displayLineVert(int16_t st, int16_t en, int16_t x)
         displayChar('|', x, i);
 }
 
+void Console::displayOutput(int16_t x, int16_t y)
+{
+    int16_t st  = x;
+    size_t  len = m_std.size(), i;
+    for (i = 0; i < len; i++)
+    {
+        char ch = m_std.at(i);
+        if (ch == '\n')
+        {
+            x = st;
+            ++y;
+        }
+        else
+            displayChar(ch, x++, y);
+    }
+}
+
+void Console::clearOutput()
+{
+    m_std.clear();
+}
+
 void Console::setColor(ColorSpace fg, ColorSpace bg)
 {
     m_curColor = getColorImpl(fg, bg);

@@ -35,6 +35,7 @@ private:
 
     uint32_t getColorImpl(ColorSpace fg,
                           ColorSpace bg);
+
 public:
     ConsoleWindows();
     virtual ~ConsoleWindows();
@@ -46,6 +47,8 @@ public:
     void   clear();
     void   flush();
     int    create();
+
+    void switchOutput(bool on);
 
     void setCursorPosition(int x, int y);
     void showCursor(bool doit);

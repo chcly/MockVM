@@ -30,6 +30,7 @@ class Console
 protected:
     uint8_t *m_buffer;
     uint8_t *m_colorBuffer;
+    str_t    m_std;
 
     int16_t  m_width;
     int16_t  m_height;
@@ -44,7 +45,9 @@ public:
 
     void displayString(const str_t &string, int16_t x, int16_t y);
     void displayChar(char ch, int16_t x, int16_t y);
-
+    void displayOutput(int16_t x, int16_t y);
+    void clearOutput();
+    
     void displayLineHorz(int16_t st, int16_t en, int16_t y);
     void displayLineVert(int16_t st, int16_t en, int16_t x);
 
@@ -58,6 +61,8 @@ public:
     virtual void clear()  = 0;
     virtual void flush()  = 0;
     virtual int  create() = 0;
+
+    virtual void switchOutput(bool on) = 0;
 
     virtual void setCursorPosition(int x, int y) = 0;
     virtual void showCursor(bool doit)           = 0;
