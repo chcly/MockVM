@@ -36,7 +36,7 @@ public:
     typedef void (Program::*Operation)(const ExecInstruction& inst);
     typedef Operation InstructionTable[OP_MAX - OP_BEG];
 
-private:
+protected:
     ExecInstructions m_ins;
     TVMHeader        m_header;
     Registers        m_regi;

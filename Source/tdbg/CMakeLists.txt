@@ -17,47 +17,51 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 # ------------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.0)
-project(ToyVM)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include_directories(../libtvm)
 
-set(CMAKE_MODULE_PATH 
-    ${ToyVM_SOURCE_DIR}/CMake
+set(SRC
+  Console.h
+  Color.h
+  Console.cpp
+  Debugger.h
+  Debugger.cpp
+  Main.cpp
 )
 
-set(ToyVM_INSTALL_PATH CACHE STRING "")
-set(ToyVM_TEST         CACHE BOOL   OFF)
-set(BUILD_TEST         CACHE BOOL   OFF)
-set(BUILD_DBG          CACHE BOOL   OFF)
+if (WIN32)
+    set(PLAT_NO_COMP
+      ConsoleCurses.h
+      ConsoleCurses.cpp 
+     )
 
-if (BUILD_TEST)
-    set(ToyVM_TEST CACHE FORCE BOOL ON)
-else ()
-    if (ToyVM_TEST)
-        set(ToyVM_TEST CACHE FORCE BOOL OFF)
-    endif()
+    set_source_files_properties(${PLAT_NO_COMP} PROPERTIES HEADER_FILE_ONLY ON)
+
+    set(PLAT
+      ConsoleWindows.h
+      ConsoleWindows.cpp
+      ${PLAT_NO_COMP}
+    )
+
+
+else()
+
+    set(CURSES_NEED_NCURSES TRUE)
+    find_package(Curses REQUIRED)
+
+    include_directories(${CURSES_INCLUDE_DIRS})
+    set(PLAT_LIBS ${CURSES_LIBRARIES})
+
+    set(PLAT
+      ConsoleCurses.h
+      ConsoleCurses.cpp
+    )
 endif()
 
-
-subdirs(CMake)
-include (StaticRuntime)
-include (CopyTarget)
-set_static_runtime()
-
-set(ToyVM_BIN_DIR ${ToyVM_BINARY_DIR}/bin)
-set(ToyVM_LIB_DIR ${ToyVM_BIN_DIR}/lib)
+add_executable(tdbg  ${SRC} ${PLAT})
+target_link_libraries(tdbg libtvm ${PLAT_LIBS})
 
 
-subdirs(Source)
+copy_target(tdbg ${ToyVM_BIN_DIR})
+copy_install_target(tdbg)
 
-if (ToyVM_TEST)
-    set(TestDirectory ${ToyVM_SOURCE_DIR}/Test)
-
-
-    configure_file(${ToyVM_SOURCE_DIR}/CMake/TestConfig.h.in  
-                   ${ToyVM_BINARY_DIR}/TestConfig.h)
-
-    subdirs(Test)
-endif()

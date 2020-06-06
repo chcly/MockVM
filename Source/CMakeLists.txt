@@ -24,3 +24,7 @@ subdirs(stdlib)
 
 subdirs(tcom)
 subdirs(tvm)
+
+if (BUILD_DBG)
+    subdirs(tdbg)
+endif()
