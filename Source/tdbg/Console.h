@@ -42,11 +42,11 @@ public:
     Console();
     virtual ~Console();
 
-    void displayString(const str_t &string, size_t x, size_t y);
-    void displayChar(char ch, size_t x, size_t y);
+    void displayString(const str_t &string, int16_t x, int16_t y);
+    void displayChar(char ch, int16_t x, int16_t y);
 
-    void displayLineHorz(size_t st, size_t en, size_t y);
-    void displayLineVert(size_t st, size_t en, size_t x);
+    void displayLineHorz(int16_t st, int16_t en, int16_t y);
+    void displayLineVert(int16_t st, int16_t en, int16_t x);
 
     void setColor(ColorSpace fg, ColorSpace bg = ColorSpace::CS_TRANSPARENT);
 

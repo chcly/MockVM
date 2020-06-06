@@ -41,16 +41,16 @@ Console::~Console()
     delete[] m_colorBuffer;
 }
 
-void Console::displayString(const str_t &string, size_t x, size_t y)
+void Console::displayString(const str_t &string, int16_t x, int16_t y)
 {
-    size_t i, s, k, b;
+    int16_t i, s, k, b;
 
     if (y < 0)
         return;
     if (x < 0 || x > m_width)
         return;
 
-    s = string.size();
+    s = (int16_t)string.size();
 
     const char *ptr = string.c_str();
 
@@ -75,31 +75,31 @@ void Console::displayString(const str_t &string, size_t x, size_t y)
     }
 }
 
-void Console::displayChar(char ch, size_t x, size_t y)
+void Console::displayChar(char ch, int16_t x, int16_t y)
 {
     if (y < 0 || y > m_height)
         return;
     if (x < 0 || x > m_width)
         return;
 
-    size_t k = x + y * m_width;
-    if (k < (size_t)m_width * (size_t)m_height)
+    int16_t k = x + y * m_width;
+    if (k < m_width * m_height)
     {
         m_buffer[k]      = ch;
         m_colorBuffer[k] = m_curColor;
     }
 }
 
-void Console::displayLineHorz(size_t st, size_t en, size_t y)
+void Console::displayLineHorz(int16_t st, int16_t en, int16_t y)
 {
-    size_t i;
+    int16_t i;
     for (i = st; i < en; ++i)
         displayChar('-', i, y);
 }
 
-void Console::displayLineVert(size_t st, size_t en, size_t x)
+void Console::displayLineVert(int16_t st, int16_t en, int16_t x)
 {
-    size_t i;
+    int16_t i;
     for (i = st; i < en; ++i)
         displayChar('|', x, i);
 }

@@ -319,7 +319,7 @@ int Program::findDynamic(ExecInstruction& ins)
 {
     if (ins.argv[0] < m_strtablist.size())
     {
-        str_t name = m_strtablist.at(ins.argv[0]), look;
+        str_t name = m_strtablist.at((size_t)ins.argv[0]), look;
 
         // This needs to change to something better.
         // It should be a predictable identifier to look up
@@ -958,14 +958,14 @@ void Program::handle_OP_LDRS(const ExecInstruction& inst)
         Register&       dreg = m_regi[inst.argv[0]];
         const Register& src  = m_regi[inst.argv[1]];
 
-        size_t   sptr = src.x;
+        size_t   sptr = (size_t)src.x;
         uint8_t* ptr  = (uint8_t*)sptr;
 
         if (ptr)
         {
             if (inst.index < MAX_REG)
             {
-                size_t i = m_regi[inst.index].x;
+                size_t i = (size_t)m_regi[inst.index].x;
                 if (i < m_dataTable.capacity())
                     dreg.x = ptr[i];
             }
@@ -981,13 +981,13 @@ void Program::handle_OP_STRS(const ExecInstruction& inst)
         const Register& dreg = m_regi[inst.argv[0]];
         Register&       src  = m_regi[inst.argv[1]];
 
-        size_t   sptr = src.x;
+        size_t   sptr = (size_t)src.x;
         uint8_t* ptr  = (uint8_t*)sptr;
         if (ptr)
         {
             if (inst.index < MAX_REG)
             {
-                size_t i = m_regi[inst.index].x;
+                size_t i = (size_t)m_regi[inst.index].x;
                 if (i < m_dataTable.capacity())
                     ptr[i] = (uint8_t)dreg.x;
             }

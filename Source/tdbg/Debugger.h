@@ -31,7 +31,7 @@ private:
     str_t    m_file;
     Console* m_console;
     bool     m_exit;
-    size_t   m_ypos;
+    int16_t  m_ypos;
 
     Registers m_last;
 

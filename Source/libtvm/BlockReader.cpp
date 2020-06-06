@@ -90,7 +90,7 @@ void BlockReader::offset(int32_t nr)
     lo += nr;
     if (lo < 0)
         lo = 0;
-    if (lo > m_fileLen)
+    if (lo > (int32_t)m_fileLen)
         lo = ((int32_t)m_fileLen) - 1;
     m_loc = lo;
 }

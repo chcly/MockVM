@@ -152,7 +152,7 @@ int BinaryWriter::open(const char* fname)
     return PS_OK;
 }
 
-size_t BinaryWriter::addToStringTable(const str_t& symname)
+uint64_t BinaryWriter::addToStringTable(const str_t& symname)
 {
     LabelMap::iterator it = m_strtab.find(symname);
     if (it != m_strtab.end())
@@ -168,9 +168,9 @@ size_t BinaryWriter::addToStringTable(const str_t& symname)
     return size;
 }
 
-size_t BinaryWriter::addToDataTable(const DataDeclaration& dt)
+uint64_t BinaryWriter::addToDataTable(const DataDeclaration& dt)
 {
-    size_t startAddr = m_sizeOfData;
+    uint64_t startAddr = m_sizeOfData;
 
     LabelMap::iterator it = m_datatab.find(dt.lname);
     if (it != m_datatab.end())
@@ -185,7 +185,7 @@ size_t BinaryWriter::addToDataTable(const DataDeclaration& dt)
     }
     else if (dt.type == SEC_ZERO)
     {
-        m_sizeOfData += m_dataTable.fill(dt.ival, 0);
+        m_sizeOfData += m_dataTable.fill((size_t)dt.ival, 0);
     }
     else
     {
@@ -194,7 +194,7 @@ size_t BinaryWriter::addToDataTable(const DataDeclaration& dt)
     return startAddr;
 }
 
-size_t BinaryWriter::addLinkedSymbol(const str_t& symname, const str_t& libname)
+uint64_t BinaryWriter::addLinkedSymbol(const str_t& symname, const str_t& libname)
 {
     if (m_linkedLibraries.find(libname) == m_linkedLibraries.end())
     {
@@ -208,8 +208,8 @@ size_t BinaryWriter::addLinkedSymbol(const str_t& symname, const str_t& libname)
 int BinaryWriter::mapInstructions(void)
 {
     uint64_t label  = PS_UNDEFINED;
-    int64_t  insp   = 0;
-    int64_t  lookup = 0;
+    uint64_t insp   = 0;
+    uint64_t lookup = 0;
     int      status = PS_OK;
 
     using InstPtr = std::vector<Instruction*>;
@@ -326,7 +326,7 @@ size_t BinaryWriter::calculateInstructionSize(void)
     return size;
 }
 
-size_t BinaryWriter::findLabel(const str_t& name)
+uint64_t BinaryWriter::findLabel(const str_t& name)
 {
     if (!name.empty())
     {
@@ -480,7 +480,7 @@ size_t BinaryWriter::writeCodeSection(void)
     sec.start      = (uint32_t)sizeof(TVMHeader);
     sec.align      = getAlignment(m_sizeOfCode);
 
-    size_t entry = findLabel("main");
+    uint64_t entry = findLabel("main");
     if (entry == -1)
     {
         printf("failed to find main entry point\n");

@@ -32,7 +32,7 @@ using namespace std;
 #define COL1_LAB 10
 #define COL2_LAB 55
 #define MAX_RIGHT 80
-#define MIN_Y     1
+#define MIN_Y     0
 
 const ExecInstruction nop = {0, 0, 0, {0, 0, 0}, 0, 0};
 
@@ -79,7 +79,7 @@ int Debugger::debug(void)
     render();
     while (!m_exit)
     {
-        int cmd = m_console->getNextCmd();
+        int cmd = (int)m_console->getNextCmd();
         if (cmd == 27)
             m_exit = true;
 
@@ -103,9 +103,9 @@ void Debugger::render(void)
 
 void Debugger::displayInstructions(void)
 {
-    size_t start = m_curinst, i;
-    size_t ma    = 25;
-    size_t hs    = ma >> 1;
+    int16_t start = (int16_t)m_curinst, i;
+    int16_t ma    = 25;
+    int16_t hs    = ma >> 1;
 
     for (i = 0; i < hs && start > 1; ++i)
         start--;
@@ -126,7 +126,7 @@ void Debugger::step(void)
 {
     if (m_curinst < m_ins.size())
     {
-        const ExecInstruction& inst = m_ins.at(m_curinst++);
+        const ExecInstruction& inst = m_ins.at((size_t)m_curinst++);
         if (OPCodeTable[inst.op] != nullptr)
             (this->*OPCodeTable[inst.op])(inst);
     }

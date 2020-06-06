@@ -285,13 +285,13 @@ struct ExecInstruction
 };
 
 using Instructions     = std::vector<Instruction>;
-using IndexToPosition  = std::unordered_map<size_t, size_t>;
-using LabelMap         = std::unordered_map<str_t, size_t>;
+using IndexToPosition  = std::unordered_map<uint64_t, uint64_t>;
+using LabelMap         = std::unordered_map<str_t, uint64_t>;
 using SymbolMap        = std::unordered_map<str_t, Symbol>;
 using StringLookup     = std::unordered_map<str_t, str_t>;
 using AddressLookup    = std::unordered_map<str_t, uint64_t>;
 using DynamicLib       = std::vector<void*>;
-using StringMap        = std::unordered_map<str_t, size_t>;
+using StringMap        = std::unordered_map<str_t, uint64_t>;
 using ExecInstructions = std::vector<ExecInstruction>;
 using DataLookup       = std::unordered_map<str_t, DataDeclaration>;
 
