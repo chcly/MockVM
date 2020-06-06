@@ -32,7 +32,7 @@ public:
     uint8_t m_colorTable[16][16];
 
     uint32_t getColorImpl(ColorSpace fg,
-                          ColorSpace bg = ColorSpace::CS_TRANSPARENT);
+                          ColorSpace bg);
 
     void mapEnumColor(int mapping, int fg, int bg);
 
@@ -42,14 +42,12 @@ public:
 
     size_t getWidth();
     size_t getHeight();
-
     size_t getNextCmd();
     void   clear();
     void   flush();
     int    create();
-
-    void setCursorPosition(int x, int y);
-    void showCursor(bool doit);
+    void   setCursorPosition(int x, int y);
+    void   showCursor(bool doit);
 };
 
 #endif  //_ConsoleCurses_h_

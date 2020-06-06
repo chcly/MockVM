@@ -36,7 +36,7 @@ protected:
     uint32_t m_curColor;
 
     virtual uint32_t getColorImpl(ColorSpace fg,
-                                  ColorSpace bg = ColorSpace::CS_TRANSPARENT) = 0;
+                                  ColorSpace bg) = 0;
 
 public:
     Console();

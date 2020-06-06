@@ -30,14 +30,11 @@ class ConsoleWindows : public Console
 private:
     HANDLE m_stdout;
     HANDLE m_stdin;
-    int    m_keyState;
     DWORD  m_lastParm;
-    bool   m_dirty;
     COORD  m_lastSize;
 
     uint32_t getColorImpl(ColorSpace fg,
-                          ColorSpace bg = ColorSpace::CS_TRANSPARENT);
-
+                          ColorSpace bg);
 public:
     ConsoleWindows();
     virtual ~ConsoleWindows();

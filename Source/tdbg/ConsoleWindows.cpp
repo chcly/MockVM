@@ -30,9 +30,7 @@ ConsoleWindows::ConsoleWindows() :
     m_stdout(nullptr),
     m_stdin(nullptr),
     m_lastSize({0, 0}),
-    m_keyState(0),
-    m_lastParm(0),
-    m_dirty(true)
+    m_lastParm(0)
 {
 }
 
@@ -54,12 +52,6 @@ size_t ConsoleWindows::getHeight()
 
 void ConsoleWindows::clear()
 {
-    if (m_dirty)
-    {
-        ClearConsole(m_stdout);
-        m_dirty = false;
-    }
-
     size_t size = (size_t)m_width * (size_t)m_height;
     memset(m_buffer, ' ', size);
     memset(m_colorBuffer, CS_WHITE, size);
@@ -97,7 +89,7 @@ void ConsoleWindows::flush()
     ConsoleWindows::showCursor(false);
     ConsoleWindows::setCursorPosition(0, 0);
 
-    uint32_t   color = ConsoleWindows::getColorImpl(ColorSpace::CS_WHITE);
+    uint32_t   color = ConsoleWindows::getColorImpl(ColorSpace::CS_WHITE, ColorSpace::CS_TRANSPARENT);
     const char nl    = '\n';
 
     int16_t i, j, k;
@@ -161,7 +153,7 @@ int ConsoleWindows::create()
     m_colorBuffer = new uint8_t[size + 1];
     memset(m_colorBuffer, CS_WHITE, size);
 
-    m_dirty = true;
+
     return 0;
 }
 

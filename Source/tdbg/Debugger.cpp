@@ -27,11 +27,12 @@
 
 using namespace std;
 
-#define COL1_ST 2
-#define COL2_ST 41
+#define COL1_ST  2
+#define COL2_ST  41
 #define COL1_LAB 10
 #define COL2_LAB 55
 #define MAX_RIGHT 80
+#define MIN_Y     1
 
 const ExecInstruction nop = {0, 0, 0, {0, 0, 0}, 0, 0};
 
@@ -53,18 +54,17 @@ Debugger::~Debugger()
 
 void Debugger::displayHeader(void)
 {
-    m_ypos = 1;
+    m_ypos = MIN_Y;
     m_console->setColor(CS_GREY);
     m_console->displayLineHorz(0, MAX_RIGHT, m_ypos);
     m_console->displayLineHorz(0, MAX_RIGHT, 27);
     m_console->displayLineVert(m_ypos + 1, 27, COL2_ST - 2);
-    m_console->displayLineHorz(COL2_ST - 1, MAX_RIGHT, MAX_REG + 2);
-    m_console->displayLineHorz(COL2_ST - 1, MAX_RIGHT, MAX_REG + 7);
+    m_console->displayLineHorz(COL2_ST - 1, MAX_RIGHT, m_ypos + MAX_REG + 1);
+    m_console->displayLineHorz(COL2_ST - 1, MAX_RIGHT, m_ypos + MAX_REG + 7);
     m_console->setColor(CS_GREEN);
     m_console->displayString("Instructions", COL1_LAB, m_ypos);
     m_console->displayString("Registers", COL2_LAB, m_ypos);
-    m_console->displayString("Stack", COL2_LAB, MAX_REG + 2);
-
+    m_console->displayString("Stack", COL2_LAB, m_ypos + MAX_REG + 1);
     m_console->setColor(CS_WHITE);
     ++m_ypos;
 }
@@ -94,7 +94,7 @@ int Debugger::debug(void)
 
 void Debugger::render(void)
 {
-    m_ypos = 1;
+    m_ypos = MIN_Y;
     m_console->clear();
     displayHeader();
     displayInstructions();
@@ -138,7 +138,7 @@ void Debugger::displayRegisters(void)
 {
     stringstream ss, ss1;
     int          i;
-    int          line = 2;
+    int          line = MIN_Y + 1;
 
     m_console->setColor(CS_WHITE);
 
@@ -167,7 +167,7 @@ void Debugger::displayRegisters(void)
 
 void Debugger::displayStack(void)
 {
-    int line = MAX_REG + 2;
+    int line = MIN_Y + MAX_REG + 2;
     if (m_stack.empty())
         return;
     m_console->setColor(CS_WHITE);
