@@ -117,27 +117,6 @@ void Console::clearOutput()
 }
 
 
-void Console::readRedirectedOutput(const str_t &_path)
-{
-    FILE *fp = fopen(_path.c_str(), "r");
-    if (fp)
-    {
-        fseek(fp, 0L, SEEK_END);
-        long len = ftell(fp);
-        if (len > 0)
-        {
-            fseek(fp, 0L, SEEK_SET);
-            char buffer[256] = {};
-
-            len = fread(buffer, 1, 255, fp);
-            if (len > 0)
-                m_std += str_t(buffer, len);
-        }
-
-        fclose(fp);
-    }
-}
-
 
 void Console::setColor(ColorSpace fg, ColorSpace bg)
 {

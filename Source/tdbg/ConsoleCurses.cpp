@@ -62,21 +62,41 @@ void ConsoleCurses::switchOutput(bool on)
         if (m_stdout != nullptr)
             fclose(m_stdout);
         freopen("/dev/tty", "w", stdout);
-    }
 
-    readRedirectedOutput("/tmp/tdbg_stdout");
+        readRedirectedOutput("/tmp/tdbg_stdout");
+    }
 }
 
-size_t ConsoleCurses::getNextCmd()
+void ConsoleCurses::readRedirectedOutput(const str_t &_path)
+{
+    FILE *fp = fopen(_path.c_str(), "r");
+    if (fp)
+    {
+        fseek(fp, 0L, SEEK_END);
+        long len = ftell(fp);
+        if (len > 0)
+        {
+            fseek(fp, 0L, SEEK_SET);
+            char buffer[256] = {};
+
+            len = fread(buffer, 1, 255, fp);
+            if (len > 0)
+                m_std += str_t(buffer, len);
+        }
+
+        fclose(fp);
+    }
+}
+
+
+int ConsoleCurses::getNextCmd()
 {
     int ch = getch();
     if (ch == 'q')
-        return 27;
-
+        return CCS_QUIT;
     if (ch == KEY_DOWN)
-        return 13;
-
-    return 0;
+        return CCS_STEP;
+    return CCS_NO_INPUT;
 }
 
 void ConsoleCurses::setCursorPosition(int x, int y)

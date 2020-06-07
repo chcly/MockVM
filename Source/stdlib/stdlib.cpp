@@ -20,16 +20,27 @@
 -------------------------------------------------------------------------------
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include "SharedLib.h"
 #include "SymbolUtils.h"
+
+#ifdef _WIN32
+# include <windows.h>
+# include <string.h>
+#endif
 
 SYM_API SYM_EXPORT void __putchar(tvmregister_t regi)
 {
     uint8_t ch = prog_get_register8(regi, 0);
     if (ch)
     {
+#ifdef _WIN32
+        HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (handle != INVALID_HANDLE_VALUE)
+            WriteFile(handle, &ch, 1, nullptr, nullptr);
+#else
         putchar(ch);
-        fflush(stdout);
+#endif
     }
 }
 
@@ -38,9 +49,18 @@ SYM_API SYM_EXPORT void __puts(tvmregister_t regi)
     size_t ptr = (size_t)prog_get_register64(regi, 0);
     if (ptr)
     {
-
+#ifdef _WIN32
+        HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (handle != INVALID_HANDLE_VALUE)
+        {
+            const char nl = '\n';
+            char* cp = (char*)ptr;
+            WriteFile(handle, cp, (DWORD)strlen(cp), nullptr, nullptr);
+            WriteFile(handle, &nl, 1, nullptr, nullptr);
+        }
+#else
         puts((char*)ptr);
-        fflush(stdout);
+#endif
     }
 }
 
@@ -58,6 +78,5 @@ const SymbolTable stdlib[] = {
 
 SYM_API SYM_EXPORT SymbolTable* std_init()
 {
-
     return (SymbolTable*)stdlib;
 }

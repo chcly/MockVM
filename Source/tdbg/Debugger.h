@@ -44,9 +44,7 @@ private:
 
     void render(void);
     void step(void);
-
     void disassemble(const ExecInstruction& inst, size_t i);
-
     void getOpString(str_t& dest, const uint8_t op);
 
 public:

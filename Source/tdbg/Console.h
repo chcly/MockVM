@@ -25,6 +25,13 @@
 #include "Color.h"
 #include "Declarations.h"
 
+enum ConsoleCtrlStatus
+{
+    CCS_NO_INPUT=0,
+    CCS_QUIT,
+    CCS_STEP
+};
+
 class Console
 {
 protected:
@@ -37,8 +44,6 @@ protected:
                                   ColorSpace bg) = 0;
 
     virtual void writeChar(char ch, uint32_t col, size_t k) = 0;
-
-    void readRedirectedOutput(const str_t&_path);
 
 public:
     Console();
@@ -54,14 +59,12 @@ public:
 
     void setColor(ColorSpace fg, ColorSpace bg = ColorSpace::CS_TRANSPARENT);
 
-    virtual size_t getNextCmd() = 0;
 
-    virtual void clear()  = 0;
-    virtual void flush()  = 0;
-    virtual int  create() = 0;
-
-    virtual void switchOutput(bool on) = 0;
-
+    virtual int  getNextCmd()                    = 0;
+    virtual void clear()                         = 0;
+    virtual void flush()                         = 0;
+    virtual int  create()                        = 0;
+    virtual void switchOutput(bool on)           = 0;
     virtual void setCursorPosition(int x, int y) = 0;
     virtual void showCursor(bool doit)           = 0;
 

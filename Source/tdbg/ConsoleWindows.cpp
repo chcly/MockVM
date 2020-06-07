@@ -19,11 +19,11 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#include "SymbolUtils.h"
 #include "ConsoleWindows.h"
+#include <conio.h>
 #include <stdio.h>
 #include <string.h>
-#include <conio.h>
+#include "SymbolUtils.h"
 
 const CHAR_INFO NullChar = {' ', CS_WHITE};
 
@@ -35,10 +35,10 @@ ConsoleWindows::ConsoleWindows() :
     m_startRect({0, 0, 0, 0}),
     m_size(0),
     m_stdout(nullptr),
-    m_redirect(nullptr),
-    m_tmpFile("")
+    m_redirIn(nullptr),
+    m_redirOut(nullptr)
 {
-    makeTempFileName();
+    initialize();
 }
 
 ConsoleWindows::~ConsoleWindows()
@@ -53,8 +53,8 @@ ConsoleWindows::~ConsoleWindows()
         cinf.dwSize   = 1;
         SetConsoleCursorInfo(m_stdout, &cinf);
 
-
-        // Restore the contents of the start screen.
+        // Restore the contents of
+        // the start screen.
         WriteConsoleOutput(
             m_stdout,
             m_startBuf,
@@ -63,34 +63,20 @@ ConsoleWindows::~ConsoleWindows()
             &m_startRect);
 
         delete[] m_startBuf;
-
-        if (DeleteFile(m_tmpFile.c_str())==0)
-        {
-            printf("Failed to delete temp file\n");
-        }
     }
+
+    CloseHandle(m_redirIn);
+    CloseHandle(m_redirOut);
 }
 
-void ConsoleWindows::makeTempFileName()
+void ConsoleWindows::initialize()
 {
-    char  tmp[270];
-    DWORD len;
-    len = GetTempPath(270, tmp);
-    if (len > 0)
-    {
-        tmp[len] = 0;
-        m_tmpFile = str_t(tmp, len);
-        m_tmpFile += "tdbg_stdout";
-    }
-
-    // fall back
-    if (m_tmpFile.empty())
-    {
-        FindModuleDirectory(m_tmpFile);
-        m_tmpFile += "tdbg_stdout";
-    }
+    SECURITY_ATTRIBUTES attr;
+    attr.bInheritHandle       = TRUE;
+    attr.lpSecurityDescriptor = nullptr;
+    if (::CreatePipe(&m_redirIn, &m_redirOut, &attr, 1024) == FALSE)
+        printf("failed to create pipe\n");
 }
-
 
 void ConsoleWindows::clear()
 {
@@ -101,36 +87,44 @@ void ConsoleWindows::switchOutput(bool on)
 {
     if (on)
     {
-        fclose(stdout);
-        m_redirect = freopen(m_tmpFile.c_str(), "w", stdout);
-        m_stdout = nullptr;
+        CloseHandle(GetStdHandle(STD_OUTPUT_HANDLE));
+        SetStdHandle(STD_OUTPUT_HANDLE, m_redirOut);
     }
     else
     {
-        fclose(stdout);
-        m_redirect = nullptr;
-        freopen("CONOUT$", "w", stdout);
+        DWORD br;
+        br = GetFileSize(m_redirIn, nullptr);
+        if (br > 0)
+        {
+            char buffer[256] = {};
+            ReadFile(m_redirIn, buffer, 255, &br, nullptr);
+            if (br > 0)
+                m_std += str_t(buffer, br);
+        }
 
-        m_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (m_stdout == INVALID_HANDLE_VALUE)
-            printf("failed to acquire stdout\n");
+        m_stdout = CreateFile(
+            "CONOUT$",
+            GENERIC_WRITE,
+            0,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr);
 
-        readRedirectedOutput(m_tmpFile);
+        SetStdHandle(STD_OUTPUT_HANDLE, m_stdout);
     }
 }
 
-size_t ConsoleWindows::getNextCmd()
+int ConsoleWindows::getNextCmd()
 {
-    if (GetAsyncKeyState(VK_ESCAPE))
-        return 27;
-
     while (!_kbhit())
         Sleep(1);
-
     int ch = _getch();
+    if (ch == 'q')
+        return CCS_QUIT;
     if (ch == 224)
-        return 13;
-    return 0;
+        return CCS_STEP;
+    return CCS_NO_INPUT;
 }
 
 void ConsoleWindows::setCursorPosition(int x, int y)
@@ -194,12 +188,9 @@ int ConsoleWindows::create()
 
     showCursor(false);
 
-
-
     m_startBuf  = new CHAR_INFO[m_size];
     m_startRect = {0, 0, m_width, m_height};
     m_startCurs = info.dwCursorPosition;
-    
 
     ReadConsoleOutput(m_stdout, m_startBuf, {m_width, m_height}, {0, 0}, &m_startRect);
     return 0;

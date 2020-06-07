@@ -31,31 +31,26 @@ private:
     CHAR_INFO *m_buffer;
     CHAR_INFO *m_startBuf;
     SMALL_RECT m_startRect;
-    str_t      m_tmpFile;
     COORD      m_startCurs;
-  
+
     size_t     m_size;
     HANDLE     m_stdout;
-    FILE *     m_redirect;
-    
-    uint32_t getColorImpl(ColorSpace fg,
-                          ColorSpace bg);
-    void     writeChar(char ch, uint32_t col, size_t k);
-
-    void makeTempFileName();
-
+    HANDLE     m_redirIn;
+    HANDLE     m_redirOut;
+    uint32_t   getColorImpl(ColorSpace fg,
+                            ColorSpace bg);
+    void       writeChar(char ch, uint32_t col, size_t k);
+    void       initialize();
 
 public:
     ConsoleWindows();
     virtual ~ConsoleWindows();
 
-    size_t getNextCmd();
-    void   clear();
-    void   flush();
-    int    create();
-
+    int  getNextCmd();
+    void clear();
+    void flush();
+    int  create();
     void switchOutput(bool on);
-
     void setCursorPosition(int x, int y);
     void showCursor(bool doit);
 };

@@ -42,14 +42,16 @@ public:
     void mapEnumColor(int mapping, int fg, int bg);
     void writeChar(char ch, uint32_t col, size_t k);
 
+    void readRedirectedOutput(const str_t &_path);
+
 public:
     ConsoleCurses();
     virtual ~ConsoleCurses();
 
-    size_t getNextCmd();
-    void   clear();
-    void   flush();
-    int    create();
+    int  getNextCmd();
+    void clear();
+    void flush();
+    int  create();
 
     void switchOutput(bool on);
     void setCursorPosition(int x, int y);

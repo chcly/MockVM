@@ -79,11 +79,10 @@ int Debugger::debug(void)
     render();
     while (!m_exit)
     {
-        int cmd = (int)m_console->getNextCmd();
-        if (cmd == 27)
+        int cmd = m_console->getNextCmd();
+        if (cmd == CCS_QUIT)
             m_exit = true;
-
-        if (cmd == 13)
+        if (cmd == CCS_STEP)
         {
             render();
             step();
@@ -104,13 +103,10 @@ void Debugger::render(void)
 void Debugger::displayInstructions(void)
 {
     int16_t start = (int16_t)m_curinst, i;
-    int16_t ma    = 20;
+    int16_t ma    = 25;
     int16_t hs    = ma >> 1;
-    hs+=4;
-
     for (i = 0; i < hs && start > 1; ++i)
         start--;
-
     for (i = 0; i < ma; ++i)
     {
         size_t cinst = start + i;
@@ -146,6 +142,7 @@ void Debugger::step(void)
         m_exit = true;
 }
 
+
 void Debugger::displayRegisters(void)
 {
     stringstream ss, ss1;
@@ -179,7 +176,7 @@ void Debugger::displayRegisters(void)
 
 void Debugger::displayStack(void)
 {
-    int line = MIN_Y + MAX_REG + 2;
+    int line = MIN_Y + MAX_REG + 1;
     if (m_stack.empty())
         return;
     m_console->setColor(CS_WHITE);
