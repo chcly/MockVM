@@ -2,10 +2,11 @@
 
 ToyVM is a custom assembly compiler and a simple virtual machine/interpreter to execute the code. It runs on Windows, Linux, and OSX. It supports linking c/c++ dynamic libraries through a simple plugin interface.
 
-As of right now, there are two main programs in the repository.
+There are three main programs in the repository.
 
 * tcom
 * tvm
+* tdbg
 
 ## tcom
 
@@ -41,6 +42,19 @@ tvm <options> <program_path>
       -h display this message.
       -t display execution time.
       -m print the module path and exit.
+```
+
+## tdbg
+
+tdbg is an experimental debugger.
+
+It is disabled by default.
+```-DBUILD_DBG=ON``` will enable it.
+
+### tdbg Usage
+
+```txt
+tdbg <program_path>
 ```
 
 ### Current Documentation
