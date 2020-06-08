@@ -74,6 +74,7 @@ void ConsoleWindows::initialize()
     SECURITY_ATTRIBUTES attr;
     attr.bInheritHandle       = TRUE;
     attr.lpSecurityDescriptor = nullptr;
+
     if (::CreatePipe(&m_redirIn, &m_redirOut, &attr, 1024) == FALSE)
         printf("failed to create pipe\n");
 }
@@ -153,9 +154,12 @@ void ConsoleWindows::flush()
 {
     if (!m_stdout)
         return;
+
     setCursorPosition(0, 0);
 
     ConsoleWindows::showCursor(false);
+
+
     SMALL_RECT sr = {0, 0, m_width, m_height};
     WriteConsoleOutput(
         m_stdout,

@@ -27,11 +27,11 @@
 
 using namespace std;
 
-#define COL1_ST 2
-#define COL2_ST 41
+#define COL1_ST  2
+#define COL2_ST  36
 #define COL1_LAB 10
-#define COL2_LAB 55
-#define MAX_RIGHT 80
+#define COL2_LAB 54
+#define MAX_RIGHT 74
 #define MIN_Y 0
 
 const ExecInstruction nop = {0, 0, 0, {0, 0, 0}, 0, 0};
@@ -55,16 +55,10 @@ Debugger::~Debugger()
 void Debugger::displayHeader(void)
 {
     m_ypos = MIN_Y;
-    m_console->setColor(CS_GREY);
-    m_console->displayLineHorz(0, MAX_RIGHT, m_ypos);
-    m_console->displayLineHorz(0, MAX_RIGHT, 27);
-    m_console->displayLineVert(m_ypos + 1, 27, COL2_ST - 2);
-    m_console->displayLineHorz(COL2_ST - 1, MAX_RIGHT, m_ypos + MAX_REG + 1);
-    m_console->displayLineHorz(COL2_ST - 1, MAX_RIGHT, m_ypos + MAX_REG + 7);
     m_console->setColor(CS_GREEN);
     m_console->displayString("Instructions", COL1_LAB, m_ypos);
-    m_console->displayString("Registers", COL2_LAB, m_ypos);
-    m_console->displayString("Stack", COL2_LAB, m_ypos + MAX_REG + 1);
+    m_console->displayString("Registers", COL2_LAB-4, m_ypos);
+    m_console->displayString("Stack", COL2_LAB-2, m_ypos + MAX_REG + 2);
     m_console->setColor(CS_WHITE);
     ++m_ypos;
 }
@@ -73,7 +67,8 @@ int Debugger::debug(void)
 {
     if (!m_console)
         return -1;
-
+  
+    
     m_callStack.push(m_curinst);
 
     render();
@@ -117,8 +112,8 @@ void Debugger::displayInstructions(void)
     }
     displayRegisters();
     displayStack();
-    m_console->setColor(CS_DARKCYAN);
-    m_console->displayOutput(MAX_RIGHT + 1, 1);
+    m_console->setColor(CS_CYAN);
+    m_console->displayOutput(MAX_RIGHT + 3, 1);
 }
 
 void Debugger::step(void)
@@ -129,12 +124,12 @@ void Debugger::step(void)
         const ExecInstruction& inst = m_ins.at((size_t)m_curinst++);
         if (OPCodeTable[inst.op] != nullptr)
         {
-            if (inst.op == OP_GTO && inst.call || inst.op >= OP_PRG)
+            if ((inst.op == OP_GTO && inst.call) || (inst.op >= OP_PRG))
                 m_console->switchOutput(true);
 
             (this->*OPCodeTable[inst.op])(inst);
 
-            if (inst.op == OP_GTO && inst.call || inst.op >= OP_PRG)
+            if ((inst.op == OP_GTO && inst.call) || (inst.op >= OP_PRG))
                 m_console->switchOutput(false);
         }
     }
@@ -167,20 +162,32 @@ void Debugger::displayRegisters(void)
             m_console->setColor(CS_LIGHT_GREY);
 
         m_last[i].x = m_regi[i].x;
-
         m_console->displayString(ss1.str(), COL2_ST - 1, line);
+
         ss.str("");
         ss1.str("");
     }
+
+    ss << "flags: [";
+    if (m_flags & PF_Z)
+        ss << ' ' << 'Z';
+    if (m_flags & PF_G)
+        ss << ' ' << 'G';
+    if (m_flags & PF_L)
+        ss << ' ' << 'L';
+    ss << ' ' << ']';
+
+    m_console->setColor(CS_DARKCYAN);
+    m_console->displayString(ss.str(), COL2_ST, line);
 }
 
 void Debugger::displayStack(void)
 {
-    int line = MIN_Y + MAX_REG + 1;
+    int line = MIN_Y + MAX_REG + 2;
     if (m_stack.empty())
         return;
-    m_console->setColor(CS_WHITE);
 
+    m_console->setColor(CS_WHITE);
     line++;
     uint32_t stk = m_stack.size(), i;
     if (stk > 4)
@@ -203,12 +210,12 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
 
     if (i == m_curinst)
     {
-        ss << "==> ";
+        ss << "==>";
         m_console->setColor(CS_YELLOW);
     }
     else
     {
-        ss << setw(4) << ' ';
+        ss << setw(3) << ' ';
         m_console->setColor(CS_LIGHT_GREY);
     }
 
@@ -233,7 +240,24 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
     if (inst.argc > 1)
     {
         ss << ", ";
-        if (inst.flags & IF_REG1)
+        if (inst.flags & IF_RIDX)
+        {
+            ss << '[';
+            ss << 'x' << inst.argv[1];
+            ss << ", ";
+            
+            if (inst.flags & IF_REG1)
+                ss << 'x' << inst.index;
+            else
+                ss << dec << inst.index << hex;
+            ss << ']';
+        }
+        else if (inst.flags & IF_STKP)
+        {
+            ss << dec << inst.argv[1];
+            ss << hex;
+        }
+        else if (inst.flags & IF_REG1)
             ss << 'x' << inst.argv[1];
         else
             ss << inst.argv[1];
@@ -248,7 +272,7 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
             ss << inst.argv[2];
     }
 
-    m_console->displayString(ss.str(), COL1_ST, m_ypos++);
+    m_console->displayString(ss.str(), 1, m_ypos++);
 }
 
 void Debugger::getOpString(str_t& dest, const uint8_t op)
