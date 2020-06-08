@@ -32,8 +32,6 @@ private:
     CHAR_INFO *m_startBuf;
     SMALL_RECT m_startRect;
     COORD      m_startCurs;
-
-    size_t     m_size;
     HANDLE     m_stdout;
     HANDLE     m_redirIn;
     HANDLE     m_redirOut;

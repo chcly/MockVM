@@ -30,18 +30,15 @@ class ConsoleCurses : public Console
 public:
     uint8_t *m_buffer;
     uint8_t *m_colorBuffer;
-    size_t   m_size;
-
-    FILE*   m_stdout;
-    bool    m_supportsColor;
-    uint8_t m_colorTable[16][16];
+    FILE *   m_stdout;
+    bool     m_supportsColor;
+    uint8_t  m_colorTable[16][16];
 
     uint32_t getColorImpl(ColorSpace fg,
                           ColorSpace bg);
 
-    void mapEnumColor(int mapping, int fg, int bg);
+    int  getSwappedColor(int inp);
     void writeChar(char ch, uint32_t col, size_t k);
-
     void readRedirectedOutput(const str_t &_path);
 
 public:
@@ -52,13 +49,9 @@ public:
     void clear();
     void flush();
     int  create();
-
     void switchOutput(bool on);
     void setCursorPosition(int x, int y);
     void showCursor(bool doit);
-
-
-
 };
 
 #endif  //_ConsoleCurses_h_

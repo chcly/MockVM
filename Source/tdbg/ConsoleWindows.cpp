@@ -33,7 +33,6 @@ ConsoleWindows::ConsoleWindows() :
     m_buffer(nullptr),
     m_startBuf(nullptr),
     m_startRect({0, 0, 0, 0}),
-    m_size(0),
     m_stdout(nullptr),
     m_redirIn(nullptr),
     m_redirOut(nullptr)
@@ -58,7 +57,7 @@ ConsoleWindows::~ConsoleWindows()
         WriteConsoleOutput(
             m_stdout,
             m_startBuf,
-            {m_width, m_height},
+            {m_displayRect.w, m_displayRect.h},
             {0, 0},
             &m_startRect);
 
@@ -155,17 +154,15 @@ void ConsoleWindows::flush()
     if (!m_stdout)
         return;
 
-    setCursorPosition(0, 0);
-
     ConsoleWindows::showCursor(false);
+    ConsoleWindows::setCursorPosition(m_displayRect.x, m_displayRect.y);
 
-
-    SMALL_RECT sr = {0, 0, m_width, m_height};
+    SMALL_RECT sr = {m_displayRect.x, m_displayRect.y, m_displayRect.w, m_displayRect.h};
     WriteConsoleOutput(
         m_stdout,
         m_buffer,
-        {m_width, m_height},
-        {0, 0},
+        {m_displayRect.w, m_displayRect.h},
+        {m_displayRect.x, m_displayRect.y},
         &sr);
 }
 
@@ -180,23 +177,29 @@ int ConsoleWindows::create()
 
     CONSOLE_SCREEN_BUFFER_INFO info;
     if (GetConsoleScreenBufferInfo(m_stdout, &info) == 0)
+    {
+        printf("failed get the screen buffer\n");
         return -1;
+    }
 
-    m_width  = info.srWindow.Right;
-    m_height = info.srWindow.Bottom;
-    m_size   = (size_t)m_width * (size_t)m_height;
-
-    m_buffer = new CHAR_INFO[m_size];
+    m_displayRect = {0, 0, info.srWindow.Right, info.srWindow.Bottom};
+    m_size        = (size_t)m_displayRect.w * (size_t)m_displayRect.h;
+    m_buffer      = new CHAR_INFO[m_size];
 
     ZeroBufferMemory(m_buffer, m_size);
 
-    showCursor(false);
+    ConsoleWindows::showCursor(false);
 
     m_startBuf  = new CHAR_INFO[m_size];
-    m_startRect = {0, 0, m_width, m_height};
+    m_startRect = {0, 0, m_displayRect.w, m_displayRect.h};
     m_startCurs = info.dwCursorPosition;
 
-    ReadConsoleOutput(m_stdout, m_startBuf, {m_width, m_height}, {0, 0}, &m_startRect);
+    ReadConsoleOutput(
+        m_stdout,                            // handle
+        m_startBuf,                          // buffer
+        {m_displayRect.w, m_displayRect.h},  // sizeof buffer
+        {0, 0},                              // start coordinates
+        &m_startRect);                       // actual rect if not the same
     return 0;
 }
 

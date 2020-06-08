@@ -27,8 +27,9 @@
 #endif  // _WIN32
 
 Console::Console() :
-    m_width(0),
-    m_height(0),
+    m_std(),
+    m_size(0),
+    m_displayRect({0, 0, 0, 0}),
     m_curColor(CS_WHITE)
 {
 }
@@ -39,44 +40,42 @@ Console::~Console()
 
 void Console::displayString(const str_t &string, int16_t x, int16_t y)
 {
-    int16_t i, s, k, b;
+    int16_t i, s, k;
 
-    if (y < 0)
+    if ((y < m_displayRect.y) || (y >= m_displayRect.h))
         return;
-    if (x < 0 || x > m_width)
+    if ((x < m_displayRect.x) || (x >= m_displayRect.w))
         return;
 
     s = (int16_t)string.size();
 
     const char *ptr = string.c_str();
 
-    b = (size_t)m_width * (size_t)m_height;
     for (i = 0; i < s; ++i)
     {
         k = x + i;
-        if (k < 0 || y < 0)
+        if ((k < 0) || (y < m_displayRect.y))
             continue;
-        if (k > m_width)
+        if (k >= m_displayRect.w)
             continue;
-        if (y > m_height)
+        if (y >= m_displayRect.h)
             continue;
 
-        k += y * m_width;
-
-        if (k <= b)
+        k += y * m_displayRect.w;
+        if (k < m_size)
             writeChar(ptr[i], m_curColor, k);
     }
 }
 
 void Console::displayChar(char ch, int16_t x, int16_t y)
 {
-    if (y < 0 || y > m_height)
+    if ((y < 0) || (y >= m_displayRect.h))
         return;
-    if (x < 0 || x > m_width)
+    if ((x < 0) || (x >= m_displayRect.w))
         return;
 
-    int16_t k = x + y * m_width;
-    if (k < m_width * m_height)
+    int16_t k = x + y * m_displayRect.w;
+    if (k < (int16_t)m_size)
         writeChar(ch, m_curColor, k);
 }
 
@@ -93,7 +92,6 @@ void Console::displayLineVert(int16_t st, int16_t en, int16_t x)
     for (i = st; i < en; ++i)
         displayChar('|', x, i);
 }
-
 void Console::displayOutput(int16_t x, int16_t y)
 {
     int16_t st  = x;
@@ -101,7 +99,7 @@ void Console::displayOutput(int16_t x, int16_t y)
     for (i = 0; i < len; i++)
     {
         char ch = m_std.at(i);
-        if (ch == '\n' || x + 1 > m_width)
+        if (ch == '\n' || (x + 1 > m_displayRect.w))
         {
             x = st;
             ++y;
@@ -115,8 +113,6 @@ void Console::clearOutput()
 {
     m_std.clear();
 }
-
-
 
 void Console::setColor(ColorSpace fg, ColorSpace bg)
 {

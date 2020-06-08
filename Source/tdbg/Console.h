@@ -32,13 +32,45 @@ enum ConsoleCtrlStatus
     CCS_STEP
 };
 
+struct ConsolePoint
+{
+    int16_t x, y;
+};
+
+struct ConsoleRect
+{
+    int16_t x, y, w, h;
+
+    inline int16_t right()
+    {
+        return x + w;
+    }
+
+    inline int16_t bottom()
+    {
+        return y + h;
+    }
+
+    inline int16_t cx()
+    {
+        return x + (w >> 1);
+    }
+
+    inline int16_t cy()
+    {
+        return y + (h >> 1);
+    }
+};
+
+
+
 class Console
 {
 protected:
-    str_t    m_std;
-    int16_t  m_width;
-    int16_t  m_height;
-    uint32_t m_curColor;
+    str_t       m_std;
+    size_t      m_size;
+    ConsoleRect m_displayRect;
+    uint32_t    m_curColor;
 
     virtual uint32_t getColorImpl(ColorSpace fg,
                                   ColorSpace bg) = 0;
@@ -71,12 +103,17 @@ public:
 
     inline size_t getWidth()
     {
-        return m_width;
+        return (size_t)m_displayRect.w;
     }
 
     inline size_t getHeight()
     {
-        return m_height;
+        return (size_t)m_displayRect.h;
+    }
+
+    const ConsoleRect &getRect()
+    {
+        return m_displayRect;
     }
 };
 

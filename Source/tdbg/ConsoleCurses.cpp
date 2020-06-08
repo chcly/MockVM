@@ -26,19 +26,25 @@
 #include <string.h>
 #include <unistd.h>
 
+
+int restrictColor(int c)
+{
+    return c < 0 ? 0 : c > 15 ? 15 : c;
+}
+
+
 ConsoleCurses::ConsoleCurses() :
-    m_stdout(nullptr),
-    m_supportsColor(false),
     m_buffer(nullptr),
     m_colorBuffer(nullptr),
-    m_size(0)
+    m_stdout(nullptr),
+    m_supportsColor(false)
 {
     memset(m_colorTable, 0, 256);
 }
 
 ConsoleCurses ::~ConsoleCurses()
 {
-    delete []m_buffer;
+    delete[] m_buffer;
     delete[] m_colorBuffer;
 
     endwin();
@@ -48,8 +54,8 @@ void ConsoleCurses::clear()
 {
     if (m_buffer)
     {
-        memset(m_buffer, ' ', m_width * m_height);
-        memset(m_colorBuffer, 0, m_width * m_height);
+        memset(m_buffer, ' ', m_size);
+        memset(m_colorBuffer, 0, m_size);
     }
 }
 
@@ -77,9 +83,9 @@ void ConsoleCurses::readRedirectedOutput(const str_t &_path)
         if (len > 0)
         {
             fseek(fp, 0L, SEEK_SET);
-            char buffer[256] = {};
+            char buffer[1025] = {};
 
-            len = fread(buffer, 1, 255, fp);
+            len = fread(buffer, 1, 1024, fp);
             if (len > 0)
                 m_std += str_t(buffer, len);
         }
@@ -113,24 +119,24 @@ void ConsoleCurses::flush()
 {
     move(0, 0);
     curs_set(0);
-    int c = 0;
+    int c = 0, p;
 
     size_t i, j, k;
-    for (i = 0; i < m_height; ++i)
+    for (i = 0; i <m_displayRect.h; ++i)
     {
-        for (j = 0; j < m_width; ++j)
+        for (j = 0; j < m_displayRect.w; ++j)
         {
-            k = j + (i * m_width);
+            k = j + (i * m_displayRect.w);
 
             if (m_colorBuffer[k] != c)
-            {
                 c = m_colorBuffer[k];
-                attron(COLOR_PAIR(c));
-            }
 
+            p = COLOR_PAIR(c);
+            attron(p);
             move(i, j);
             delch();
             insch(m_buffer[k]);
+            attroff(p);
         }
     }
     refresh();
@@ -140,11 +146,9 @@ uint32_t ConsoleCurses::getColorImpl(ColorSpace fg, ColorSpace bg)
 {
     if (!m_supportsColor)
         return 0;
-
     if (bg == CS_TRANSPARENT)
         bg = CS_BLACK;
-
-    return m_colorTable[bg][fg % 16];
+    return m_colorTable[restrictColor(bg)][restrictColor(fg)];
 }
 
 void ConsoleCurses::writeChar(char ch, uint32_t col, size_t k)
@@ -157,103 +161,60 @@ void ConsoleCurses::writeChar(char ch, uint32_t col, size_t k)
 }
 
 
-void ConsoleCurses::mapEnumColor(int mapping, int fg, int bg)
+int ConsoleCurses::getSwappedColor(int inp)
 {
-    int fgcol = COLOR_WHITE;
-    int bgcol = COLOR_BLACK;
-    switch (fg)
+    switch (inp)
     {
-    case CS_GREY:
-        break;
-    case CS_LIGHT_GREY:
-        break;
-    case CS_WHITE:
-        break;
-    case CS_BLACK:
-        fgcol = COLOR_BLACK;
-        break;
-    case CS_DARKBLUE:
-        fgcol = COLOR_BLUE;
-        break;
-    case CS_BLUE:
-        fgcol = COLOR_BLUE;
+    case CS_GREEN:
+        inp = CS_GREEN;
         break;
     case CS_DARKGREEN:
-        fgcol = COLOR_GREEN;
+        inp = CS_DARKGREEN;
         break;
-    case CS_GREEN:
-        fgcol = COLOR_GREEN;
+    case CS_BLUE:  // blue and red are swapped here
+        inp = CS_RED;
         break;
-    case CS_DARKCYAN:
-        fgcol = COLOR_CYAN;
-        break;
-    case CS_CYAN:
-        fgcol = COLOR_CYAN;
-        break;
-    case CS_DARKRED:
-        fgcol = COLOR_RED;
+    case CS_DARKBLUE:
+        inp = CS_DARKRED;
         break;
     case CS_RED:
-        fgcol = COLOR_RED;
+        inp = CS_BLUE;
         break;
-    case CS_DARKMAGENTA:
-        fgcol = COLOR_MAGENTA;
+    case CS_DARKRED:
+        inp = CS_DARKBLUE;
         break;
-    case CS_MAGENTA:
-        fgcol = COLOR_MAGENTA;
-        break;
-    case CS_DARKYELLOW:
-        fgcol = COLOR_YELLOW;
+    case CS_DARKYELLOW:  // yellow and cyan are swapped here
+        inp = CS_DARKCYAN;
         break;
     case CS_YELLOW:
-        fgcol = COLOR_YELLOW;
+        inp = CS_CYAN;
+        break;
+    case CS_DARKCYAN:
+        inp = CS_DARKYELLOW;
+        break;
+    case CS_CYAN:
+        inp = CS_YELLOW;
+        break;
+    case CS_DARKMAGENTA:
+        inp = CS_DARKMAGENTA;
+        break;
+    case CS_MAGENTA:
+        inp = CS_MAGENTA;
+        break;
+    case CS_GREY:
+        inp = CS_GREY;
+        break;
+    case CS_LIGHT_GREY:
+        inp = CS_LIGHT_GREY;
+        break;
+    case CS_WHITE:
+        inp = CS_BLACK;
+        break;
+    case CS_BLACK:
+        inp = CS_BLACK;
         break;
     }
-
-    if (bg != 0)
-    {
-        switch (bg)
-        {
-        default:
-        case CS_BLACK:
-            break;
-        case CS_GREY:
-        case CS_LIGHT_GREY:
-        case CS_WHITE:
-            bgcol = COLOR_WHITE;
-            break;
-        case CS_DARKBLUE:
-        case CS_BLUE:
-            bgcol = COLOR_BLUE;
-            break;
-        case CS_DARKGREEN:
-        case CS_GREEN:
-            bgcol = COLOR_GREEN;
-            break;
-        case CS_DARKCYAN:
-        case CS_CYAN:
-            bgcol = COLOR_CYAN;
-            break;
-        case CS_DARKRED:
-        case CS_RED:
-            bgcol = COLOR_RED;
-            break;
-        case CS_DARKMAGENTA:
-            bgcol = COLOR_MAGENTA;
-            break;
-        case CS_MAGENTA:
-            bgcol = COLOR_MAGENTA;
-            break;
-        case CS_DARKYELLOW:
-        case CS_YELLOW:
-            bgcol = COLOR_YELLOW;
-            break;
-        }
-    }
-    else
-        bgcol = -1;
-
-    init_pair(mapping, fgcol, bgcol);
+    return inp;
 }
 
 int ConsoleCurses::create()
@@ -266,7 +227,6 @@ int ConsoleCurses::create()
 
     start_color();
     m_supportsColor = has_colors() != 0;
-
     use_default_colors();
 
     if (m_supportsColor)
@@ -277,7 +237,10 @@ int ConsoleCurses::create()
             for (j = 0; j < 16; ++j)
             {
                 c = i + j * 16;
-                mapEnumColor(c, j, i);
+                int fg = getSwappedColor(j);
+                int bg = getSwappedColor(i);
+                init_pair(c, fg, bg == 0 ? -1 : bg);
+
                 m_colorTable[i][j] = c;
             }
         }
@@ -286,10 +249,9 @@ int ConsoleCurses::create()
     int r, c;
     getmaxyx(stdscr, r, c);
 
-    m_width  = c;
-    m_height = r;
 
-    m_size  = r * c;
+    m_displayRect = {0, 0, (int16_t)c, (int16_t)r};
+    m_size        = r * c;
     m_buffer      = new uint8_t[m_size];
     m_colorBuffer = new uint8_t[m_size];
 

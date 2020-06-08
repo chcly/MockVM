@@ -27,12 +27,6 @@
 
 using namespace std;
 
-#define COL1_ST  2
-#define COL2_ST  36
-#define COL1_LAB 10
-#define COL2_LAB 54
-#define MAX_RIGHT 74
-#define MIN_Y 0
 
 const ExecInstruction nop = {0, 0, 0, {0, 0, 0}, 0, 0};
 
@@ -40,11 +34,10 @@ Debugger::Debugger(const str_t& mod, const str_t& file) :
     Program(mod),
     m_exit(false),
     m_file(file),
-    m_console(nullptr)
+    m_console(nullptr),
+    m_last()
 {
-    memset(m_last, 0, sizeof(Registers));
-    m_ypos    = 0;
-    m_console = GetPlatformConsole();
+    initialize();
 }
 
 Debugger::~Debugger()
@@ -52,15 +45,83 @@ Debugger::~Debugger()
     delete m_console;
 }
 
+
+void Debugger::initialize()
+{
+    memset(m_last, 0, sizeof(Registers));
+    m_console = GetPlatformConsole();
+    if (!m_console)
+    {
+        printf("Console initialization failed\n");
+        return;
+    }
+
+    const ConsoleRect& rect = m_console->getRect();
+
+    
+    m_instRect.x = 0;
+    m_instRect.y = 0;
+    m_instRect.w = 30;
+    m_instRect.h = rect.h;
+
+    m_regiRect.x = m_instRect.right() + 1;
+    m_regiRect.y = 0;
+    m_regiRect.w = 43;
+    m_regiRect.h = 11;
+
+    m_stackRect.x = m_instRect.right() + 1;
+    m_stackRect.y = m_regiRect.bottom() + 1;
+    m_stackRect.w = m_regiRect.w;
+    m_stackRect.h = 5;
+
+    m_dataRect.x = m_instRect.right() + 1;
+    m_dataRect.y = m_stackRect.bottom() + 1;
+    m_dataRect.w = m_regiRect.w;
+    m_dataRect.h = rect.h;
+
+    m_outRect.x = m_regiRect.right() + 1;
+    m_outRect.y = 0;
+    m_outRect.w = rect.w - (m_instRect.w + m_regiRect.w);
+    m_outRect.h = rect.h;
+}
+
 void Debugger::displayHeader(void)
 {
-    m_ypos = MIN_Y;
+    m_console->setColor(CS_GREY);
+
+    //m_console->displayLineHorz(m_instRect.x, m_instRect.right(), m_instRect.y);
+    //m_console->displayLineHorz(m_regiRect.x, m_regiRect.right(), m_regiRect.y);
+    //m_console->displayChar('+', m_regiRect.x-1, m_regiRect.y);
+    //m_console->displayLineHorz(m_stackRect.x, m_stackRect.right(), m_stackRect.y);
+    //m_console->displayLineHorz(m_dataRect.x, m_dataRect.right(), m_dataRect.y);
+    //m_console->displayLineHorz(m_outRect.x, m_outRect.right()-1, m_outRect.y);
+    //m_console->displayChar('+', m_outRect.x-1, m_outRect.y);
+    //m_console->displayLineVert(m_instRect.y+1, m_instRect.bottom(), m_instRect.right());
+    //m_console->displayLineVert(m_regiRect.y + 1, m_instRect.bottom(), m_regiRect.right());
+
     m_console->setColor(CS_GREEN);
-    m_console->displayString("Instructions", COL1_LAB, m_ypos);
-    m_console->displayString("Registers", COL2_LAB-4, m_ypos);
-    m_console->displayString("Stack", COL2_LAB-2, m_ypos + MAX_REG + 2);
+
+    m_console->displayString("Instructions",
+                             m_instRect.cx() - 6,
+                             m_instRect.y);
+    m_console->displayString("Registers",
+                             m_regiRect.cx() - 4,
+                             m_regiRect.y);
+
+    m_console->displayString("Stack",
+                             m_stackRect.cx()-2,
+                             m_stackRect.y);
+
+    m_console->displayString("Data",
+                             m_dataRect.cx()- 2,
+                             m_dataRect.y);
+
+    m_console->displayString("Output",
+                             m_outRect.cx() - 2,
+                             m_outRect.y);
+
+
     m_console->setColor(CS_WHITE);
-    ++m_ypos;
 }
 
 int Debugger::debug(void)
@@ -88,32 +149,33 @@ int Debugger::debug(void)
 
 void Debugger::render(void)
 {
-    m_ypos = MIN_Y;
     m_console->clear();
     displayHeader();
     displayInstructions();
+    displayRegisters();
+    displayStack();
     m_console->flush();
 }
 
 void Debugger::displayInstructions(void)
 {
+    m_ypos = m_instRect.y + 1;
+
     int16_t start = (int16_t)m_curinst, i;
-    int16_t ma    = 25;
+    int16_t ma    = m_instRect.h - 1;
     int16_t hs    = ma >> 1;
     for (i = 0; i < hs && start > 1; ++i)
         start--;
     for (i = 0; i < ma; ++i)
     {
-        size_t cinst = start + i;
+        size_t cinst = (size_t)start + (size_t)i;
         if (cinst < m_ins.size())
             disassemble(m_ins.at(cinst), cinst);
         else
             disassemble(nop, cinst);
     }
-    displayRegisters();
-    displayStack();
-    m_console->setColor(CS_CYAN);
-    m_console->displayOutput(MAX_RIGHT + 3, 1);
+    m_console->setColor(CS_DARKCYAN);
+    m_console->displayOutput(m_outRect.x, m_outRect.y +1);
 }
 
 void Debugger::step(void)
@@ -142,18 +204,18 @@ void Debugger::displayRegisters(void)
 {
     stringstream ss, ss1;
     int          i;
-    int          line = MIN_Y + 1;
+    int          line = m_regiRect.y + 1;
 
     m_console->setColor(CS_WHITE);
 
     for (i = 0; i < MAX_REG; ++i, ++line)
     {
         ss << "0x" << setfill('0') << uppercase << hex << m_regi[i].x;
-        ss1 << ' ' << 'x' << i << ' ';
-        ss1 << right << setw(17) << ss.str();
+        ss1 << 'x' << i << ' ';
+        ss1 << right << setw(19) << ss.str();
         ss1 << ' ';
         ss1 << dec;
-        ss1 << setw(17);
+        ss1 << setw(19);
         ss1 << m_regi[i].x;
 
         if (m_regi[i].x != m_last[i].x)
@@ -162,7 +224,7 @@ void Debugger::displayRegisters(void)
             m_console->setColor(CS_LIGHT_GREY);
 
         m_last[i].x = m_regi[i].x;
-        m_console->displayString(ss1.str(), COL2_ST - 1, line);
+        m_console->displayString(ss1.str(), m_regiRect.x, line);
 
         ss.str("");
         ss1.str("");
@@ -178,17 +240,16 @@ void Debugger::displayRegisters(void)
     ss << ' ' << ']';
 
     m_console->setColor(CS_DARKCYAN);
-    m_console->displayString(ss.str(), COL2_ST, line);
+    m_console->displayString(ss.str(), m_regiRect.x, line);
 }
 
 void Debugger::displayStack(void)
 {
-    int line = MIN_Y + MAX_REG + 2;
+    int line = m_stackRect.y +1;
     if (m_stack.empty())
         return;
 
-    m_console->setColor(CS_WHITE);
-    line++;
+    m_console->setColor(CS_LIGHT_GREY);
     uint32_t stk = m_stack.size(), i;
     if (stk > 4)
         stk = 4;
@@ -196,9 +257,9 @@ void Debugger::displayStack(void)
     for (i = 0; i < stk; ++i)
     {
         stringstream ss;
-        ss << right << setw(2) << i << ' ';
-        ss << right << setw(16) << m_stack.peek(i);
-        m_console->displayString(ss.str(), COL2_ST, line++);
+        ss << left << setw(3) << i << ' ';
+        ss << m_stack.peek(i);
+        m_console->displayString(ss.str(), m_stackRect.x, line++);
     }
 }
 
@@ -211,7 +272,7 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
     if (i == m_curinst)
     {
         ss << "==>";
-        m_console->setColor(CS_YELLOW);
+        m_console->setColor(CS_YELLOW, CS_DARKMAGENTA);
     }
     else
     {
@@ -272,7 +333,7 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
             ss << inst.argv[2];
     }
 
-    m_console->displayString(ss.str(), 1, m_ypos++);
+    m_console->displayString(ss.str(), m_instRect.x, m_ypos++);
 }
 
 void Debugger::getOpString(str_t& dest, const uint8_t op)
