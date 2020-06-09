@@ -27,41 +27,23 @@
 #ifdef _WIN32
 # include <windows.h>
 # include <string.h>
+# include <fcntl.h>
+# include <io.h>
 #endif
+
 
 SYM_API SYM_EXPORT void __putchar(tvmregister_t regi)
 {
     uint8_t ch = prog_get_register8(regi, 0);
     if (ch)
-    {
-#ifdef _WIN32
-        HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (handle != INVALID_HANDLE_VALUE)
-            WriteFile(handle, &ch, 1, nullptr, nullptr);
-#else
         putchar(ch);
-#endif
-    }
 }
 
 SYM_API SYM_EXPORT void __puts(tvmregister_t regi)
 {
     size_t ptr = (size_t)prog_get_register64(regi, 0);
     if (ptr)
-    {
-#ifdef _WIN32
-        HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (handle != INVALID_HANDLE_VALUE)
-        {
-            const char nl = '\n';
-            char* cp = (char*)ptr;
-            WriteFile(handle, cp, (DWORD)strlen(cp), nullptr, nullptr);
-            WriteFile(handle, &nl, 1, nullptr, nullptr);
-        }
-#else
         puts((char*)ptr);
-#endif
-    }
 }
 
 SYM_API SYM_EXPORT void __getchar(tvmregister_t regi)
@@ -80,3 +62,26 @@ SYM_API SYM_EXPORT SymbolTable* std_init()
 {
     return (SymbolTable*)stdlib;
 }
+
+
+
+#ifdef _WIN32
+
+BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
+{
+    switch (reason)
+    {
+    case DLL_THREAD_ATTACH:
+        break;
+    case DLL_PROCESS_ATTACH:
+        setvbuf(stdout, 0, _IONBF, 0);
+        break;
+    default:
+        break;
+    }
+
+    return TRUE;
+}
+
+
+#endif
