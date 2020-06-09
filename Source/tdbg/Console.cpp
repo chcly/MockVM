@@ -99,10 +99,19 @@ void Console::displayOutput(int16_t x, int16_t y)
     for (i = 0; i < len; i++)
     {
         char ch = m_std.at(i);
-        if (ch == '\n' || (x + 1 > m_displayRect.w))
+
+        if ((ch == '\n') || (ch == '\r') || (x + 1 > m_displayRect.w))
         {
             x = st;
             ++y;
+            if (ch == '\r')
+            {
+                if (i + 1 < len)
+                {
+                    if (m_std.at(i + 1) == '\n')
+                        ++i;
+                }
+            }
         }
         else
             displayChar(ch, x++, y);

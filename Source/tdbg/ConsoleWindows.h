@@ -32,9 +32,13 @@ private:
     CHAR_INFO *m_startBuf;
     SMALL_RECT m_startRect;
     COORD      m_startCurs;
+    int        m_fd, m_dup;
     HANDLE     m_stdout;
     HANDLE     m_redirIn;
     HANDLE     m_redirOut;
+    FILE *     m_redir;
+
+
     uint32_t   getColorImpl(ColorSpace fg,
                             ColorSpace bg);
     void       writeChar(char ch, uint32_t col, size_t k);

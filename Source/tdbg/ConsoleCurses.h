@@ -33,7 +33,6 @@ public:
     FILE *   m_stdout;
     bool     m_supportsColor;
     uint8_t  m_colorTable[16][16];
-
     uint32_t getColorImpl(ColorSpace fg,
                           ColorSpace bg);
 

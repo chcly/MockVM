@@ -20,11 +20,15 @@
 -------------------------------------------------------------------------------
 */
 #include "ConsoleCurses.h"
+#include "MemoryStream.h"
 #include <fcntl.h>
 #include <ncurses.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 
 int restrictColor(int c)
@@ -36,7 +40,6 @@ int restrictColor(int c)
 ConsoleCurses::ConsoleCurses() :
     m_buffer(nullptr),
     m_colorBuffer(nullptr),
-    m_stdout(nullptr),
     m_supportsColor(false)
 {
     memset(m_colorTable, 0, 256);
@@ -67,6 +70,8 @@ void ConsoleCurses::switchOutput(bool on)
     {
         if (m_stdout != nullptr)
             fclose(m_stdout);
+
+
         freopen("/dev/tty", "w", stdout);
 
         readRedirectedOutput("/tmp/tdbg_stdout");
@@ -132,9 +137,10 @@ void ConsoleCurses::flush()
                 c = m_colorBuffer[k];
 
             p = COLOR_PAIR(c);
-            attron(p);
             move(i, j);
             delch();
+
+            attron(p);
             insch(m_buffer[k]);
             attroff(p);
         }
@@ -221,7 +227,7 @@ int ConsoleCurses::create()
 {
     initscr();
 
-    keypad(stdscr, TRUE);
+    keypad(stdscr, 1);
     noecho();
     curs_set(0);
 
@@ -240,7 +246,6 @@ int ConsoleCurses::create()
                 int fg = getSwappedColor(j);
                 int bg = getSwappedColor(i);
                 init_pair(c, fg, bg == 0 ? -1 : bg);
-
                 m_colorTable[i][j] = c;
             }
         }

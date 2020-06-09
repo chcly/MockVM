@@ -23,7 +23,14 @@
 #include <conio.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <io.h>
 #include "SymbolUtils.h"
+#include "MemoryStream.h"
+//#include <corecrt.h>
+
+#define STDOUT 1
+
 
 const CHAR_INFO NullChar = {' ', CS_WHITE};
 
@@ -37,6 +44,10 @@ ConsoleWindows::ConsoleWindows() :
     m_redirIn(nullptr),
     m_redirOut(nullptr)
 {
+
+    m_dup   = 0;
+    m_redir = nullptr;
+    m_fd = 0;
     initialize();
 }
 
@@ -65,17 +76,30 @@ ConsoleWindows::~ConsoleWindows()
     }
 
     CloseHandle(m_redirIn);
-    CloseHandle(m_redirOut);
+
+    if (m_redir)
+    {
+        // closes 
+        // m_fd
+        // m_redirOut
+        fclose(m_redir);
+    }
 }
 
 void ConsoleWindows::initialize()
 {
+    // in, out, err, redir
+    _setmaxstdio(4);
+
     SECURITY_ATTRIBUTES attr;
     attr.bInheritHandle       = TRUE;
     attr.lpSecurityDescriptor = nullptr;
 
     if (::CreatePipe(&m_redirIn, &m_redirOut, &attr, 1024) == FALSE)
         printf("failed to create pipe\n");
+
+    if (!m_dup)
+        m_dup = _dup(STDOUT);
 }
 
 void ConsoleWindows::clear()
@@ -87,31 +111,56 @@ void ConsoleWindows::switchOutput(bool on)
 {
     if (on)
     {
-        CloseHandle(GetStdHandle(STD_OUTPUT_HANDLE));
-        SetStdHandle(STD_OUTPUT_HANDLE, m_redirOut);
+        if (m_redirOut)
+        {
+            if (!m_fd)
+            {
+                // transfers ownership of m_redirOut,
+                // (do not close m_redirOut with CloseHandle,
+                //  nor m_fd with close)
+                m_fd = _open_osfhandle((intptr_t)m_redirOut, _O_TEXT);
+            }
+
+            if (m_fd != -1)
+            {
+                // associate it with stdout.
+                // (use fclose it will call close
+                // for m_fd and m_redirOut)
+
+                if (!m_redir)
+                {
+                    m_redir = _fdopen(m_fd, "w");
+                }
+
+                if (_dup2(_fileno(m_redir), STDOUT) == -1)
+                {
+                    printf("Failed to duplicate handle\n");
+                }
+            }
+            else
+            {
+                printf("failed to open low level file descriptor\n");
+            }
+         
+        }
     }
     else
     {
         DWORD br;
         br = GetFileSize(m_redirIn, nullptr);
-        if (br > 0)
+        if (br > 0 && br != -1)
         {
-            char buffer[256] = {};
-            ReadFile(m_redirIn, buffer, 255, &br, nullptr);
+            MemoryStream ms;
+            ms.reserve(br);
+
+            ReadFile(m_redirIn, ms.ptr(), br, &br, nullptr);
             if (br > 0)
-                m_std += str_t(buffer, br);
+                m_std += str_t((char*)ms.ptr(), br);
         }
 
-        m_stdout = CreateFile(
-            "CONOUT$",
-            GENERIC_WRITE,
-            0,
-            nullptr,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            nullptr);
-
-        SetStdHandle(STD_OUTPUT_HANDLE, m_stdout);
+        // re associate stdout
+        if (m_dup)
+            _dup2(m_dup, 1);
     }
 }
 
