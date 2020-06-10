@@ -20,8 +20,8 @@
 -------------------------------------------------------------------------------
 */
 #include "Console.h"
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 #ifdef _WIN32
 #include "ConsoleWindows.h"
 #else
@@ -32,7 +32,8 @@ Console::Console() :
     m_std(),
     m_size(0),
     m_displayRect({0, 0, 0, 0}),
-    m_curColor(CS_WHITE)
+    m_curColor(CS_WHITE),
+    m_lineCount(0)
 {
 }
 
@@ -81,10 +82,9 @@ void Console::displayChar(char ch, int16_t x, int16_t y)
         writeChar(ch, m_curColor, k);
 }
 
-
 void Console::displayCharHex(int ch, int16_t x, int16_t y)
 {
-    if (ch>= 32 && ch < 127)
+    if (ch >= 32 && ch < 127)
     {
         std::ostringstream ss;
         ss << '.' << (char)ch;
@@ -98,7 +98,6 @@ void Console::displayCharHex(int ch, int16_t x, int16_t y)
         displayString(ss.str(), x, y);
     }
 }
-
 
 void Console::displayInt(int v, int16_t x, int16_t y)
 {
@@ -129,8 +128,11 @@ void Console::displayLineVert(int16_t st, int16_t en, int16_t x)
     for (i = st; i < en; ++i)
         displayChar('|', x, i);
 }
+
 void Console::displayOutput(int16_t x, int16_t y)
 {
+    m_lineCount = 0;
+
     int16_t st  = x;
     size_t  len = m_std.size(), i;
     for (i = 0; i < len; i++)
@@ -149,10 +151,17 @@ void Console::displayOutput(int16_t x, int16_t y)
                         ++i;
                 }
             }
+
+            m_lineCount++;
         }
         else
             displayChar(ch, x++, y);
     }
+}
+
+int16_t Console::getOutputLineCount()
+{
+    return m_lineCount;
 }
 
 void Console::clearOutput()

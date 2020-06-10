@@ -59,7 +59,6 @@ TEST_CASE("BlockReader2")
     r.open(KeywordsFile.c_str());
     EXPECT_FALSE(r.eof());
 
-
     char buf[1024];
     while (!r.eof())
         r.read(buf, 127);

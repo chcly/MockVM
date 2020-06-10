@@ -21,6 +21,7 @@
 */
 #include "Debugger.h"
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include "Console.h"
 #include "SymbolUtils.h"
@@ -136,6 +137,10 @@ int Debugger::debug(void)
     if (!m_console)
         return -1;
 
+    // save the original data table
+    m_dataTable.cloneInto(m_dataTableCpy);
+
+top:
     m_callStack.push(m_curinst);
 
     render();
@@ -150,6 +155,10 @@ int Debugger::debug(void)
             step();
         }
     }
+
+    displayExit();
+    if (m_console->getNextCmd() == CCS_RESTART)
+        goto top;
     return 0;
 }
 
@@ -281,7 +290,6 @@ void Debugger::displayData(void)
 
     int line = m_dataRect.y + 1;
 
-
     const ExecInstruction& inst = m_ins.at((size_t)m_curinst);
     switch (inst.op)
     {
@@ -345,6 +353,45 @@ void Debugger::displayData(void)
             }
         }
     }
+}
+
+void Debugger::displayExit(void)
+{
+    if (m_curinst > 0)
+        --m_curinst;
+
+    render();
+
+    int nr = m_console->getOutputLineCount();
+    nr += 2;
+
+    std::ostringstream ss;
+    ss << "Exited with code " << m_return;
+
+    m_console->setColor(CS_LIGHT_GREY);
+    m_console->displayString(ss.str(), m_outRect.x, nr);
+    ++nr;
+
+    ss.str("");
+    ss << "Press (q) to exit or (r) to restart.";
+    m_console->displayString(ss.str(), m_outRect.x, nr);
+
+    m_console->flush();
+    m_console->pause();
+
+    // reset all state variables
+    m_console->clearOutput();
+
+    m_stack.clear();
+    memset(m_regi, 0, sizeof(Registers));
+    memset(m_last, 0, sizeof(Registers));
+
+    m_baseAddr = 0;
+    m_lastAddr = -1;
+    m_dataTableCpy.cloneInto(m_dataTable);
+
+    m_curinst = m_startinst;
+    m_exit    = false;
 }
 
 void Debugger::disassemble(const ExecInstruction& inst, size_t i)

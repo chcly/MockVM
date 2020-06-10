@@ -128,7 +128,7 @@ public:
 private:
     uint32_t m_size;
     uint32_t m_capacity;
-    Data*   m_data;
+    Data*    m_data;
 };
 
 #endif  //_ArrayStack_h_

@@ -194,7 +194,6 @@ void MakeModulePath(str_t& dest, char* buf, size_t sz)
 #endif
 }
 
-
 void DisplayModulePath(void)
 {
     str_t path;

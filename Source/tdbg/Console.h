@@ -27,9 +27,10 @@
 
 enum ConsoleCtrlStatus
 {
-    CCS_NO_INPUT=0,
+    CCS_NO_INPUT = 0,
     CCS_QUIT,
-    CCS_STEP
+    CCS_STEP,
+    CCS_RESTART
 };
 
 struct ConsolePoint
@@ -62,8 +63,6 @@ struct ConsoleRect
     }
 };
 
-
-
 class Console
 {
 protected:
@@ -71,6 +70,7 @@ protected:
     size_t      m_size;
     ConsoleRect m_displayRect;
     uint32_t    m_curColor;
+    int16_t     m_lineCount;
 
     virtual uint32_t getColorImpl(ColorSpace fg,
                                   ColorSpace bg) = 0;
@@ -86,24 +86,25 @@ public:
     void displayCharHex(int ch, int16_t x, int16_t y);
     void displayInt(int v, int16_t x, int16_t y);
     void displayIntRightAligned(int v, int16_t r, int16_t y);
-    void displayOutput(int16_t x, int16_t y);
-    
+
+    void    displayOutput(int16_t x, int16_t y);
+    int16_t getOutputLineCount();
+
     void clearOutput();
-    
+
     void displayLineHorz(int16_t st, int16_t en, int16_t y);
     void displayLineVert(int16_t st, int16_t en, int16_t x);
 
     void setColor(ColorSpace fg, ColorSpace bg = ColorSpace::CS_TRANSPARENT);
 
-
     virtual int  getNextCmd()                    = 0;
+    virtual void pause()                         = 0;
     virtual void clear()                         = 0;
     virtual void flush()                         = 0;
     virtual int  create()                        = 0;
     virtual void switchOutput(bool on)           = 0;
     virtual void setCursorPosition(int x, int y) = 0;
     virtual void showCursor(bool doit)           = 0;
-
 
     inline size_t getWidth()
     {

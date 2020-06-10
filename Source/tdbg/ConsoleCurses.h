@@ -47,6 +47,7 @@ public:
     int  getNextCmd();
     void clear();
     void flush();
+    void pause();
     int  create();
     void switchOutput(bool on);
     void setCursorPosition(int x, int y);

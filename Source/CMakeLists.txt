@@ -21,7 +21,6 @@
 
 subdirs(libtvm)
 subdirs(stdlib)
-
 subdirs(tcom)
 subdirs(tvm)
 

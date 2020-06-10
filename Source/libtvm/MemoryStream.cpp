@@ -38,7 +38,10 @@ MemoryStream::~MemoryStream()
 void MemoryStream::clear(void)
 {
     if (m_data)
+    {
         delete[] m_data;
+        m_data = nullptr;
+    }
     m_size     = 0;
     m_capacity = 0;
 }
@@ -55,6 +58,18 @@ void MemoryStream::reserve(size_t nr)
         }
         m_data     = buf;
         m_capacity = nr;
+    }
+}
+
+void MemoryStream::cloneInto(MemoryStream& dest)
+{
+    dest.clear();
+    dest.reserve(m_capacity);
+
+    if (m_data)
+    {
+        memcpy(dest.ptr(), m_data, m_capacity);
+        dest.m_size = m_capacity;
     }
 }
 

@@ -150,16 +150,38 @@ void ConsoleWindows::switchOutput(bool on)
     }
 }
 
+void ConsoleWindows::pause()
+{
+    for (;;)
+    {
+        if (_kbhit())
+        {
+            int ch = _getch();
+            if (ch == 'r')
+            {
+                _ungetch(ch);
+                break;
+            }
+            else if (ch == 'q')
+            {
+                _ungetch(ch);
+                break;
+            }
+            else
+                Sleep(1);
+        }
+    }
+}
+
 int ConsoleWindows::getNextCmd()
 {
-    while (!_kbhit())
-        Sleep(1);
-
     int ch = _getch();
     if (ch == 'q')
         return CCS_QUIT;
     if (ch == 224)
         return CCS_STEP;
+    if (ch == 'r')
+        return CCS_RESTART;
     return CCS_NO_INPUT;
 }
 

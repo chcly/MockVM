@@ -20,22 +20,20 @@
 -------------------------------------------------------------------------------
 */
 #include "ConsoleCurses.h"
-#include "MemoryStream.h"
 #include <fcntl.h>
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-
+#include <sys/types.h>
+#include <unistd.h>
+#include "MemoryStream.h"
 
 int restrictColor(int c)
 {
     return c < 0 ? 0 : c > 15 ? 15 : c;
 }
-
 
 ConsoleCurses::ConsoleCurses() :
     m_buffer(nullptr),
@@ -71,7 +69,6 @@ void ConsoleCurses::switchOutput(bool on)
         if (m_stdout != nullptr)
             fclose(m_stdout);
 
-
         freopen("/dev/tty", "w", stdout);
 
         readRedirectedOutput("/tmp/tdbg_stdout");
@@ -99,12 +96,33 @@ void ConsoleCurses::readRedirectedOutput(const str_t &_path)
     }
 }
 
+void ConsoleCurses::pause()
+{
+    for (;;)
+    {
+        int ch = getch();
+        if (ch == 'r')
+        {
+            ungetch(ch);
+            break;
+        }
+        else if (ch == 'q')
+        {
+            ungetch(ch);
+            break;
+        }
+        else
+            usleep(1);
+    }
+}
 
 int ConsoleCurses::getNextCmd()
 {
     int ch = getch();
     if (ch == 'q')
         return CCS_QUIT;
+    if (ch == 'r')
+        return CCS_RESTART;
     if (ch == KEY_DOWN)
         return CCS_STEP;
     return CCS_NO_INPUT;
@@ -127,7 +145,7 @@ void ConsoleCurses::flush()
     int c = 0, p;
 
     size_t i, j, k;
-    for (i = 0; i <m_displayRect.h; ++i)
+    for (i = 0; i < m_displayRect.h; ++i)
     {
         for (j = 0; j < m_displayRect.w; ++j)
         {
@@ -165,7 +183,6 @@ void ConsoleCurses::writeChar(char ch, uint32_t col, size_t k)
         m_colorBuffer[k] = (uint8_t)col;
     }
 }
-
 
 int ConsoleCurses::getSwappedColor(int inp)
 {
@@ -214,7 +231,7 @@ int ConsoleCurses::getSwappedColor(int inp)
         inp = CS_LIGHT_GREY;
         break;
     case CS_WHITE:
-        inp = CS_BLACK;
+        inp = CS_WHITE;
         break;
     case CS_BLACK:
         inp = CS_BLACK;
@@ -226,7 +243,6 @@ int ConsoleCurses::getSwappedColor(int inp)
 int ConsoleCurses::create()
 {
     initscr();
-
     keypad(stdscr, 1);
     noecho();
     curs_set(0);
@@ -242,7 +258,7 @@ int ConsoleCurses::create()
         {
             for (j = 0; j < 16; ++j)
             {
-                c = i + j * 16;
+                c      = i + j * 16;
                 int fg = getSwappedColor(j);
                 int bg = getSwappedColor(i);
                 init_pair(c, fg, bg == 0 ? -1 : bg);
@@ -253,10 +269,15 @@ int ConsoleCurses::create()
 
     int r, c;
     getmaxyx(stdscr, r, c);
-
+    if (r <= 0 || c <= 0)
+    {
+        printf("getmaxyx returned an invalid screen size\n");
+        return -1;
+    }
 
     m_displayRect = {0, 0, (int16_t)c, (int16_t)r};
-    m_size        = r * c;
+    m_size        = (size_t)r * (size_t)c;
+
     m_buffer      = new uint8_t[m_size];
     m_colorBuffer = new uint8_t[m_size];
 

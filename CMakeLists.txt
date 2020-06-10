@@ -48,14 +48,10 @@ set_static_runtime()
 
 set(ToyVM_BIN_DIR ${ToyVM_BINARY_DIR}/bin)
 set(ToyVM_LIB_DIR ${ToyVM_BIN_DIR}/lib)
-
-
 subdirs(Source)
 
 if (ToyVM_TEST)
     set(TestDirectory ${ToyVM_SOURCE_DIR}/Test)
-
-
     configure_file(${ToyVM_SOURCE_DIR}/CMake/TestConfig.h.in  
                    ${ToyVM_BINARY_DIR}/TestConfig.h)
 

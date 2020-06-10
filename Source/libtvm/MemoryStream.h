@@ -39,6 +39,7 @@ public:
     size_t fill(size_t nr, uint8_t code);
 
     void reserve(size_t cap);
+    void cloneInto(MemoryStream& dest);
 
     inline size_t size(void) const
     {

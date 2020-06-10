@@ -28,21 +28,22 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "SharedLib.h"
 #include "ArrayStack.h"
+#include "SharedLib.h"
 
 #define INS_ARG 3
 #define MAX_KWD 5
 #define MAX_REG 10
 
 // Maximum number of branches present at one time
-#define MAX_STK 256 
+#define MAX_STK 256
 
 typedef std::string        str_t;
 typedef std::vector<str_t> strvec_t;
 typedef std::set<str_t>    strset_t;
 
-typedef union Register {
+typedef union Register
+{
     uint8_t  b[8];
     uint16_t w[4];
     uint32_t l[2];
@@ -229,7 +230,7 @@ enum InstructionFlags
     IF_BTEW = 0x0200,  // w uint16_t
     IF_BTEL = 0x0400,  // l uint32_t
                        // x = default, if not present
-    IF_RIDX = 0x0800,  // [r(n), idx < 256] 
+    IF_RIDX = 0x0800,  // [r(n), idx < 256]
     IF_MAXF = 0x1000,  // needs an uint16_t
 };
 

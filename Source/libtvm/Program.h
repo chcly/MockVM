@@ -43,6 +43,7 @@ protected:
     uint32_t         m_flags;
     int32_t          m_return;
     uint64_t         m_curinst;
+    uint64_t         m_startinst;
     LabelMap         m_strtab;
     strvec_t         m_strtablist;
     ArrayStack       m_callStack;

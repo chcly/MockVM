@@ -25,22 +25,22 @@
 #include "Console.h"
 #include "Program.h"
 
-
 class Debugger : public Program
 {
 private:
-    str_t       m_file;
-    Console*    m_console;
-    bool        m_exit;
-    int16_t     m_ypos;
-    ConsoleRect m_instRect;
-    ConsoleRect m_regiRect;
-    ConsoleRect m_stackRect;
-    ConsoleRect m_outRect;
-    ConsoleRect m_dataRect;
-    Registers   m_last;
-    size_t      m_lastAddr;
-    size_t      m_baseAddr;
+    str_t        m_file;
+    Console*     m_console;
+    bool         m_exit;
+    int16_t      m_ypos;
+    ConsoleRect  m_instRect;
+    ConsoleRect  m_regiRect;
+    ConsoleRect  m_stackRect;
+    ConsoleRect  m_outRect;
+    ConsoleRect  m_dataRect;
+    Registers    m_last;
+    size_t       m_lastAddr;
+    size_t       m_baseAddr;
+    MemoryStream m_dataTableCpy;
 
 private:
     void displayHeader(void);
@@ -48,12 +48,12 @@ private:
     void displayRegisters(void);
     void displayStack(void);
     void displayData(void);
+    void displayExit(void);
 
     void render(void);
     void step(void);
     void disassemble(const ExecInstruction& inst, size_t i);
     void getOpString(str_t& dest, const uint8_t op);
-
 
     void initialize();
 

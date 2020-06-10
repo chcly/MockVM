@@ -38,11 +38,10 @@ private:
     HANDLE     m_redirOut;
     FILE *     m_redir;
 
-
-    uint32_t   getColorImpl(ColorSpace fg,
-                            ColorSpace bg);
-    void       writeChar(char ch, uint32_t col, size_t k);
-    void       initialize();
+    uint32_t getColorImpl(ColorSpace fg,
+                          ColorSpace bg);
+    void     writeChar(char ch, uint32_t col, size_t k);
+    void     initialize();
 
 public:
     ConsoleWindows();
@@ -51,6 +50,7 @@ public:
     int  getNextCmd();
     void clear();
     void flush();
+    void pause();
     int  create();
     void switchOutput(bool on);
     void setCursorPosition(int x, int y);

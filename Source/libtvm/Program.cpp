@@ -40,6 +40,8 @@ const size_t MaxRegisterSize = sizeof(Register) * (MAX_REG - 1);
 Program::Program(const str_t& modpath) :
     m_flags(0),
     m_return(0),
+    m_curinst(0),
+    m_startinst(0),
     m_modpath(modpath)
 {
     memset(m_regi, 0, sizeof(Registers));
@@ -312,6 +314,7 @@ int Program::loadCode(BlockReader& reader)
     m_curinst = 0;
     if (code.entry < m_ins.size())
         m_curinst = code.entry;
+    m_startinst = m_curinst;
     return PS_OK;
 }
 

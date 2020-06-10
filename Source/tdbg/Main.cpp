@@ -35,7 +35,6 @@ int main(int argc, char **argv)
 
     str_t file, mod;
     int   i;
-
     for (i = 1; i < argc; ++i)
     {
         if (argv[i][0] != '-')

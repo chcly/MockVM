@@ -57,10 +57,9 @@ int main(int argc, char **argv)
         printf("Usage: fcmp file1 file2\n");
         return 1;
     }
-    size_t  a, b;
-    char *  fileA = GetFilteredBuffer(argv[1], a);
-    char *  fileB = GetFilteredBuffer(argv[2], b);
-
+    size_t a, b;
+    char * fileA = GetFilteredBuffer(argv[1], a);
+    char * fileB = GetFilteredBuffer(argv[2], b);
 
     int rc = 0;
     if (a != b)
