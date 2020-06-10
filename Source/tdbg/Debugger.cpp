@@ -181,9 +181,8 @@ void Debugger::displayInstructions(void)
     m_ypos = m_instRect.y + 1;
 
     int16_t start = (int16_t)m_curinst, i;
-    int16_t ma    = m_instRect.h - 1;
-    int16_t hs    = ma - 5;
-    start -= hs;
+    int16_t ma    = m_instRect.bottom();
+    start -= ma - (ma >> 2);
     if (start < 0)
         start = 0;
 
@@ -441,7 +440,7 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
             ss << 'x' << inst.argv[1];
             ss << ", ";
 
-            if (inst.flags & IF_REG1)
+            if (inst.flags & IF_REG1 && !(inst.flags & IF_STKP))
                 ss << 'x' << inst.index;
             else
                 ss << dec << inst.index << hex;

@@ -136,8 +136,8 @@ void Console::displayOutput(int16_t x, int16_t y)
     int16_t st  = x, skipln=0;
     size_t  len = m_std.size(), i;
 
-    if (m_lineCount+2 > m_maxOutput.bottom()-1)
-        skipln += (m_lineCount+2)  - m_maxOutput.bottom()-1;
+    if (m_lineCount+1 > m_maxOutput.bottom())
+        skipln += (m_lineCount+1)  - m_maxOutput.bottom();
 
     m_lineCount = 0;
     for (i = 0; i < len; i++)
@@ -146,7 +146,7 @@ void Console::displayOutput(int16_t x, int16_t y)
 
         if ((ch == '\n') || (ch == '\r') || (x + 1 > m_maxOutput.right()))
         {
-            if (m_lineCount > skipln)
+            if (m_lineCount >= skipln)
             {
                 x = st;
                 ++y;
@@ -164,7 +164,7 @@ void Console::displayOutput(int16_t x, int16_t y)
         }
         else
         {
-            if (m_lineCount > skipln)
+            if (m_lineCount >= skipln)
                 displayChar(ch, x++, y);
         }
     }
@@ -172,7 +172,7 @@ void Console::displayOutput(int16_t x, int16_t y)
 
 int16_t Console::getOutputLineCount()
 {
-    size_t  len = m_std.size(), i, skpln;
+    size_t  len = m_std.size(), i;
 
     int16_t x, y, x0;
 
