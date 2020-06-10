@@ -34,7 +34,7 @@ Console::Console() :
     m_displayRect({0, 0, 0, 0}),
     m_curColor(CS_WHITE),
     m_lineCount(0),
-    m_maxOutput({0,0})
+    m_maxOutput({0, 0})
 {
 }
 
@@ -132,12 +132,11 @@ void Console::displayLineVert(int16_t st, int16_t en, int16_t x)
 
 void Console::displayOutput(int16_t x, int16_t y)
 {
-
-    int16_t st  = x, skipln=0;
+    int16_t st = x, skipln = 0;
     size_t  len = m_std.size(), i;
 
-    if (m_lineCount+1 > m_maxOutput.bottom())
-        skipln += (m_lineCount+1)  - m_maxOutput.bottom();
+    if (m_lineCount + 1 > m_maxOutput.bottom())
+        skipln += (m_lineCount + 1) - m_maxOutput.bottom();
 
     m_lineCount = 0;
     for (i = 0; i < len; i++)
@@ -172,13 +171,12 @@ void Console::displayOutput(int16_t x, int16_t y)
 
 int16_t Console::getOutputLineCount()
 {
-    size_t  len = m_std.size(), i;
+    size_t len = m_std.size(), i;
 
     int16_t x, y, x0;
 
-
-    x = m_maxOutput.x;
-    y = m_maxOutput.y;
+    x  = m_maxOutput.x;
+    y  = m_maxOutput.y;
     x0 = x;
 
     m_lineCount = 0;
@@ -216,12 +214,10 @@ void Console::clearOutput()
     m_std.clear();
 }
 
-
 void Console::appendOutput(const str_t &str)
 {
     m_std += str;
 }
-
 
 void Console::setColor(ColorSpace fg, ColorSpace bg)
 {

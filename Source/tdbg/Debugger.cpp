@@ -357,7 +357,7 @@ void Debugger::displayData(void)
 
 void Debugger::displayOutput(void)
 {
-    m_console->setColor(CS_DARKCYAN);
+    m_console->setColor(CS_LIGHT_GREY);
     m_console->displayOutput(m_outRect.x, m_outRect.y + 1);
 }
 
