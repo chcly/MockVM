@@ -20,6 +20,8 @@
 -------------------------------------------------------------------------------
 */
 #include "Console.h"
+#include <sstream>
+#include <iomanip>
 #ifdef _WIN32
 #include "ConsoleWindows.h"
 #else
@@ -77,6 +79,37 @@ void Console::displayChar(char ch, int16_t x, int16_t y)
     int16_t k = x + y * m_displayRect.w;
     if (k < (int16_t)m_size)
         writeChar(ch, m_curColor, k);
+}
+
+
+void Console::displayCharHex(int ch, int16_t x, int16_t y)
+{
+    if (ch> 32 && ch < 127)
+        displayChar(ch, x, y);
+    else
+    {
+        std::ostringstream ss;
+        ss << std::setfill('0') << std::setw(2);
+        ss << std::hex << std::uppercase << ch;
+        displayString(ss.str(), x, y);
+    }
+}
+
+
+void Console::displayInt(int v, int16_t x, int16_t y)
+{
+    std::ostringstream ss;
+    ss << v;
+    displayString(ss.str(), x, y);
+}
+
+void Console::displayIntRightAligned(int v, int16_t r, int16_t y)
+{
+    std::ostringstream ss;
+    ss << v;
+
+    str_t str = ss.str();
+    displayString(str, r - (int16_t)str.size(), y);
 }
 
 void Console::displayLineHorz(int16_t st, int16_t en, int16_t y)

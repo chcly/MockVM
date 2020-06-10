@@ -21,16 +21,14 @@
 */
 #include "ConsoleWindows.h"
 #include <conio.h>
-#include <stdio.h>
-#include <string.h>
 #include <fcntl.h>
 #include <io.h>
-#include "SymbolUtils.h"
+#include <stdio.h>
+#include <string.h>
 #include "MemoryStream.h"
-//#include <corecrt.h>
+#include "SymbolUtils.h"
 
 #define STDOUT 1
-
 
 const CHAR_INFO NullChar = {' ', CS_WHITE};
 
@@ -44,10 +42,9 @@ ConsoleWindows::ConsoleWindows() :
     m_redirIn(nullptr),
     m_redirOut(nullptr)
 {
-
     m_dup   = 0;
     m_redir = nullptr;
-    m_fd = 0;
+    m_fd    = 0;
     initialize();
 }
 
@@ -79,9 +76,7 @@ ConsoleWindows::~ConsoleWindows()
 
     if (m_redir)
     {
-        // closes 
-        // m_fd
-        // m_redirOut
+        // closes, m_fd, m_redirOut
         fclose(m_redir);
     }
 }
@@ -116,32 +111,23 @@ void ConsoleWindows::switchOutput(bool on)
             if (!m_fd)
             {
                 // transfers ownership of m_redirOut,
-                // (do not close m_redirOut with CloseHandle,
-                //  nor m_fd with close)
+                // (do not close m_redirOut with CloseHandle, nor m_fd with close)
                 m_fd = _open_osfhandle((intptr_t)m_redirOut, _O_TEXT);
             }
 
             if (m_fd != -1)
             {
-                // associate it with stdout.
-                // (use fclose it will call close
-                // for m_fd and m_redirOut)
-
+                // associate m_redirOut with stdout.
                 if (!m_redir)
-                {
                     m_redir = _fdopen(m_fd, "w");
-                }
 
                 if (_dup2(_fileno(m_redir), STDOUT) == -1)
-                {
-                    printf("Failed to duplicate handle\n");
-                }
+                    printf("Failed to duplicate stdout file descriptor\n");
             }
             else
             {
                 printf("failed to open low level file descriptor\n");
             }
-         
         }
     }
     else
@@ -155,12 +141,12 @@ void ConsoleWindows::switchOutput(bool on)
 
             ReadFile(m_redirIn, ms.ptr(), br, &br, nullptr);
             if (br > 0)
-                m_std += str_t((char*)ms.ptr(), br);
+                m_std += str_t((char *)ms.ptr(), br);
         }
 
-        // re associate stdout
+        // re associate stdout with the main console.
         if (m_dup)
-            _dup2(m_dup, 1);
+            _dup2(m_dup, STDOUT);
     }
 }
 
@@ -168,6 +154,7 @@ int ConsoleWindows::getNextCmd()
 {
     while (!_kbhit())
         Sleep(1);
+
     int ch = _getch();
     if (ch == 'q')
         return CCS_QUIT;

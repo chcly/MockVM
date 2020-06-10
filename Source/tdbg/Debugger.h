@@ -39,12 +39,15 @@ private:
     ConsoleRect m_outRect;
     ConsoleRect m_dataRect;
     Registers   m_last;
+    size_t      m_lastAddr;
+    size_t      m_baseAddr;
 
 private:
     void displayHeader(void);
     void displayInstructions(void);
     void displayRegisters(void);
     void displayStack(void);
+    void displayData(void);
 
     void render(void);
     void step(void);

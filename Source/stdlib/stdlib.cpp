@@ -25,12 +25,11 @@
 #include "SymbolUtils.h"
 
 #ifdef _WIN32
-# include <windows.h>
-# include <string.h>
-# include <fcntl.h>
-# include <io.h>
+#include <fcntl.h>
+#include <io.h>
+#include <string.h>
+#include <windows.h>
 #endif
-
 
 SYM_API SYM_EXPORT void __putchar(tvmregister_t regi)
 {
@@ -63,10 +62,7 @@ SYM_API SYM_EXPORT SymbolTable* std_init()
     return (SymbolTable*)stdlib;
 }
 
-
-
 #ifdef _WIN32
-
 BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 {
     switch (reason)
@@ -74,14 +70,14 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
     case DLL_THREAD_ATTACH:
         break;
     case DLL_PROCESS_ATTACH:
+        // Work around for process synchronization
+        // issues with tests. Another option is to
+        // call fflush(stdout) after every call.
         setvbuf(stdout, 0, _IONBF, 0);
         break;
     default:
         break;
     }
-
     return TRUE;
 }
-
-
 #endif

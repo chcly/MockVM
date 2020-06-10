@@ -86,17 +86,15 @@ protected:
     void handle_OP_PRG(const ExecInstruction& inst);
     void handle_OP_PRGI(const ExecInstruction& inst);
 
-
     void derefRegister(
         const uint64_t& x0,
         const uint32_t& flags,
-        uint8_t *ptr);
+        uint8_t*        ptr);
 
     void copyIntoRegister(
         const uint64_t& x0,
         const uint64_t& flags,
         const uint64_t& val);
-
 
     void forceExit(int returnCode);
 

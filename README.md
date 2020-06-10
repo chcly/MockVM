@@ -48,13 +48,18 @@ tvm <options> <program_path>
 
 tdbg is an experimental debugger.
 
-It is disabled by default.
+It is disabled by default. 
 ```-DBUILD_DBG=ON``` will enable it.
+
+![Cap](capture.gif)
 
 ### tdbg Usage
 
 ```txt
 tdbg <program_path>
+
+q key       - exits the program.
+down arrow  - steps one frame.
 ```
 
 ### Current Documentation

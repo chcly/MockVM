@@ -27,7 +27,6 @@
 
 using namespace std;
 
-
 const ExecInstruction nop = {0, 0, 0, {0, 0, 0}, 0, 0};
 
 Debugger::Debugger(const str_t& mod, const str_t& file) :
@@ -35,7 +34,9 @@ Debugger::Debugger(const str_t& mod, const str_t& file) :
     m_exit(false),
     m_file(file),
     m_console(nullptr),
-    m_last()
+    m_last(),
+    m_lastAddr(-1),
+    m_baseAddr(0)
 {
     initialize();
 }
@@ -44,7 +45,6 @@ Debugger::~Debugger()
 {
     delete m_console;
 }
-
 
 void Debugger::initialize()
 {
@@ -58,7 +58,6 @@ void Debugger::initialize()
 
     const ConsoleRect& rect = m_console->getRect();
 
-    
     m_instRect.x = 0;
     m_instRect.y = 0;
     m_instRect.w = 30;
@@ -87,8 +86,10 @@ void Debugger::initialize()
 
 void Debugger::displayHeader(void)
 {
-    m_console->setColor(CS_GREY);
+    str_t              string;
+    std::ostringstream stream;
 
+    //m_console->setColor(CS_GREY);
     //m_console->displayLineHorz(m_instRect.x, m_instRect.right(), m_instRect.y);
     //m_console->displayLineHorz(m_regiRect.x, m_regiRect.right(), m_regiRect.y);
     //m_console->displayChar('+', m_regiRect.x-1, m_regiRect.y);
@@ -101,25 +102,31 @@ void Debugger::displayHeader(void)
 
     m_console->setColor(CS_GREEN);
 
-    m_console->displayString("Instructions",
-                             m_instRect.cx() - 6,
+    stream << "Instructions [" << m_ins.size() << "]";
+    string = stream.str();
+
+    m_console->displayString(string,
+                             m_instRect.cx() - (int16_t)(string.size() >> 1),
                              m_instRect.y);
     m_console->displayString("Registers",
                              m_regiRect.cx() - 4,
                              m_regiRect.y);
 
-    m_console->displayString("Stack",
-                             m_stackRect.cx()-2,
+    stream.str("");
+    stream << "Stack [" << m_stack.size() << "]";
+    string = stream.str();
+
+    m_console->displayString(string,
+                             m_stackRect.cx() - (int16_t)(string.size() >> 1),
                              m_stackRect.y);
 
     m_console->displayString("Data",
-                             m_dataRect.cx()- 2,
+                             m_dataRect.cx() - 2,
                              m_dataRect.y);
 
     m_console->displayString("Output",
                              m_outRect.cx() - 2,
                              m_outRect.y);
-
 
     m_console->setColor(CS_WHITE);
 }
@@ -128,8 +135,7 @@ int Debugger::debug(void)
 {
     if (!m_console)
         return -1;
-  
-    
+
     m_callStack.push(m_curinst);
 
     render();
@@ -154,6 +160,7 @@ void Debugger::render(void)
     displayInstructions();
     displayRegisters();
     displayStack();
+    displayData();
     m_console->flush();
 }
 
@@ -163,9 +170,11 @@ void Debugger::displayInstructions(void)
 
     int16_t start = (int16_t)m_curinst, i;
     int16_t ma    = m_instRect.h - 1;
-    int16_t hs    = ma >> 1;
-    for (i = 0; i < hs && start > 1; ++i)
-        start--;
+    int16_t hs    = ma - 5;
+    start -= hs;
+    if (start < 0)
+        start = 0;
+
     for (i = 0; i < ma; ++i)
     {
         size_t cinst = (size_t)start + (size_t)i;
@@ -175,14 +184,13 @@ void Debugger::displayInstructions(void)
             disassemble(nop, cinst);
     }
     m_console->setColor(CS_DARKCYAN);
-    m_console->displayOutput(m_outRect.x, m_outRect.y +1);
+    m_console->displayOutput(m_outRect.x, m_outRect.y + 1);
 }
 
 void Debugger::step(void)
 {
     if (m_curinst < m_ins.size())
     {
-
         const ExecInstruction& inst = m_ins.at((size_t)m_curinst++);
         if (OPCodeTable[inst.op] != nullptr)
         {
@@ -198,7 +206,6 @@ void Debugger::step(void)
     else
         m_exit = true;
 }
-
 
 void Debugger::displayRegisters(void)
 {
@@ -245,21 +252,97 @@ void Debugger::displayRegisters(void)
 
 void Debugger::displayStack(void)
 {
-    int line = m_stackRect.y +1;
+    int16_t line = m_stackRect.y + 1;
     if (m_stack.empty())
         return;
 
     m_console->setColor(CS_LIGHT_GREY);
-    uint32_t stk = m_stack.size(), i;
+    uint32_t stk = (uint32_t)m_stack.size(), i;
     if (stk > 4)
         stk = 4;
 
-    for (i = 0; i < stk; ++i)
+    for (i = 0; i < stk; ++i, ++line)
     {
-        stringstream ss;
-        ss << left << setw(3) << i << ' ';
-        ss << m_stack.peek(i);
-        m_console->displayString(ss.str(), m_stackRect.x, line++);
+        m_console->displayChar('I', m_stackRect.x, line);
+        m_console->displayInt(i, m_stackRect.x + 2, line);
+        m_console->displayIntRightAligned((int)m_stack.peek(i),
+                                          m_stackRect.right() - 1,
+                                          line);
+    }
+}
+
+void Debugger::displayData(void)
+{
+    uint8_t* data = m_dataTable.ptr();
+    if (!data || (m_dataTable.capacity() <= 0))
+        return;
+    if (m_baseAddr == 0)
+        m_baseAddr = (size_t)data;
+
+    int line = m_dataRect.y + 1;
+
+    const ExecInstruction& inst = m_ins.at((size_t)m_curinst);
+    switch (inst.op)
+    {
+    case OP_STRS:
+    case OP_LDRS:
+
+        if (inst.flags & IF_REG1)
+        {
+            const Register& src = m_regi[inst.argv[1]];
+            m_baseAddr          = (size_t)src.x;
+            if (m_baseAddr)
+            {
+                m_lastAddr = 0;
+                if (inst.index < MAX_REG)
+                {
+                    size_t i = (size_t)m_regi[inst.index].x;
+                    if (i < m_dataTable.capacity())
+                        m_lastAddr = i;
+                }
+                else
+                    m_lastAddr = inst.index;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+
+    m_console->setColor(CS_LIGHT_GREY);
+    size_t sz = m_dataTable.capacity(), i;
+
+    if (m_baseAddr != 0 && m_baseAddr != -1)
+    {
+        int16_t x, y;
+        x = m_dataRect.x;
+        y = m_dataRect.y + 1;
+
+        uint8_t* st = (uint8_t*)m_baseAddr;
+        uint8_t* en = data + m_dataTable.capacity();
+
+        size_t sz = en - st;
+
+        for (i = 0; i < sz && y < m_dataRect.bottom(); ++i)
+        {
+            uint8_t ch = (*st++);
+
+            if (i == m_lastAddr)
+                m_console->setColor(CS_WHITE, CS_RED);
+            else if (ch == 0)
+                m_console->setColor(CS_LIGHT_GREY);
+            else
+                m_console->setColor(CS_LIGHT_GREY);
+
+            m_console->displayCharHex(ch, x++, y);
+            x += 2;
+
+            if (x + 2 > m_dataRect.right())
+            {
+                x = m_dataRect.x;
+                y++;
+            }
+        }
     }
 }
 
@@ -277,7 +360,7 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
     else
     {
         ss << setw(3) << ' ';
-        m_console->setColor(CS_LIGHT_GREY);
+        m_console->setColor(CS_WHITE);
     }
 
     str_t op;
@@ -306,7 +389,7 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
             ss << '[';
             ss << 'x' << inst.argv[1];
             ss << ", ";
-            
+
             if (inst.flags & IF_REG1)
                 ss << 'x' << inst.index;
             else

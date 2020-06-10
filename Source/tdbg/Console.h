@@ -83,7 +83,11 @@ public:
 
     void displayString(const str_t &string, int16_t x, int16_t y);
     void displayChar(char ch, int16_t x, int16_t y);
+    void displayCharHex(int ch, int16_t x, int16_t y);
+    void displayInt(int v, int16_t x, int16_t y);
+    void displayIntRightAligned(int v, int16_t r, int16_t y);
     void displayOutput(int16_t x, int16_t y);
+    
     void clearOutput();
     
     void displayLineHorz(int16_t st, int16_t en, int16_t y);
