@@ -52,6 +52,7 @@ It is disabled by default because the Linux and Mac versions use ncurses for the
 
 ```-DBUILD_DBG=ON``` will enable it.
 
+![Cap](Capture.gif)
 It can be obtained using:
 
 ```txt
