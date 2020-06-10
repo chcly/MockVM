@@ -274,12 +274,13 @@ void Debugger::displayStack(void)
 void Debugger::displayData(void)
 {
     uint8_t* data = m_dataTable.ptr();
-    if (!data || (m_dataTable.capacity() <= 0))
+    if (!data || (m_dataTable.capacity() <= 0) || (m_curinst >= m_ins.size()))
         return;
     if (m_baseAddr == 0)
         m_baseAddr = (size_t)data;
 
     int line = m_dataRect.y + 1;
+
 
     const ExecInstruction& inst = m_ins.at((size_t)m_curinst);
     switch (inst.op)

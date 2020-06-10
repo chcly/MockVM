@@ -84,8 +84,12 @@ void Console::displayChar(char ch, int16_t x, int16_t y)
 
 void Console::displayCharHex(int ch, int16_t x, int16_t y)
 {
-    if (ch> 32 && ch < 127)
-        displayChar(ch, x, y);
+    if (ch>= 32 && ch < 127)
+    {
+        std::ostringstream ss;
+        ss << '.' << (char)ch;
+        displayString(ss.str(), x, y);
+    }
     else
     {
         std::ostringstream ss;
