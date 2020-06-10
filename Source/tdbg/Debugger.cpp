@@ -83,6 +83,8 @@ void Debugger::initialize()
     m_outRect.y = 0;
     m_outRect.w = rect.w - (m_instRect.w + m_regiRect.w);
     m_outRect.h = rect.h;
+
+    m_console->setOutputRect({m_outRect.x, int16_t(m_outRect.y + 1), m_outRect.w, m_outRect.h});
 }
 
 void Debugger::displayHeader(void)
@@ -170,6 +172,7 @@ void Debugger::render(void)
     displayRegisters();
     displayStack();
     displayData();
+    displayOutput();
     m_console->flush();
 }
 
@@ -192,8 +195,6 @@ void Debugger::displayInstructions(void)
         else
             disassemble(nop, cinst);
     }
-    m_console->setColor(CS_DARKCYAN);
-    m_console->displayOutput(m_outRect.x, m_outRect.y + 1);
 }
 
 void Debugger::step(void)
@@ -339,7 +340,7 @@ void Debugger::displayData(void)
             if (i == m_lastAddr)
                 m_console->setColor(CS_WHITE, CS_RED);
             else if (ch == 0)
-                m_console->setColor(CS_LIGHT_GREY);
+                m_console->setColor(CS_GREY);
             else
                 m_console->setColor(CS_LIGHT_GREY);
 
@@ -355,26 +356,28 @@ void Debugger::displayData(void)
     }
 }
 
+void Debugger::displayOutput(void)
+{
+    m_console->setColor(CS_DARKCYAN);
+    m_console->displayOutput(m_outRect.x, m_outRect.y + 1);
+}
+
 void Debugger::displayExit(void)
 {
     if (m_curinst > 0)
         --m_curinst;
 
-    render();
-
-    int nr = m_console->getOutputLineCount();
-    nr += 2;
-
     std::ostringstream ss;
-    ss << "Exited with code " << m_return;
+    ss << "\nExited with code " << m_return << '\n';
 
-    m_console->setColor(CS_LIGHT_GREY);
-    m_console->displayString(ss.str(), m_outRect.x, nr);
-    ++nr;
+    m_console->appendOutput(ss.str());
 
     ss.str("");
-    ss << "Press (q) to exit or (r) to restart.";
-    m_console->displayString(ss.str(), m_outRect.x, nr);
+    ss << "Press (q) to exit or (r) to restart.\n\n";
+    m_console->appendOutput(ss.str());
+    m_console->getOutputLineCount();
+
+    render();
 
     m_console->flush();
     m_console->pause();

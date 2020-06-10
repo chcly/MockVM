@@ -49,6 +49,7 @@ private:
     void displayStack(void);
     void displayData(void);
     void displayExit(void);
+    void displayOutput(void);
 
     void render(void);
     void step(void);

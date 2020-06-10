@@ -66,11 +66,12 @@ struct ConsoleRect
 class Console
 {
 protected:
-    str_t       m_std;
-    size_t      m_size;
-    ConsoleRect m_displayRect;
-    uint32_t    m_curColor;
-    int16_t     m_lineCount;
+    str_t        m_std;
+    size_t       m_size;
+    ConsoleRect  m_displayRect;
+    uint32_t     m_curColor;
+    int16_t      m_lineCount;
+    ConsoleRect  m_maxOutput;
 
     virtual uint32_t getColorImpl(ColorSpace fg,
                                   ColorSpace bg) = 0;
@@ -81,6 +82,8 @@ public:
     Console();
     virtual ~Console();
 
+    void displayLineHorz(int16_t st, int16_t en, int16_t y);
+    void displayLineVert(int16_t st, int16_t en, int16_t x);
     void displayString(const str_t &string, int16_t x, int16_t y);
     void displayChar(char ch, int16_t x, int16_t y);
     void displayCharHex(int ch, int16_t x, int16_t y);
@@ -89,12 +92,9 @@ public:
 
     void    displayOutput(int16_t x, int16_t y);
     int16_t getOutputLineCount();
-
-    void clearOutput();
-
-    void displayLineHorz(int16_t st, int16_t en, int16_t y);
-    void displayLineVert(int16_t st, int16_t en, int16_t x);
-
+    void    clearOutput();
+    void    appendOutput(const str_t &str);
+    
     void setColor(ColorSpace fg, ColorSpace bg = ColorSpace::CS_TRANSPARENT);
 
     virtual int  getNextCmd()                    = 0;
@@ -119,6 +119,17 @@ public:
     const ConsoleRect &getRect()
     {
         return m_displayRect;
+    }
+
+
+    inline void setOutputRect(const ConsoleRect &pt)
+    {
+        m_maxOutput = pt;
+    }
+
+    inline ConsoleRect &getOutputRect()
+    {
+        return m_maxOutput;
     }
 };
 

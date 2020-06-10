@@ -33,7 +33,8 @@ Console::Console() :
     m_size(0),
     m_displayRect({0, 0, 0, 0}),
     m_curColor(CS_WHITE),
-    m_lineCount(0)
+    m_lineCount(0),
+    m_maxOutput({0,0})
 {
 }
 
@@ -87,7 +88,7 @@ void Console::displayCharHex(int ch, int16_t x, int16_t y)
     if (ch >= 32 && ch < 127)
     {
         std::ostringstream ss;
-        ss << '.' << (char)ch;
+        ss << ' ' << (char)ch;
         displayString(ss.str(), x, y);
     }
     else
@@ -131,18 +132,25 @@ void Console::displayLineVert(int16_t st, int16_t en, int16_t x)
 
 void Console::displayOutput(int16_t x, int16_t y)
 {
-    m_lineCount = 0;
 
-    int16_t st  = x;
+    int16_t st  = x, skipln=0;
     size_t  len = m_std.size(), i;
+
+    if (m_lineCount+2 > m_maxOutput.bottom()-1)
+        skipln += (m_lineCount+2)  - m_maxOutput.bottom()-1;
+
+    m_lineCount = 0;
     for (i = 0; i < len; i++)
     {
         char ch = m_std.at(i);
 
-        if ((ch == '\n') || (ch == '\r') || (x + 1 > m_displayRect.w))
+        if ((ch == '\n') || (ch == '\r') || (x + 1 > m_maxOutput.right()))
         {
-            x = st;
-            ++y;
+            if (m_lineCount > skipln)
+            {
+                x = st;
+                ++y;
+            }
             if (ch == '\r')
             {
                 if (i + 1 < len)
@@ -155,12 +163,51 @@ void Console::displayOutput(int16_t x, int16_t y)
             m_lineCount++;
         }
         else
-            displayChar(ch, x++, y);
+        {
+            if (m_lineCount > skipln)
+                displayChar(ch, x++, y);
+        }
     }
 }
 
 int16_t Console::getOutputLineCount()
 {
+    size_t  len = m_std.size(), i, skpln;
+
+    int16_t x, y, x0;
+
+
+    x = m_maxOutput.x;
+    y = m_maxOutput.y;
+    x0 = x;
+
+    m_lineCount = 0;
+    for (i = 0; i < len; i++)
+    {
+        char ch = m_std.at(i);
+
+        if ((ch == '\n') || (ch == '\r') || (x + 1 > m_maxOutput.right()))
+        {
+            x = x0;
+            ++y;
+
+            if (ch == '\r')
+            {
+                if (i + 1 < len)
+                {
+                    if (m_std.at(i + 1) == '\n')
+                        ++i;
+                }
+            }
+
+            m_lineCount++;
+        }
+        else
+        {
+            ++x;
+        }
+    }
+
     return m_lineCount;
 }
 
@@ -168,6 +215,13 @@ void Console::clearOutput()
 {
     m_std.clear();
 }
+
+
+void Console::appendOutput(const str_t &str)
+{
+    m_std += str;
+}
+
 
 void Console::setColor(ColorSpace fg, ColorSpace bg)
 {
