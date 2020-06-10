@@ -50,13 +50,12 @@ tdbg is an experimental debugger.
 
 It is disabled by default because the Linux and Mac versions use ncurses for the display which may or may not be installed. ```-DBUILD_DBG=ON``` will enable it.
 
-![Cap](Capture.gif)
-
 It can be obtained using:
 
 ```txt
 sudo apt-get install libncurses-dev
 ```
+
 It has been tested with ```(6.2-0ubuntu2).```
 
 ### tdbg Usage
@@ -67,6 +66,8 @@ tdbg <program_path>
 q key       - exits the program.
 down arrow  - steps one frame.
 ```
+
+![Cap](Capture.gif)
 
 ### Current Documentation
 
