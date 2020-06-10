@@ -51,7 +51,7 @@ tdbg is an experimental debugger.
 It is disabled by default. 
 ```-DBUILD_DBG=ON``` will enable it.
 
-![Cap](capture.gif)
+![Screenshot](Capture.gif)
 
 ### tdbg Usage
 
