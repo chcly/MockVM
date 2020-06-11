@@ -33,12 +33,12 @@ if (WIN32)
     set(PLAT_NO_COMP
       ConsoleCurses.h
       ConsoleCurses.cpp 
-      #Win32/ncurses.h
-      #Win32/unistd.h
+      Win32/ncurses.h
+      Win32/unistd.h
      )
 
     set_source_files_properties(${PLAT_NO_COMP} PROPERTIES HEADER_FILE_ONLY ON)
-    #include_directories(Win32)
+    include_directories(Win32)
 
     set(PLAT
       ConsoleWindows.h
