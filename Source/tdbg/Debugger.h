@@ -55,9 +55,7 @@ private:
     void step(void);
     void disassemble(const ExecInstruction& inst, size_t i);
     void getOpString(str_t& dest, const uint8_t op);
-
-    void initialize();
-
+    void initialize(void);
 public:
     Debugger(const str_t& mod, const str_t& file);
     ~Debugger();

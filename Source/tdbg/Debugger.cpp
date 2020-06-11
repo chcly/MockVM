@@ -285,6 +285,7 @@ void Debugger::displayData(void)
     uint8_t* data = m_dataTable.ptr();
     if (!data || (m_dataTable.capacity() <= 0) || (m_curinst >= m_ins.size()))
         return;
+
     if (m_baseAddr == 0)
         m_baseAddr = (size_t)data;
 
@@ -319,8 +320,8 @@ void Debugger::displayData(void)
     }
 
     m_console->setColor(CS_LIGHT_GREY);
-    size_t sz = m_dataTable.capacity(), i;
 
+    size_t sz = m_dataTable.capacity(), i;
     if (m_baseAddr != 0 && m_baseAddr != -1)
     {
         int16_t x, y;

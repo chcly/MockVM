@@ -33,11 +33,6 @@ enum ConsoleCtrlStatus
     CCS_RESTART
 };
 
-struct ConsolePoint
-{
-    int16_t x, y;
-};
-
 struct ConsoleRect
 {
     int16_t x, y, w, h;
@@ -66,12 +61,12 @@ struct ConsoleRect
 class Console
 {
 protected:
-    str_t        m_std;
-    size_t       m_size;
-    ConsoleRect  m_displayRect;
-    uint32_t     m_curColor;
-    int16_t      m_lineCount;
-    ConsoleRect  m_maxOutput;
+    str_t       m_std;
+    size_t      m_size;
+    ConsoleRect m_displayRect;
+    uint32_t    m_curColor;
+    int16_t     m_lineCount;
+    ConsoleRect m_maxOutput;
 
     virtual uint32_t getColorImpl(ColorSpace fg,
                                   ColorSpace bg) = 0;
@@ -94,7 +89,7 @@ public:
     int16_t getOutputLineCount();
     void    clearOutput();
     void    appendOutput(const str_t &str);
-    
+
     void setColor(ColorSpace fg, ColorSpace bg = ColorSpace::CS_TRANSPARENT);
 
     virtual int  getNextCmd()                    = 0;
@@ -120,7 +115,6 @@ public:
     {
         return m_displayRect;
     }
-
 
     inline void setOutputRect(const ConsoleRect &pt)
     {

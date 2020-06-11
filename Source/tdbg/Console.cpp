@@ -135,8 +135,9 @@ void Console::displayOutput(int16_t x, int16_t y)
     int16_t st = x, skipln = 0;
     size_t  len = m_std.size(), i;
 
-    if (m_lineCount + 1 > m_maxOutput.bottom())
-        skipln += (m_lineCount + 1) - m_maxOutput.bottom();
+    m_lineCount += 1;
+    if (m_lineCount > m_maxOutput.h)
+        skipln += (m_lineCount) - m_maxOutput.h;
 
     m_lineCount = 0;
     for (i = 0; i < len; i++)
