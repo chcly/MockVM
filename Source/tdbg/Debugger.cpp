@@ -172,7 +172,7 @@ top:
     if (cmd != CCS_FORCE_EXIT)
     {
         displayExit();
-        if (m_console->getNextCmd() == CCS_RESTART)
+        if (m_console->pause() == CCS_RESTART)
             goto top;
     }
     return m_return;
@@ -400,7 +400,6 @@ void Debugger::displayExit(void)
     render();
 
     m_console->flush();
-    m_console->pause();
 
     // reset all state variables
     m_console->clearOutput();

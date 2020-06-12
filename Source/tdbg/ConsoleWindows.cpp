@@ -33,12 +33,10 @@
 #define VK_C 0x43
 #define VK_Z 0x5A
 
-
 const CHAR_INFO NullChar = {' ', CS_WHITE};
 
-void ZeroBufferMemory(CHAR_INFO *dest, size_t size);
+void        ZeroBufferMemory(CHAR_INFO *dest, size_t size);
 BOOL WINAPI CtrlCallback(DWORD evt);
-
 
 ConsoleWindows::ConsoleWindows() :
     m_buffer(nullptr),
@@ -79,7 +77,6 @@ void ConsoleWindows::initialize()
 
 void ConsoleWindows::finalize()
 {
-
     if (m_stdout)
     {
         SetConsoleCursorPosition(m_stdout, m_startCurs);
@@ -106,8 +103,6 @@ void ConsoleWindows::finalize()
         fclose(m_redir);
     }
 }
-
-
 
 void ConsoleWindows::clear()
 {
@@ -162,12 +157,37 @@ void ConsoleWindows::switchOutput(bool on)
     }
 }
 
-void ConsoleWindows::pause()
+int ConsoleWindows::processKeyEvent(const KEY_EVENT_RECORD &rec)
 {
-    // fall through to process input
+    int rc = CCS_NO_INPUT;
+
+    if (rec.bKeyDown)
+    {
+        if (rec.wVirtualKeyCode == VK_DOWN)
+            rc = CCS_STEP;
+        else if (rec.wVirtualKeyCode == VK_Q)
+            rc = CCS_QUIT;
+        else if (rec.wVirtualKeyCode == VK_R)
+            rc = CCS_RESTART;
+        else if (rec.dwControlKeyState & LEFT_CTRL_PRESSED ||
+                 rec.dwControlKeyState & RIGHT_CTRL_PRESSED)
+        {
+            if (rec.wVirtualKeyCode == VK_C ||
+                rec.wVirtualKeyCode == VK_Z)
+            {
+                rc = CCS_FORCE_EXIT;
+            }
+        }
+    }
+    return rc;
 }
 
-int ConsoleWindows::processInput()
+int ConsoleWindows::processMouseEvent(const MOUSE_EVENT_RECORD &rec)
+{
+    return CCS_NO_INPUT;
+}
+
+int ConsoleWindows::getNextCmd()
 {
     INPUT_RECORD ir[64];
     DWORD        nr, i;
@@ -209,41 +229,6 @@ block_input:
         FlushConsoleInputBuffer(m_stdin);
     }
     return rc;
-}
-
-int ConsoleWindows::processKeyEvent(const KEY_EVENT_RECORD &rec)
-{
-    int rc = CCS_NO_INPUT;
-
-    if (rec.bKeyDown)
-    {
-        if (rec.wVirtualKeyCode == VK_DOWN)
-            rc = CCS_STEP;
-        else if (rec.wVirtualKeyCode == VK_Q)
-            rc = CCS_QUIT;
-        else if (rec.wVirtualKeyCode == VK_R)
-            rc = CCS_RESTART;
-        else if (rec.dwControlKeyState & LEFT_CTRL_PRESSED ||
-                 rec.dwControlKeyState & RIGHT_CTRL_PRESSED)
-        {
-            if (rec.wVirtualKeyCode == VK_C ||
-                rec.wVirtualKeyCode == VK_Z)
-            {
-                rc = CCS_FORCE_EXIT;
-            }
-        }
-    }
-    return rc;
-}
-
-int ConsoleWindows::processMouseEvent(const MOUSE_EVENT_RECORD &rec)
-{
-    return CCS_NO_INPUT;
-}
-
-int ConsoleWindows::getNextCmd()
-{
-    return processInput();
 }
 
 void ConsoleWindows::setCursorPosition(int x, int y)
@@ -301,7 +286,6 @@ int ConsoleWindows::create()
         printf("failed to acquire stdin\n");
         return -1;
     }
-
 
     CONSOLE_SCREEN_BUFFER_INFO info;
     if (GetConsoleScreenBufferInfo(m_stdout, &info) == FALSE)
@@ -370,7 +354,6 @@ uint8_t ConsoleWindows::getColorImpl(uint8_t fg, uint8_t bg)
     }
 }
 
-
 BOOL WINAPI CtrlCallback(DWORD evt)
 {
     switch (evt)
@@ -393,16 +376,15 @@ BOOL WINAPI CtrlCallback(DWORD evt)
             1,
             &eventsWritten);
 
-        // Skip it or pass it on to the default 
+        // Skip it or pass it on to the default
         // handler. If this fails, it just won't
-        // exit cleanly (reset the screen etc ...) 
+        // exit cleanly (reset the screen etc ...)
         return eventsWritten > 0 ? TRUE : FALSE;
     }
     }
 
     return FALSE;
 }
-
 
 void ZeroBufferMemory(CHAR_INFO *dest, size_t size)
 {

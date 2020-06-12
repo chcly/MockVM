@@ -47,8 +47,8 @@ private:
     void displayRegisters(void);
     void displayStack(void);
     void displayData(void);
-    void displayExit(void);
     void displayOutput(void);
+    void displayExit(void);
 
     void render(void);
     void step(void);

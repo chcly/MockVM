@@ -45,7 +45,6 @@ private:
     void     initialize();
     void     finalize();
     
-    int processInput();
     int processKeyEvent(const KEY_EVENT_RECORD &rec);
     int processMouseEvent(const MOUSE_EVENT_RECORD &rec);
 
@@ -56,7 +55,6 @@ public:
     int  getNextCmd();
     void clear();
     void flush();
-    void pause();
     int  create();
     void switchOutput(bool on);
     void setCursorPosition(int x, int y);

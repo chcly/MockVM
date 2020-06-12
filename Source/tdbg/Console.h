@@ -89,11 +89,10 @@ public:
     int16_t getOutputLineCount();
     void    clearOutput();
     void    appendOutput(const str_t &str);
+    void    setColor(uint8_t fg, uint8_t bg = CS_TRANSPARENT);
 
-    void setColor(uint8_t fg, uint8_t bg = CS_TRANSPARENT);
-
+    int          pause();
     virtual int  getNextCmd()                    = 0;
-    virtual void pause()                         = 0;
     virtual void clear()                         = 0;
     virtual void flush()                         = 0;
     virtual int  create()                        = 0;

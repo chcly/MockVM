@@ -94,26 +94,6 @@ void ConsoleCurses::readRedirectedOutput(const str_t &_path)
     }
 }
 
-void ConsoleCurses::pause()
-{
-    for (;;)
-    {
-        int ch = getch();
-        if (ch == 'r')
-        {
-            ungetch(ch);
-            break;
-        }
-        else if (ch == 'q')
-        {
-            ungetch(ch);
-            break;
-        }
-        else
-            usleep(1);
-    }
-}
-
 int ConsoleCurses::getNextCmd()
 {
     int ch = getch();

@@ -212,6 +212,27 @@ int16_t Console::getOutputLineCount()
     return m_lineCount;
 }
 
+
+int Console::pause()
+{
+    int rc = CCS_NO_INPUT;
+    while (rc == CCS_NO_INPUT)
+    {
+        rc = getNextCmd();
+        switch (rc)
+        {
+        case CCS_RESTART:
+        case CCS_FORCE_EXIT:
+        case CCS_QUIT:
+            break;
+        default:
+            rc = CCS_NO_INPUT;
+            break;
+        }
+    }
+    return rc;
+}
+
 void Console::clearOutput()
 {
     m_std.clear();
