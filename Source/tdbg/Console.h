@@ -29,8 +29,10 @@ enum ConsoleCtrlStatus
 {
     CCS_NO_INPUT = 0,
     CCS_QUIT,
+    CCS_FORCE_EXIT,
     CCS_STEP,
-    CCS_RESTART
+    CCS_RESTART,
+    CCS_REDRAW
 };
 
 struct ConsoleRect

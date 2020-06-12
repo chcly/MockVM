@@ -34,13 +34,20 @@ private:
     COORD      m_startCurs;
     int        m_fd, m_dup;
     HANDLE     m_stdout;
+    HANDLE     m_stdin;
     HANDLE     m_redirIn;
     HANDLE     m_redirOut;
     FILE *     m_redir;
 
     uint8_t  getColorImpl(uint8_t fg, uint8_t bg);
     void     writeChar(char ch, uint8_t col, size_t k);
+
     void     initialize();
+    void     finalize();
+    
+    int processInput();
+    int processKeyEvent(const KEY_EVENT_RECORD &rec);
+    int processMouseEvent(const MOUSE_EVENT_RECORD &rec);
 
 public:
     ConsoleWindows();

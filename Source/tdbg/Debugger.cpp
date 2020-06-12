@@ -142,26 +142,40 @@ int Debugger::debug(void)
     // save the original data table
     m_dataTable.cloneInto(m_dataTableCpy);
 
+    int cmd = CCS_NO_INPUT;
+
 top:
     m_callStack.push(m_curinst);
-
     render();
     while (!m_exit)
     {
-        int cmd = m_console->getNextCmd();
-        if (cmd == CCS_QUIT)
-            m_exit = true;
-        if (cmd == CCS_STEP)
+        cmd = m_console->getNextCmd();
+
+        switch (cmd)
         {
+        case CCS_FORCE_EXIT:
+        case CCS_QUIT:
+            m_exit = true;
+            break;
+        case CCS_STEP:
             render();
             step();
+            break;
+        case CCS_REDRAW:
+            render();
+            break;
+        default:
+            break;
         }
     }
 
-    displayExit();
-    if (m_console->getNextCmd() == CCS_RESTART)
-        goto top;
-    return 0;
+    if (cmd != CCS_FORCE_EXIT)
+    {
+        displayExit();
+        if (m_console->getNextCmd() == CCS_RESTART)
+            goto top;
+    }
+    return m_return;
 }
 
 void Debugger::render(void)

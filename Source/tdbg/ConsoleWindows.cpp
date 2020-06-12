@@ -20,7 +20,6 @@
 -------------------------------------------------------------------------------
 */
 #include "ConsoleWindows.h"
-#include <conio.h>
 #include <fcntl.h>
 #include <io.h>
 #include <stdio.h>
@@ -29,10 +28,17 @@
 #include "SymbolUtils.h"
 
 #define STDOUT 1
+#define VK_Q 0x51
+#define VK_R 0x52
+#define VK_C 0x43
+#define VK_Z 0x5A
+
 
 const CHAR_INFO NullChar = {' ', CS_WHITE};
 
 void ZeroBufferMemory(CHAR_INFO *dest, size_t size);
+BOOL WINAPI CtrlCallback(DWORD evt);
+
 
 ConsoleWindows::ConsoleWindows() :
     m_buffer(nullptr),
@@ -40,45 +46,19 @@ ConsoleWindows::ConsoleWindows() :
     m_startRect({0, 0, 0, 0}),
     m_stdout(nullptr),
     m_redirIn(nullptr),
-    m_redirOut(nullptr)
+    m_redirOut(nullptr),
+    m_dup(0),
+    m_redir(nullptr),
+    m_fd(-1)
 {
-    m_dup   = 0;
-    m_redir = nullptr;
-    m_fd    = 0;
     initialize();
 }
 
 ConsoleWindows::~ConsoleWindows()
 {
+    finalize();
     delete[] m_buffer;
-
-    if (m_stdout)
-    {
-        SetConsoleCursorPosition(m_stdout, m_startCurs);
-        CONSOLE_CURSOR_INFO cinf;
-        cinf.bVisible = 1;
-        cinf.dwSize   = 1;
-        SetConsoleCursorInfo(m_stdout, &cinf);
-
-        // Restore the contents of
-        // the start screen.
-        WriteConsoleOutput(
-            m_stdout,
-            m_startBuf,
-            {m_displayRect.w, m_displayRect.h},
-            {0, 0},
-            &m_startRect);
-
-        delete[] m_startBuf;
-    }
-
-    CloseHandle(m_redirIn);
-
-    if (m_redir)
-    {
-        // closes, m_fd, m_redirOut
-        fclose(m_redir);
-    }
+    delete[] m_startBuf;
 }
 
 void ConsoleWindows::initialize()
@@ -96,6 +76,38 @@ void ConsoleWindows::initialize()
     if (!m_dup)
         m_dup = _dup(STDOUT);
 }
+
+void ConsoleWindows::finalize()
+{
+
+    if (m_stdout)
+    {
+        SetConsoleCursorPosition(m_stdout, m_startCurs);
+        CONSOLE_CURSOR_INFO cinf;
+        cinf.bVisible = 1;
+        cinf.dwSize   = 1;
+        SetConsoleCursorInfo(m_stdout, &cinf);
+
+        // Restore the contents of
+        // the start screen.
+        WriteConsoleOutput(
+            m_stdout,
+            m_startBuf,
+            {m_displayRect.w, m_displayRect.h},
+            {0, 0},
+            &m_startRect);
+    }
+
+    CloseHandle(m_redirIn);
+
+    if (m_redir)
+    {
+        // closes, m_fd, m_redirOut
+        fclose(m_redir);
+    }
+}
+
+
 
 void ConsoleWindows::clear()
 {
@@ -152,37 +164,86 @@ void ConsoleWindows::switchOutput(bool on)
 
 void ConsoleWindows::pause()
 {
-    for (;;)
+    // fall through to process input
+}
+
+int ConsoleWindows::processInput()
+{
+    INPUT_RECORD ir[64];
+    DWORD        nr, i;
+    int          rc = CCS_NO_INPUT;
+
+block_input:
+    WaitForSingleObject(m_stdin, INFINITE);
+
+    if (ReadConsoleInput(m_stdin, ir, 64, &nr))
     {
-        if (_kbhit())
+        for (i = 0; i < nr && rc == CCS_NO_INPUT; ++i)
         {
-            int ch = _getch();
-            if (ch == 'r')
+            switch (ir[i].EventType)
             {
-                _ungetch(ch);
+            case WINDOW_BUFFER_SIZE_EVENT:
+                break;
+            case MOUSE_EVENT:
+                rc = processMouseEvent(ir[i].Event.MouseEvent);
+                break;
+            case KEY_EVENT:
+                rc = processKeyEvent(ir[i].Event.KeyEvent);
+                break;
+            default:
+            case MENU_EVENT:
+            case FOCUS_EVENT:
                 break;
             }
-            else if (ch == 'q')
-            {
-                _ungetch(ch);
-                break;
-            }
-            else
-                Sleep(1);
         }
     }
+
+    if (rc == CCS_NO_INPUT)
+    {
+        // continue to filter for wanted events.
+        goto block_input;
+    }
+    else
+    {
+        // Discard the rest?
+        FlushConsoleInputBuffer(m_stdin);
+    }
+    return rc;
+}
+
+int ConsoleWindows::processKeyEvent(const KEY_EVENT_RECORD &rec)
+{
+    int rc = CCS_NO_INPUT;
+
+    if (rec.bKeyDown)
+    {
+        if (rec.wVirtualKeyCode == VK_DOWN)
+            rc = CCS_STEP;
+        else if (rec.wVirtualKeyCode == VK_Q)
+            rc = CCS_QUIT;
+        else if (rec.wVirtualKeyCode == VK_R)
+            rc = CCS_RESTART;
+        else if (rec.dwControlKeyState & LEFT_CTRL_PRESSED ||
+                 rec.dwControlKeyState & RIGHT_CTRL_PRESSED)
+        {
+            if (rec.wVirtualKeyCode == VK_C ||
+                rec.wVirtualKeyCode == VK_Z)
+            {
+                rc = CCS_FORCE_EXIT;
+            }
+        }
+    }
+    return rc;
+}
+
+int ConsoleWindows::processMouseEvent(const MOUSE_EVENT_RECORD &rec)
+{
+    return CCS_NO_INPUT;
 }
 
 int ConsoleWindows::getNextCmd()
 {
-    int ch = _getch();
-    if (ch == 'q')
-        return CCS_QUIT;
-    if (ch == 224)
-        return CCS_STEP;
-    if (ch == 'r')
-        return CCS_RESTART;
-    return CCS_NO_INPUT;
+    return processInput();
 }
 
 void ConsoleWindows::setCursorPosition(int x, int y)
@@ -216,6 +277,7 @@ void ConsoleWindows::flush()
     ConsoleWindows::setCursorPosition(m_displayRect.x, m_displayRect.y);
 
     SMALL_RECT sr = {m_displayRect.x, m_displayRect.y, m_displayRect.w, m_displayRect.h};
+
     WriteConsoleOutput(
         m_stdout,
         m_buffer,
@@ -233,12 +295,22 @@ int ConsoleWindows::create()
         return -1;
     }
 
+    m_stdin = GetStdHandle(STD_INPUT_HANDLE);
+    if (m_stdin == INVALID_HANDLE_VALUE)
+    {
+        printf("failed to acquire stdin\n");
+        return -1;
+    }
+
+
     CONSOLE_SCREEN_BUFFER_INFO info;
-    if (GetConsoleScreenBufferInfo(m_stdout, &info) == 0)
+    if (GetConsoleScreenBufferInfo(m_stdout, &info) == FALSE)
     {
         printf("failed get the screen buffer\n");
         return -1;
     }
+
+    SetConsoleCtrlHandler(CtrlCallback, TRUE);
 
     m_displayRect = {0, 0, info.srWindow.Right, info.srWindow.Bottom};
     m_size        = (size_t)m_displayRect.w * (size_t)m_displayRect.h;
@@ -282,7 +354,6 @@ const unsigned char COLOR_TABLE[16][16] = {
 
 uint8_t ConsoleWindows::getColorImpl(uint8_t fg, uint8_t bg)
 {
-
     if (bg != CS_TRANSPARENT)
     {
         if (fg < 16 && bg < 16)
@@ -298,6 +369,40 @@ uint8_t ConsoleWindows::getColorImpl(uint8_t fg, uint8_t bg)
             return CS_WHITE;
     }
 }
+
+
+BOOL WINAPI CtrlCallback(DWORD evt)
+{
+    switch (evt)
+    {
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_CLOSE_EVENT:
+    {
+        // generate an event to exit
+        INPUT_RECORD inputRecord;
+        inputRecord.EventType                        = KEY_EVENT;
+        inputRecord.Event.KeyEvent.bKeyDown          = 1;
+        inputRecord.Event.KeyEvent.dwControlKeyState = LEFT_CTRL_PRESSED;
+        inputRecord.Event.KeyEvent.wVirtualKeyCode   = VK_C;
+
+        DWORD eventsWritten;
+        WriteConsoleInput(
+            GetStdHandle(STD_INPUT_HANDLE),
+            &inputRecord,
+            1,
+            &eventsWritten);
+
+        // Skip it or pass it on to the default 
+        // handler. If this fails, it just won't
+        // exit cleanly (reset the screen etc ...) 
+        return eventsWritten > 0 ? TRUE : FALSE;
+    }
+    }
+
+    return FALSE;
+}
+
 
 void ZeroBufferMemory(CHAR_INFO *dest, size_t size)
 {
