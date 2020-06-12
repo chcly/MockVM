@@ -31,7 +31,6 @@ private:
     str_t        m_file;
     Console*     m_console;
     bool         m_exit;
-    int16_t      m_ypos;
     ConsoleRect  m_instRect;
     ConsoleRect  m_regiRect;
     ConsoleRect  m_stackRect;
@@ -53,7 +52,7 @@ private:
 
     void render(void);
     void step(void);
-    void disassemble(const ExecInstruction& inst, size_t i);
+    void disassemble(const ExecInstruction& inst, size_t i, int16_t y);
     void getOpString(str_t& dest, const uint8_t op);
     void initialize(void);
 public:

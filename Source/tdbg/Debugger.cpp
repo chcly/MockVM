@@ -61,7 +61,7 @@ void Debugger::initialize()
 
     m_instRect.x = 0;
     m_instRect.y = 0;
-    m_instRect.w = 30;
+    m_instRect.w = 36;
     m_instRect.h = rect.h;
 
     m_regiRect.x = m_instRect.right() + 1;
@@ -178,21 +178,22 @@ void Debugger::render(void)
 
 void Debugger::displayInstructions(void)
 {
-    m_ypos = m_instRect.y + 1;
+    int16_t ypos = m_instRect.y + 1;
 
-    int16_t start = (int16_t)m_curinst, i;
-    int16_t ma    = m_instRect.bottom();
-    start -= ma - (ma >> 2);
-    if (start < 0)
-        start = 0;
+    int16_t offs = (int16_t)m_curinst, i;
+    int16_t maxy = m_instRect.bottom();
 
-    for (i = 0; i < ma; ++i)
+    offs -= maxy - (maxy >> 2);
+    if (offs < 0)
+        offs = 0;
+
+    for (i = 0; i < maxy; ++i, ++ypos)
     {
-        size_t cinst = (size_t)start + (size_t)i;
+        size_t cinst = (size_t)offs + (size_t)i;
         if (cinst < m_ins.size())
-            disassemble(m_ins.at(cinst), cinst);
+            disassemble(m_ins.at(cinst), cinst, ypos);
         else
-            disassemble(nop, cinst);
+            disassemble(nop, cinst, ypos);
     }
 }
 
@@ -200,15 +201,18 @@ void Debugger::step(void)
 {
     if (m_curinst < m_ins.size())
     {
+        bool switchOutput = false;
+
         const ExecInstruction& inst = m_ins.at((size_t)m_curinst++);
         if (OPCodeTable[inst.op] != nullptr)
         {
-            if ((inst.op == OP_GTO && inst.call) || (inst.op >= OP_PRG))
+            switchOutput = (inst.op == OP_GTO && inst.call) || (inst.op >= OP_PRG);
+            if (switchOutput)
                 m_console->switchOutput(true);
 
             (this->*OPCodeTable[inst.op])(inst);
 
-            if ((inst.op == OP_GTO && inst.call) || (inst.op >= OP_PRG))
+            if (switchOutput)
                 m_console->switchOutput(false);
         }
     }
@@ -218,29 +222,29 @@ void Debugger::step(void)
 
 void Debugger::displayRegisters(void)
 {
-    stringstream ss, ss1;
-    int          i;
-    int          line = m_regiRect.y + 1;
+    ostringstream ss, ss1;
+
+    int16_t y;
+    int16_t ypos = m_regiRect.y + 1;
 
     m_console->setColor(CS_WHITE);
 
-    for (i = 0; i < MAX_REG; ++i, ++line)
+    ss << setfill('0') << uppercase << hex;
+    for (y = 0; y < MAX_REG; ++y, ++ypos)
     {
-        ss << "0x" << setfill('0') << uppercase << hex << m_regi[i].x;
-        ss1 << 'x' << i << ' ';
+        ss << "0x" << m_regi[y].x;
+        ss1 << 'x' << y << ' ';
         ss1 << right << setw(19) << ss.str();
-        ss1 << ' ';
-        ss1 << dec;
-        ss1 << setw(19);
-        ss1 << m_regi[i].x;
+        ss1 << ' ' << setw(19);
+        ss1 << m_regi[y].x;
 
-        if (m_regi[i].x != m_last[i].x)
+        if (m_regi[y].x != m_last[y].x)
             m_console->setColor(CS_RED);
         else
             m_console->setColor(CS_LIGHT_GREY);
 
-        m_last[i].x = m_regi[i].x;
-        m_console->displayString(ss1.str(), m_regiRect.x, line);
+        m_last[y].x = m_regi[y].x;
+        m_console->displayString(ss1.str(), m_regiRect.x, ypos);
 
         ss.str("");
         ss1.str("");
@@ -256,27 +260,29 @@ void Debugger::displayRegisters(void)
     ss << ' ' << ']';
 
     m_console->setColor(CS_DARKCYAN);
-    m_console->displayString(ss.str(), m_regiRect.x, line);
+    m_console->displayString(ss.str(), m_regiRect.x, ypos);
 }
 
 void Debugger::displayStack(void)
 {
-    int16_t line = m_stackRect.y + 1;
+    int16_t ypos = m_stackRect.y + 1, y;
     if (m_stack.empty())
         return;
 
     m_console->setColor(CS_LIGHT_GREY);
-    uint32_t stk = (uint32_t)m_stack.size(), i;
+    int16_t stk = (int16_t)m_stack.size();
     if (stk > 4)
         stk = 4;
 
-    for (i = 0; i < stk; ++i, ++line)
+    for (y = 0; y < stk; ++y, ++ypos)
     {
-        m_console->displayChar('I', m_stackRect.x, line);
-        m_console->displayInt(i, m_stackRect.x + 2, line);
-        m_console->displayIntRightAligned((int)m_stack.peek(i),
+        m_console->setColor(CS_GREY);
+        m_console->displayChar('I', m_stackRect.x, ypos);
+        m_console->displayInt(y, m_stackRect.x + 2, ypos);
+        m_console->setColor(CS_WHITE);
+        m_console->displayIntRightAligned((int)m_stack.peek(y),
                                           m_stackRect.right() - 1,
-                                          line);
+                                          ypos);
     }
 }
 
@@ -289,7 +295,7 @@ void Debugger::displayData(void)
     if (m_baseAddr == 0)
         m_baseAddr = (size_t)data;
 
-    int line = m_dataRect.y + 1;
+    int16_t ypos = m_dataRect.y + 1;
 
     const ExecInstruction& inst = m_ins.at((size_t)m_curinst);
     switch (inst.op)
@@ -322,6 +328,7 @@ void Debugger::displayData(void)
     m_console->setColor(CS_LIGHT_GREY);
 
     size_t sz = m_dataTable.capacity(), i;
+
     if (m_baseAddr != 0 && m_baseAddr != -1)
     {
         int16_t x, y;
@@ -332,7 +339,6 @@ void Debugger::displayData(void)
         uint8_t* en = data + m_dataTable.capacity();
 
         size_t sz = en - st;
-
         for (i = 0; i < sz && y < m_dataRect.bottom(); ++i)
         {
             uint8_t ch = (*st++);
@@ -358,7 +364,7 @@ void Debugger::displayData(void)
 
 void Debugger::displayOutput(void)
 {
-    m_console->setColor(CS_LIGHT_GREY);
+    m_console->setColor(CS_WHITE);
     m_console->displayOutput(m_outRect.x, m_outRect.y + 1);
 }
 
@@ -367,8 +373,8 @@ void Debugger::displayExit(void)
     if (m_curinst > 0)
         --m_curinst;
 
-    std::ostringstream ss;
-    ss << "\nExited with code " << m_return << '\n';
+    ostringstream ss;
+    ss << "\nExited with code " << m_regi[0].w[0] << '\n';
 
     m_console->appendOutput(ss.str());
 
@@ -397,7 +403,7 @@ void Debugger::displayExit(void)
     m_exit    = false;
 }
 
-void Debugger::disassemble(const ExecInstruction& inst, size_t i)
+void Debugger::disassemble(const ExecInstruction& inst, size_t i, int16_t y)
 {
     ostringstream ss;
     ss << right << setw(4) << setfill('0') << uppercase << hex << i;
@@ -425,7 +431,7 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
         else if (inst.flags & IF_STKP)
             ss << "sp";
         else if (inst.flags & IF_INSP)
-            ss << "sp";
+            ss << "pc";
         else if (inst.flags & IF_REG0)
             ss << 'x' << inst.argv[0];
         else
@@ -434,13 +440,10 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
 
     if (inst.argc > 1)
     {
-        ss << ", ";
+        ss << ", " << right;
         if (inst.flags & IF_RIDX)
         {
-            ss << '[';
-            ss << 'x' << inst.argv[1];
-            ss << ", ";
-
+            ss << "[x" << inst.argv[1] << ", ";
             if (inst.flags & IF_REG1 && !(inst.flags & IF_STKP))
                 ss << 'x' << inst.index;
             else
@@ -455,7 +458,7 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
         else if (inst.flags & IF_REG1)
             ss << 'x' << inst.argv[1];
         else
-            ss << inst.argv[1];
+            ss << "0x" << setw(2) << setfill('0') << inst.argv[1];
     }
 
     if (inst.argc > 2)
@@ -467,7 +470,7 @@ void Debugger::disassemble(const ExecInstruction& inst, size_t i)
             ss << inst.argv[2];
     }
 
-    m_console->displayString(ss.str(), m_instRect.x, m_ypos++);
+    m_console->displayString(ss.str(), m_instRect.x, y);
 }
 
 void Debugger::getOpString(str_t& dest, const uint8_t op)

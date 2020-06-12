@@ -28,6 +28,8 @@
 #include "ConsoleCurses.h"
 #endif  // _WIN32
 
+using namespace std;
+
 Console::Console() :
     m_std(),
     m_size(0),
@@ -87,29 +89,29 @@ void Console::displayCharHex(int ch, int16_t x, int16_t y)
 {
     if (ch >= 32 && ch < 127)
     {
-        std::ostringstream ss;
+        ostringstream ss;
         ss << ' ' << (char)ch;
         displayString(ss.str(), x, y);
     }
     else
     {
-        std::ostringstream ss;
-        ss << std::setfill('0') << std::setw(2);
-        ss << std::hex << std::uppercase << ch;
+        ostringstream ss;
+        ss << setfill('0') << setw(2);
+        ss << hex << uppercase << ch;
         displayString(ss.str(), x, y);
     }
 }
 
 void Console::displayInt(int v, int16_t x, int16_t y)
 {
-    std::ostringstream ss;
+    ostringstream ss;
     ss << v;
     displayString(ss.str(), x, y);
 }
 
 void Console::displayIntRightAligned(int v, int16_t r, int16_t y)
 {
-    std::ostringstream ss;
+    ostringstream ss;
     ss << v;
 
     str_t str = ss.str();
@@ -137,7 +139,7 @@ void Console::displayOutput(int16_t x, int16_t y)
 
     m_lineCount += 1;
     if (m_lineCount > m_maxOutput.h)
-        skipln += (m_lineCount) - m_maxOutput.h;
+        skipln += (m_lineCount)-m_maxOutput.h;
 
     m_lineCount = 0;
     for (i = 0; i < len; i++)
@@ -220,7 +222,7 @@ void Console::appendOutput(const str_t &str)
     m_std += str;
 }
 
-void Console::setColor(ColorSpace fg, ColorSpace bg)
+void Console::setColor(uint8_t fg, uint8_t bg)
 {
     m_curColor = getColorImpl(fg, bg);
 }
@@ -234,12 +236,12 @@ Console *GetPlatformConsole()
 #else
     ret = new ConsoleCurses();
 #endif  // _WIN32
+
     if (ret->create() != 0)
     {
         printf("failed to create platform console.\n");
         delete ret;
         ret = nullptr;
     }
-
     return ret;
 }

@@ -38,9 +38,8 @@ private:
     HANDLE     m_redirOut;
     FILE *     m_redir;
 
-    uint32_t getColorImpl(ColorSpace fg,
-                          ColorSpace bg);
-    void     writeChar(char ch, uint32_t col, size_t k);
+    uint8_t  getColorImpl(uint8_t fg, uint8_t bg);
+    void     writeChar(char ch, uint8_t col, size_t k);
     void     initialize();
 
 public:

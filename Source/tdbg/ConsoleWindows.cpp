@@ -198,12 +198,12 @@ void ConsoleWindows::showCursor(bool doit)
     SetConsoleCursorInfo(m_stdout, &cinf);
 }
 
-void ConsoleWindows::writeChar(char ch, uint32_t col, size_t k)
+void ConsoleWindows::writeChar(char ch, uint8_t col, size_t k)
 {
     if (k < m_size)
     {
         m_buffer[k].Char.AsciiChar = ch;
-        m_buffer[k].Attributes     = col;
+        m_buffer[k].Attributes     = (WORD)col;
     }
 }
 
@@ -280,24 +280,22 @@ const unsigned char COLOR_TABLE[16][16] = {
     {0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
 };
 
-uint32_t ConsoleWindows::getColorImpl(ColorSpace fg, ColorSpace bg)
+uint8_t ConsoleWindows::getColorImpl(uint8_t fg, uint8_t bg)
 {
-    int ivf = (int)fg;
 
-    if (bg != ColorSpace::CS_TRANSPARENT)
+    if (bg != CS_TRANSPARENT)
     {
-        int ivb = (int)bg;
-        if (ivf < 16)
-            return COLOR_TABLE[ivb][ivf];
+        if (fg < 16 && bg < 16)
+            return COLOR_TABLE[bg][fg];
         else
-            return (int)ColorSpace::CS_WHITE;
+            return CS_WHITE;
     }
     else
     {
-        if (ivf < 16)
-            return COLOR_TABLE[(int)ColorSpace::CS_BLACK][ivf];
+        if (fg < 16)
+            return COLOR_TABLE[CS_BLACK][fg];
         else
-            return (int)ColorSpace::CS_WHITE;
+            return CS_WHITE;
     }
 }
 

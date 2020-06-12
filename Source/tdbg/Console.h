@@ -64,14 +64,12 @@ protected:
     str_t       m_std;
     size_t      m_size;
     ConsoleRect m_displayRect;
-    uint32_t    m_curColor;
+    uint8_t     m_curColor;
     int16_t     m_lineCount;
     ConsoleRect m_maxOutput;
 
-    virtual uint32_t getColorImpl(ColorSpace fg,
-                                  ColorSpace bg) = 0;
-
-    virtual void writeChar(char ch, uint32_t col, size_t k) = 0;
+    virtual uint8_t getColorImpl(uint8_t fg, uint8_t bg)      = 0;
+    virtual void    writeChar(char ch, uint8_t col, size_t k) = 0;
 
 public:
     Console();
@@ -90,7 +88,7 @@ public:
     void    clearOutput();
     void    appendOutput(const str_t &str);
 
-    void setColor(ColorSpace fg, ColorSpace bg = ColorSpace::CS_TRANSPARENT);
+    void setColor(uint8_t fg, uint8_t bg = CS_TRANSPARENT);
 
     virtual int  getNextCmd()                    = 0;
     virtual void pause()                         = 0;

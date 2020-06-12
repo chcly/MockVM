@@ -30,17 +30,14 @@
 #include <unistd.h>
 #include "MemoryStream.h"
 
-int restrictColor(int c)
-{
-    return c < 0 ? 0 : c > 15 ? 15 : c;
-}
+
 
 ConsoleCurses::ConsoleCurses() :
     m_buffer(nullptr),
     m_colorBuffer(nullptr),
     m_supportsColor(false)
 {
-    memset(m_colorTable, 0, 256);
+    memset(m_colorTable, CS_BLACK, 256);
 }
 
 ConsoleCurses ::~ConsoleCurses()
@@ -56,7 +53,7 @@ void ConsoleCurses::clear()
     if (m_buffer)
     {
         memset(m_buffer, ' ', m_size);
-        memset(m_colorBuffer, 0, m_size);
+        memset(m_colorBuffer, CS_BLACK, m_size);
     }
 }
 
@@ -85,11 +82,12 @@ void ConsoleCurses::readRedirectedOutput(const str_t &_path)
         if (len > 0)
         {
             fseek(fp, 0L, SEEK_SET);
-            char buffer[1025] = {};
+            MemoryStream ms;
+            ms.reserve(len);
 
-            len = fread(buffer, 1, 1024, fp);
+            len = fread(ms.ptr(), 1, len, fp);
             if (len > 0)
-                m_std += str_t(buffer, len);
+                m_std += str_t((char*)ms.ptr(), len);
         }
 
         fclose(fp);
@@ -142,7 +140,7 @@ void ConsoleCurses::flush()
 {
     move(0, 0);
     curs_set(0);
-    int c = 0, p;
+    int32_t c = 0, p; // > 255
 
     size_t i, j, k;
     for (i = 0; i < m_displayRect.h; ++i)
@@ -166,25 +164,32 @@ void ConsoleCurses::flush()
     refresh();
 }
 
-uint32_t ConsoleCurses::getColorImpl(ColorSpace fg, ColorSpace bg)
+uint8_t ConsoleCurses::getColorImpl(uint8_t fg, uint8_t bg)
 {
+    uint8_t rc = 0;
     if (!m_supportsColor)
-        return 0;
-    if (bg == CS_TRANSPARENT)
-        bg = CS_BLACK;
-    return m_colorTable[restrictColor(bg)][restrictColor(fg)];
+        rc = 0;
+    else
+    {
+        if (bg == CS_TRANSPARENT)
+            bg = CS_BLACK;
+
+        if (bg < 16 && fg < 16)
+            rc = m_colorTable[bg][fg];
+    }
+    return rc;
 }
 
-void ConsoleCurses::writeChar(char ch, uint32_t col, size_t k)
+void ConsoleCurses::writeChar(char ch, uint8_t col, size_t k)
 {
     if (k < m_size)
     {
         m_buffer[k]      = ch;
-        m_colorBuffer[k] = (uint8_t)col;
+        m_colorBuffer[k] = col;
     }
 }
 
-int ConsoleCurses::getSwappedColor(int inp)
+uint8_t ConsoleCurses::getSwappedColor(uint8_t inp)
 {
     switch (inp)
     {
@@ -242,7 +247,7 @@ int ConsoleCurses::getSwappedColor(int inp)
 
 int ConsoleCurses::create()
 {
-    initscr();
+    initscr(); // never exits on failure
     keypad(stdscr, 1);
     noecho();
     curs_set(0);
@@ -253,21 +258,23 @@ int ConsoleCurses::create()
 
     if (m_supportsColor)
     {
-        int i, j, c;
+        uint8_t i, j, c;
         for (i = 0; i < 16; ++i)
         {
             for (j = 0; j < 16; ++j)
             {
-                c      = i + j * 16;
-                int fg = getSwappedColor(j);
-                int bg = getSwappedColor(i);
+                c = i + j * 16;
+
+                uint8_t fg = getSwappedColor(j);
+                uint8_t bg = getSwappedColor(i);
+
                 init_pair(c, fg, bg == 0 ? -1 : bg);
                 m_colorTable[i][j] = c;
             }
         }
     }
 
-    int r, c;
+    int16_t r, c;
     getmaxyx(stdscr, r, c);
     if (r <= 0 || c <= 0)
     {
@@ -282,7 +289,6 @@ int ConsoleCurses::create()
     m_colorBuffer = new uint8_t[m_size];
 
     memset(m_buffer, ' ', m_size);
-    memset(m_colorBuffer, 0, m_size);
-
+    memset(m_colorBuffer, CS_BLACK, m_size);
     return 0;
 }
