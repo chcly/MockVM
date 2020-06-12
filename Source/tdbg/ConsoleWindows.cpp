@@ -49,7 +49,7 @@ ConsoleWindows::ConsoleWindows() :
     m_redirOut(nullptr),
     m_dup(0),
     m_redir(nullptr),
-    m_fd(-1)
+    m_fd(0)
 {
     initialize();
 }
