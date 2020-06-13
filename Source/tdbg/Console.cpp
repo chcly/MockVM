@@ -38,10 +38,24 @@ Console::Console() :
     m_lineCount(0),
     m_maxOutput({0, 0})
 {
+    initializeColorTable();
 }
 
 Console::~Console()
 {
+}
+
+void Console::initializeColorTable(void)
+{
+    uint8_t i, j, c;
+    for (i = 0; i < 16; ++i)
+    {
+        for (j = 0; j < 16; ++j)
+        {
+            c = i + j * 16;
+            m_colorTable[j][i] = c;
+        }
+    }
 }
 
 void Console::displayString(const str_t &string, int16_t x, int16_t y)
@@ -217,7 +231,7 @@ int Console::pause()
     int rc = CCS_NO_INPUT;
     while (rc == CCS_NO_INPUT)
     {
-        rc = getNextCmd();
+        rc = nextCommand();
         switch (rc)
         {
         case CCS_RESTART:

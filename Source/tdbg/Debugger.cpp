@@ -79,7 +79,7 @@ top:
 
     while (!m_exit)
     {
-        cmd = m_console->getNextCmd();
+        cmd = m_console->nextCommand();
 
         switch (cmd)
         {

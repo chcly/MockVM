@@ -67,10 +67,10 @@ tdbg <options> <program_path>
       -h display this message.
 
   Usage:
-       Q   - display exit screen.
-       F5  - continue until the next breakpoint.
-       F9  - add a break point on the current instruction.
-       F10 - step one instruction.
+       Q - display exit screen.
+       C - continue until the next breakpoint.
+       B - add a break point on the current instruction.
+       Down Arrow - step one instruction.
 
 ```
 

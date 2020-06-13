@@ -71,8 +71,8 @@ void usage(void)
     puts("  options:");
     puts("      -h display this message.\n");
     puts("  Usage:");
-    puts("       Q   - display exit screen.");
-    puts("       F5  - continue until the next breakpoint.");
-    puts("       F9  - add a break point on the current instruction.");
-    puts("       F10 - step one instruction.");
+    puts("       Q - display exit screen.");
+    puts("       C - continue until the next breakpoint.");
+    puts("       B - add a break point on the current instruction.");
+    puts("       Down Arrow - step one instruction.");
 }

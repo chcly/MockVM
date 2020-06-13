@@ -33,9 +33,12 @@ protected:
     uint8_t     m_curColor;
     int16_t     m_lineCount;
     ConsoleRect m_maxOutput;
+    uint8_t     m_colorTable[16][16];
 
     virtual uint8_t getColorImpl(uint8_t fg, uint8_t bg)      = 0;
     virtual void    writeChar(char ch, uint8_t col, size_t k) = 0;
+
+    void initializeColorTable(void);
 
 public:
     Console();
@@ -50,31 +53,31 @@ public:
     void displayIntRightAligned(int v, int16_t r, int16_t y);
 
     void    displayOutput(int16_t x, int16_t y);
-    int16_t getOutputLineCount();
-    void    clearOutput();
+    int16_t getOutputLineCount(void);
+    void    clearOutput(void);
     void    appendOutput(const str_t &str);
     void    setColor(uint8_t fg, uint8_t bg = CS_TRANSPARENT);
 
-    int          pause();
-    virtual int  getNextCmd()                    = 0;
-    virtual void clear()                         = 0;
-    virtual void flush()                         = 0;
-    virtual int  create()                        = 0;
+    int          pause(void);
+    virtual int  nextCommand(void)               = 0;
+    virtual void clear(void)                     = 0;
+    virtual void flush(void)                     = 0;
+    virtual int  create(void)                    = 0;
     virtual void switchOutput(bool on)           = 0;
     virtual void setCursorPosition(int x, int y) = 0;
     virtual void showCursor(bool doit)           = 0;
 
-    inline size_t getWidth()
+    inline size_t getWidth(void)
     {
         return (size_t)m_displayRect.w;
     }
 
-    inline size_t getHeight()
+    inline size_t getHeight(void)
     {
         return (size_t)m_displayRect.h;
     }
 
-    const ConsoleRect &getRect()
+    const ConsoleRect &getRect(void)
     {
         return m_displayRect;
     }
@@ -84,12 +87,12 @@ public:
         m_maxOutput = pt;
     }
 
-    inline ConsoleRect &getOutputRect()
+    inline ConsoleRect &getOutputRect(void)
     {
         return m_maxOutput;
     }
 };
 
-extern Console *GetPlatformConsole();
+extern Console *GetPlatformConsole(void);
 
 #endif  //_Console_h_

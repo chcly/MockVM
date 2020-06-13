@@ -33,9 +33,9 @@
 ConsoleCurses::ConsoleCurses() :
     m_buffer(nullptr),
     m_colorBuffer(nullptr),
+    m_stdout(nullptr),
     m_supportsColor(false)
 {
-    memset(m_colorTable, CS_BLACK, 256);
 }
 
 ConsoleCurses ::~ConsoleCurses()
@@ -92,18 +92,18 @@ void ConsoleCurses::readRedirectedOutput(const str_t &_path)
     }
 }
 
-int ConsoleCurses::getNextCmd()
+int ConsoleCurses::nextCommand()
 {
     int ch = getch();
     if (ch == 'q')
         return CCS_QUIT;
     if (ch == 'r')
         return CCS_RESTART;
-    if (ch == KEY_F(10))
+    if (ch == KEY_DOWN)
         return CCS_STEP;
-    if (ch == KEY_F(9))
+    if (ch == 'b')
         return CCS_ADD_BREAKPOINT;
-    if (ch == KEY_F(5))
+    if (ch == 'c')
         return CCS_CONTINUE;
     return CCS_NO_INPUT;
 }
@@ -245,13 +245,10 @@ int ConsoleCurses::create()
         {
             for (j = 0; j < 16; ++j)
             {
-                c = i + j * 16;
-
+                c = j + i * 16;
                 uint8_t fg = getSwappedColor(j);
                 uint8_t bg = getSwappedColor(i);
-
                 init_pair(c, fg, bg == 0 ? -1 : bg);
-                m_colorTable[i][j] = c;
             }
         }
     }

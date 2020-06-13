@@ -53,7 +53,7 @@ public:
     ConsoleWindows();
     virtual ~ConsoleWindows();
 
-    int  getNextCmd();
+    int  nextCommand();
     void clear();
     void flush();
     int  create();

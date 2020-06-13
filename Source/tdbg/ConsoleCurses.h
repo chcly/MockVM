@@ -32,7 +32,6 @@ private:
     uint8_t *m_colorBuffer;
     FILE *   m_stdout;
     bool     m_supportsColor;
-    uint8_t  m_colorTable[16][16];
 
     uint8_t getColorImpl(uint8_t fg, uint8_t bg);
     uint8_t getSwappedColor(uint8_t inp);
@@ -44,7 +43,7 @@ public:
     ConsoleCurses();
     virtual ~ConsoleCurses();
 
-    int  getNextCmd();
+    int  nextCommand();
     void clear();
     void flush();
     int  create();
