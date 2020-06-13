@@ -515,7 +515,7 @@ void Debugger::disassemble(const DebugInstruction& inst, size_t i, int16_t y)
     if (i == m_curinst)
         m_console->setColor(CS_YELLOW, CS_DARKMAGENTA);
     else if (inst.flags & DF_BREAK)
-        m_console->setColor(CS_YELLOW, CS_DARKRED);
+        m_console->setColor(CS_WHITE, CS_RED);
     else
     {
         if (inst.inst.op == 0)
@@ -614,6 +614,10 @@ int16_t Debugger::getMaxInstructionSize(void)
                 m_maxInstWidth = (int16_t)dbg.value.size();
         }
 
+
+        // 4 for the address
+        // 4 for the cursor
+        // 2 padding
         m_maxInstWidth += 10;
     }
     return m_maxInstWidth;

@@ -157,11 +157,11 @@ set(TestFiles_2
     Exec/Add3.asm
     Exec/Add4.asm
     Exec/Sub1.asm
-    Exec/Sub2.asm
     Exec/Mul1.asm
     Exec/Div1.asm
     Exec/Fib1.asm
     Exec/Base.asm
+    Exec/Sub2.asm
 )
 
 set(TestFiles_3

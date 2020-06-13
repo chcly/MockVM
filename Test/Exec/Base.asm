@@ -35,19 +35,15 @@ tbl3:
     mov  x0, 10
     bl   putchar
     ret
-; ----------------------------------------------------
 main:
-    stp  sp, 8
-    mov  x0, 2
+    mov  x6, 2
 ml1:
-    cmp  x0, 96
+    cmp  x6, 96
     beq  ml2
-    str  x0, [sp, 0]
+    mov  x0, x6
     bl   tobase
-    ldr  x0, [sp, 0]
-    inc  x0
+    inc  x6
     b    ml1
 ml2:
     mov  w0, 0
-    ldp  sp, 8
     ret
