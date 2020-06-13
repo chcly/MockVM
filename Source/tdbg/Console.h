@@ -22,43 +22,7 @@
 #ifndef _Console_h_
 #define _Console_h_
 
-#include "Color.h"
-#include "Declarations.h"
-
-enum ConsoleCtrlStatus
-{
-    CCS_NO_INPUT = 0,
-    CCS_QUIT,
-    CCS_FORCE_EXIT,
-    CCS_STEP,
-    CCS_RESTART,
-    CCS_REDRAW
-};
-
-struct ConsoleRect
-{
-    int16_t x, y, w, h;
-
-    inline int16_t right()
-    {
-        return x + w;
-    }
-
-    inline int16_t bottom()
-    {
-        return y + h;
-    }
-
-    inline int16_t cx()
-    {
-        return x + (w >> 1);
-    }
-
-    inline int16_t cy()
-    {
-        return y + (h >> 1);
-    }
-};
+#include "Types.h"
 
 class Console
 {

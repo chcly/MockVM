@@ -19,8 +19,11 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#ifndef _Color_h_
-#define _Color_h_
+#ifndef _Types_h_
+#define _Types_h_
+
+#include <stdint.h>
+#include "Declarations.h"
 
 enum ColorSpace
 {
@@ -44,4 +47,72 @@ enum ColorSpace
     CS_COLOR_MAX
 };
 
-#endif  // !_Color_h_
+enum ConsoleCtrlStatus
+{
+    CCS_NO_INPUT = 0,
+    CCS_QUIT,
+    CCS_FORCE_EXIT,
+    CCS_STEP,
+    CCS_ADD_BREAKPOINT,
+    CCS_CONTINUE,
+    CCS_RESTART,
+    CCS_REDRAW,
+    CCS_RESIZE,
+    CCS_CLICKED
+};
+
+struct ConsolePoint
+{
+    int16_t x, y;
+};
+
+struct ConsoleRect
+{
+    int16_t x, y, w, h;
+
+    inline int16_t right()
+    {
+        return x + w;
+    }
+
+    inline int16_t bottom()
+    {
+        return y + h;
+    }
+
+    inline int16_t cx()
+    {
+        return x + (w >> 1);
+    }
+
+    inline int16_t cy()
+    {
+        return y + (h >> 1);
+    }
+};
+
+class ConsoleListener
+{
+public:
+    virtual ~ConsoleListener()
+    {
+    }
+
+    virtual int mouseClicked(const ConsolePoint &pt, int bt) = 0;
+};
+
+enum DebugFlags
+{
+    DF_BREAK = 0x01
+};
+
+struct DebugInstruction
+{
+    uint8_t         flags;
+    str_t           value;
+    ExecInstruction inst;
+};
+
+using DebugInstructions = std::vector<DebugInstruction>;
+
+#endif  // !_Types_h_

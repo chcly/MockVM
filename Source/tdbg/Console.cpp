@@ -212,7 +212,6 @@ int16_t Console::getOutputLineCount()
     return m_lineCount;
 }
 
-
 int Console::pause()
 {
     int rc = CCS_NO_INPUT;

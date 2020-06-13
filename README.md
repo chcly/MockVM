@@ -61,10 +61,17 @@ It has been tested with ```(6.2-0ubuntu2).```
 ### tdbg Usage
 
 ```txt
-tdbg <program_path>
+tdbg <options> <program_path>
 
-q key       - exits the program.
-down arrow  - steps one frame.
+  options:
+      -h display this message.
+
+  Usage:
+       Q   - display exit screen.
+       F5  - continue until the next breakpoint.
+       F9  - add a break point on the current instruction.
+       F10 - step one instruction.
+
 ```
 
 ![Cap](Capture.gif)

@@ -47,7 +47,8 @@ ConsoleWindows::ConsoleWindows() :
     m_redirOut(nullptr),
     m_dup(0),
     m_redir(nullptr),
-    m_fd(0)
+    m_fd(0),
+    m_oldMode(0)
 {
     initialize();
 }
@@ -93,6 +94,8 @@ void ConsoleWindows::finalize()
             {m_displayRect.w, m_displayRect.h},
             {0, 0},
             &m_startRect);
+
+        SetConsoleMode(m_stdin, m_oldMode);
     }
 
     CloseHandle(m_redirIn);
@@ -163,8 +166,14 @@ int ConsoleWindows::processKeyEvent(const KEY_EVENT_RECORD &rec)
 
     if (rec.bKeyDown)
     {
-        if (rec.wVirtualKeyCode == VK_DOWN)
+        if (rec.wVirtualKeyCode == VK_F11)
             rc = CCS_STEP;
+        else if (rec.wVirtualKeyCode == VK_F10)
+            rc = CCS_STEP;
+        else if (rec.wVirtualKeyCode == VK_F9)
+            rc = CCS_ADD_BREAKPOINT;
+        else if (rec.wVirtualKeyCode == VK_F5)
+            rc = CCS_CONTINUE;
         else if (rec.wVirtualKeyCode == VK_Q)
             rc = CCS_QUIT;
         else if (rec.wVirtualKeyCode == VK_R)
@@ -182,30 +191,66 @@ int ConsoleWindows::processKeyEvent(const KEY_EVENT_RECORD &rec)
     return rc;
 }
 
-int ConsoleWindows::processMouseEvent(const MOUSE_EVENT_RECORD &rec)
+int ConsoleWindows::processSizeEvent(const WINDOW_BUFFER_SIZE_RECORD &rec)
 {
-    return CCS_NO_INPUT;
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    if (GetConsoleScreenBufferInfo(m_stdout, &info) == FALSE)
+    {
+        printf("failed get the screen buffer\n");
+        return CCS_NO_INPUT;
+    }
+
+    DWORD oldSize   = (DWORD)m_size,
+          oldRight  = m_startRect.Right,
+          oldBottom = m_startRect.Bottom;
+
+    size_t i, j, k;
+
+    m_displayRect = {0, 0, info.srWindow.Right, info.srWindow.Bottom};
+    m_size        = (size_t)m_displayRect.w * (size_t)m_displayRect.h;
+    m_startRect   = {0, 0, info.srWindow.Right, info.srWindow.Bottom};
+
+    CHAR_INFO *newBuf = new CHAR_INFO[m_size];
+    ZeroBufferMemory(newBuf, m_size);
+
+    for (j = 0; j < oldBottom; ++j)
+    {
+        for (i = 0; i < oldRight; ++i)
+        {
+            k = j + i * oldRight;
+            if (k < oldSize && k < m_size)
+                newBuf[k] = m_startBuf[k];
+        }
+    }
+
+    delete[] m_startBuf;
+    m_startBuf = newBuf;
+
+    delete[] m_buffer;
+    m_buffer = new CHAR_INFO[m_size];
+    ZeroBufferMemory(m_buffer, m_size);
+
+    return CCS_RESIZE;
 }
 
 int ConsoleWindows::getNextCmd()
 {
-    INPUT_RECORD ir[64];
+    INPUT_RECORD ir[16];
     DWORD        nr, i;
     int          rc = CCS_NO_INPUT;
 
 block_input:
+
     WaitForSingleObject(m_stdin, INFINITE);
 
-    if (ReadConsoleInput(m_stdin, ir, 64, &nr))
+    if (ReadConsoleInput(m_stdin, ir, 16, &nr))
     {
         for (i = 0; i < nr && rc == CCS_NO_INPUT; ++i)
         {
             switch (ir[i].EventType)
             {
             case WINDOW_BUFFER_SIZE_EVENT:
-                break;
-            case MOUSE_EVENT:
-                rc = processMouseEvent(ir[i].Event.MouseEvent);
+                rc = processSizeEvent(ir[i].Event.WindowBufferSizeEvent);
                 break;
             case KEY_EVENT:
                 rc = processKeyEvent(ir[i].Event.KeyEvent);
@@ -213,6 +258,7 @@ block_input:
             default:
             case MENU_EVENT:
             case FOCUS_EVENT:
+            case MOUSE_EVENT:
                 break;
             }
         }
@@ -225,8 +271,10 @@ block_input:
     }
     else
     {
-        // Discard the rest?
-        FlushConsoleInputBuffer(m_stdin);
+        if (FlushConsoleInputBuffer(m_stdin) == FALSE)
+        {
+            printf("failed to flush the input buffer\n");
+        }
     }
     return rc;
 }
@@ -262,7 +310,6 @@ void ConsoleWindows::flush()
     ConsoleWindows::setCursorPosition(m_displayRect.x, m_displayRect.y);
 
     SMALL_RECT sr = {m_displayRect.x, m_displayRect.y, m_displayRect.w, m_displayRect.h};
-
     WriteConsoleOutput(
         m_stdout,
         m_buffer,
@@ -295,6 +342,13 @@ int ConsoleWindows::create()
     }
 
     SetConsoleCtrlHandler(CtrlCallback, TRUE);
+
+    GetConsoleMode(m_stdin, &m_oldMode);
+
+    DWORD newMode = 0;
+    newMode |= ENABLE_WINDOW_INPUT;
+    newMode |= ENABLE_MOUSE_INPUT;
+    SetConsoleMode(m_stdin, newMode);
 
     m_displayRect = {0, 0, info.srWindow.Right, info.srWindow.Bottom};
     m_size        = (size_t)m_displayRect.w * (size_t)m_displayRect.h;
@@ -365,7 +419,7 @@ BOOL WINAPI CtrlCallback(DWORD evt)
         // generate an event to exit
         INPUT_RECORD inputRecord;
         inputRecord.EventType                        = KEY_EVENT;
-        inputRecord.Event.KeyEvent.bKeyDown          = 1;
+        inputRecord.Event.KeyEvent.bKeyDown          = TRUE;
         inputRecord.Event.KeyEvent.dwControlKeyState = LEFT_CTRL_PRESSED;
         inputRecord.Event.KeyEvent.wVirtualKeyCode   = VK_C;
 

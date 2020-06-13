@@ -68,6 +68,11 @@ int main(int argc, char **argv)
 void usage(void)
 {
     puts("tdbg <options> <program_path>\n");
-    puts("      options:");
-    puts("          -h display this message.\n");
+    puts("  options:");
+    puts("      -h display this message.\n");
+    puts("  Usage:");
+    puts("       Q   - display exit screen.");
+    puts("       F5  - continue until the next breakpoint.");
+    puts("       F9  - add a break point on the current instruction.");
+    puts("       F10 - step one instruction.");
 }

@@ -3,11 +3,11 @@
 #define KEY_DOWN 13
 #define KEY_ENTER 13
 
-typedef void* WINDOW;
+typedef void*  WINDOW;
 extern WINDOW* stdscr;
 
-
 #define COLOR_PAIR(c) c
+#define KEY_F(c) c
 
 WINDOW* initscr(void);
 int     endwin(void);

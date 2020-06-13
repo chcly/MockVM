@@ -28,18 +28,20 @@
 class Debugger : public Program
 {
 private:
-    str_t        m_file;
-    Console*     m_console;
-    bool         m_exit;
-    ConsoleRect  m_instRect;
-    ConsoleRect  m_regiRect;
-    ConsoleRect  m_stackRect;
-    ConsoleRect  m_outRect;
-    ConsoleRect  m_dataRect;
-    Registers    m_last;
-    size_t       m_lastAddr;
-    size_t       m_baseAddr;
-    MemoryStream m_dataTableCpy;
+    str_t             m_file;
+    Console*          m_console;
+    bool              m_exit;
+    ConsoleRect       m_instRect;
+    ConsoleRect       m_regiRect;
+    ConsoleRect       m_stackRect;
+    ConsoleRect       m_outRect;
+    ConsoleRect       m_dataRect;
+    Registers         m_last;
+    size_t            m_lastAddr;
+    size_t            m_baseAddr;
+    MemoryStream      m_dataTableCpy;
+    DebugInstructions m_debugInfo;
+    int16_t           m_maxInstWidth;
 
 private:
     void displayHeader(void);
@@ -51,13 +53,26 @@ private:
     void displayExit(void);
 
     void render(void);
-    void step(void);
-    void disassemble(const ExecInstruction& inst, size_t i, int16_t y);
-    void getOpString(str_t& dest, const uint8_t op);
+    void stepOneInstruction(void);
+    void stepToNextBreakPoint(void);
+    void addBreakPoint(void);
+
+    void    constructDebugInfo(void);
+    void    disassemble(const DebugInstruction& inst, size_t i, int16_t y);
+    void    getOpString(str_t& dest, const uint8_t op);
+    str_t   getStrValue(const ExecInstruction& inst);
+    int16_t getMaxInstructionSize(void);
+
     void initialize(void);
+    void calculateDisplayRects(void);
+
+    int mouseClicked(const ConsolePoint& pt, int bt);
+
+    DebugInstruction* getCurrent(void);
+
 public:
     Debugger(const str_t& mod, const str_t& file);
-    ~Debugger();
+    virtual ~Debugger();
 
     int debug(void);
 };

@@ -30,8 +30,6 @@
 #include <unistd.h>
 #include "MemoryStream.h"
 
-
-
 ConsoleCurses::ConsoleCurses() :
     m_buffer(nullptr),
     m_colorBuffer(nullptr),
@@ -87,7 +85,7 @@ void ConsoleCurses::readRedirectedOutput(const str_t &_path)
 
             len = fread(ms.ptr(), 1, len, fp);
             if (len > 0)
-                m_std += str_t((char*)ms.ptr(), len);
+                m_std += str_t((char *)ms.ptr(), len);
         }
 
         fclose(fp);
@@ -101,8 +99,12 @@ int ConsoleCurses::getNextCmd()
         return CCS_QUIT;
     if (ch == 'r')
         return CCS_RESTART;
-    if (ch == KEY_DOWN)
+    if (ch == KEY_F(10))
         return CCS_STEP;
+    if (ch == KEY_F(9))
+        return CCS_ADD_BREAKPOINT;
+    if (ch == KEY_F(5))
+        return CCS_CONTINUE;
     return CCS_NO_INPUT;
 }
 
@@ -120,7 +122,7 @@ void ConsoleCurses::flush()
 {
     move(0, 0);
     curs_set(0);
-    int32_t c = 0, p; // > 255
+    int32_t c = 0, p;  // > 255
 
     size_t i, j, k;
     for (i = 0; i < m_displayRect.h; ++i)
@@ -227,7 +229,7 @@ uint8_t ConsoleCurses::getSwappedColor(uint8_t inp)
 
 int ConsoleCurses::create()
 {
-    initscr(); // never exits on failure
+    initscr();  // never exits on failure
     keypad(stdscr, 1);
     noecho();
     curs_set(0);

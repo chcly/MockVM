@@ -38,15 +38,16 @@ private:
     HANDLE     m_redirIn;
     HANDLE     m_redirOut;
     FILE *     m_redir;
+    DWORD      m_oldMode;
 
-    uint8_t  getColorImpl(uint8_t fg, uint8_t bg);
-    void     writeChar(char ch, uint8_t col, size_t k);
+    uint8_t getColorImpl(uint8_t fg, uint8_t bg);
+    void    writeChar(char ch, uint8_t col, size_t k);
 
-    void     initialize();
-    void     finalize();
-    
+    void initialize();
+    void finalize();
+
     int processKeyEvent(const KEY_EVENT_RECORD &rec);
-    int processMouseEvent(const MOUSE_EVENT_RECORD &rec);
+    int processSizeEvent(const WINDOW_BUFFER_SIZE_RECORD &rec);
 
 public:
     ConsoleWindows();

@@ -17,38 +17,37 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 # ------------------------------------------------------------------------------
-
 include_directories(../libtvm)
 
 set(SRC
-  Console.h
-  Color.h
-  Console.cpp
-  Debugger.h
-  Debugger.cpp
-  Main.cpp
+    Console.h
+    Types.h
+    Console.cpp
+    Debugger.h
+    Debugger.cpp
+    Main.cpp
 )
 
 if (WIN32)
+
     set(PLAT_NO_COMP
-      ConsoleCurses.h
-      ConsoleCurses.cpp 
-      Win32/ncurses.h
-      Win32/unistd.h
+        ConsoleCurses.h
+        ConsoleCurses.cpp 
+        Win32/ncurses.h
+        Win32/unistd.h
      )
 
     set_source_files_properties(${PLAT_NO_COMP} PROPERTIES HEADER_FILE_ONLY ON)
     include_directories(Win32)
 
     set(PLAT
-      ConsoleWindows.h
-      ConsoleWindows.cpp
-      ${PLAT_NO_COMP}
+        ConsoleWindows.h
+        ConsoleWindows.cpp
+        ${PLAT_NO_COMP}
     )
 
 
 else()
-
     set(CURSES_NEED_NCURSES TRUE)
     find_package(Curses REQUIRED)
 
@@ -56,14 +55,13 @@ else()
     set(PLAT_LIBS ${CURSES_LIBRARIES})
 
     set(PLAT
-      ConsoleCurses.h
-      ConsoleCurses.cpp
+        ConsoleCurses.h
+        ConsoleCurses.cpp
     )
 endif()
 
 add_executable(tdbg  ${SRC} ${PLAT})
 target_link_libraries(tdbg libtvm ${PLAT_LIBS})
-
 
 copy_target(tdbg ${ToyVM_BIN_DIR})
 copy_install_target(tdbg)
