@@ -34,8 +34,11 @@ protected:
     int16_t     m_lineCount;
     ConsoleRect m_maxOutput;
     uint8_t     m_colorTable[16][16];
+    bool        m_supportsColor;
 
-    virtual uint8_t getColorImpl(uint8_t fg, uint8_t bg)      = 0;
+   
+    uint8_t getColorImpl(uint8_t fg, uint8_t bg);
+
     virtual void    writeChar(char ch, uint8_t col, size_t k) = 0;
 
     void initializeColorTable(void);

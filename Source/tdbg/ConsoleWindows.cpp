@@ -66,6 +66,8 @@ void ConsoleWindows::initialize()
     // in, out, err, redir
     _setmaxstdio(4);
 
+    m_supportsColor = true;
+
     SECURITY_ATTRIBUTES attr;
     attr.bInheritHandle       = TRUE;
     attr.lpSecurityDescriptor = nullptr;
@@ -167,38 +169,42 @@ int ConsoleWindows::processKeyEvent(const KEY_EVENT_RECORD &rec)
 
     if (rec.bKeyDown)
     {
-        switch (rec.wVirtualKeyCode)
+        if (rec.dwControlKeyState & LEFT_CTRL_PRESSED ||
+            rec.dwControlKeyState & RIGHT_CTRL_PRESSED)
         {
-        case VK_DOWN:
-        case VK_F10:
-            rc = CCS_STEP;
-            break;
-        case VK_B:
-        case VK_F9:
-            rc = CCS_ADD_BREAKPOINT;
-            break;
-        case VK_C:
-        case VK_F5:
-            rc = CCS_CONTINUE;
-            break;
-        case VK_Q:
-        case VK_ESCAPE:
-            rc = CCS_QUIT;
-            break;
-        case VK_R:
-            rc = CCS_RESTART;
-            break;
-        default:
-            if (rec.dwControlKeyState & LEFT_CTRL_PRESSED ||
-                rec.dwControlKeyState & RIGHT_CTRL_PRESSED)
+            if (rec.wVirtualKeyCode == VK_C ||
+                rec.wVirtualKeyCode == VK_Z)
             {
-                if (rec.wVirtualKeyCode == VK_C ||
-                    rec.wVirtualKeyCode == VK_Z)
-                {
-                    rc = CCS_FORCE_EXIT;
-                }
+                rc = CCS_FORCE_EXIT;
             }
-            break;
+        }
+        else
+        {
+            switch (rec.wVirtualKeyCode)
+            {
+            case VK_DOWN:
+            case VK_F10:
+                rc = CCS_STEP;
+                break;
+            case VK_B:
+            case VK_F9:
+                rc = CCS_ADD_BREAKPOINT;
+                break;
+            case VK_C:
+            case VK_F5:
+                rc = CCS_CONTINUE;
+                break;
+            case VK_Q:
+            case VK_ESCAPE:
+                rc = CCS_QUIT;
+                break;
+            case VK_R:
+                rc = CCS_RESTART;
+                break;
+            default:
+                break;
+            }
+        
         }
     }
     return rc;
@@ -231,6 +237,7 @@ int ConsoleWindows::processSizeEvent(const WINDOW_BUFFER_SIZE_RECORD &rec)
         for (i = 0; i < oldRight; ++i)
         {
             k = j + i * oldRight;
+
             if (k < oldSize && k < m_size)
                 newBuf[k] = m_startBuf[k];
         }
@@ -279,7 +286,7 @@ block_input:
 
     if (rc == CCS_NO_INPUT)
     {
-        // continue to filter for wanted events.
+        // continue to filter events.
         goto block_input;
     }
     else
@@ -382,25 +389,6 @@ int ConsoleWindows::create()
         {0, 0},                              // start coordinates
         &m_startRect);                       // actual rect if not the same
     return 0;
-}
-
-
-uint8_t ConsoleWindows::getColorImpl(uint8_t fg, uint8_t bg)
-{
-    if (bg != CS_TRANSPARENT)
-    {
-        if (fg < 16 && bg < 16)
-            return m_colorTable[bg][fg];
-        else
-            return CS_WHITE;
-    }
-    else
-    {
-        if (fg < 16)
-            return m_colorTable[CS_BLACK][fg];
-        else
-            return CS_WHITE;
-    }
 }
 
 BOOL WINAPI CtrlCallback(DWORD evt)

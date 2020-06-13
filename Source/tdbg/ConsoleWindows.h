@@ -40,9 +40,8 @@ private:
     FILE *     m_redir;
     DWORD      m_oldMode;
 
-    uint8_t getColorImpl(uint8_t fg, uint8_t bg);
-    void    writeChar(char ch, uint8_t col, size_t k);
 
+    void writeChar(char ch, uint8_t col, size_t k);
     void initialize();
     void finalize();
 

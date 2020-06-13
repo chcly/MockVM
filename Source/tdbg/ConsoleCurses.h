@@ -31,9 +31,7 @@ private:
     uint8_t *m_buffer;
     uint8_t *m_colorBuffer;
     FILE *   m_stdout;
-    bool     m_supportsColor;
-
-    uint8_t getColorImpl(uint8_t fg, uint8_t bg);
+    
     uint8_t getSwappedColor(uint8_t inp);
     void    writeChar(char ch, uint8_t col, size_t k);
 

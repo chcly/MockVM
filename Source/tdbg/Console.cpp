@@ -58,6 +58,23 @@ void Console::initializeColorTable(void)
     }
 }
 
+uint8_t Console::getColorImpl(uint8_t fg, uint8_t bg)
+{
+    uint8_t rc = 0;
+    if (!m_supportsColor)
+        rc = CS_WHITE;
+    else
+    {
+        if (bg == CS_TRANSPARENT)
+            bg = CS_BLACK;
+
+        if (bg < 16 && fg < 16)
+            rc = m_colorTable[bg][fg];
+    }
+    return rc;
+}
+
+
 void Console::displayString(const str_t &string, int16_t x, int16_t y)
 {
     int16_t i, s, k;

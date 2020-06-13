@@ -33,8 +33,7 @@
 ConsoleCurses::ConsoleCurses() :
     m_buffer(nullptr),
     m_colorBuffer(nullptr),
-    m_stdout(nullptr),
-    m_supportsColor(false)
+    m_stdout(nullptr)
 {
 }
 
@@ -146,21 +145,6 @@ void ConsoleCurses::flush()
     refresh();
 }
 
-uint8_t ConsoleCurses::getColorImpl(uint8_t fg, uint8_t bg)
-{
-    uint8_t rc = 0;
-    if (!m_supportsColor)
-        rc = 0;
-    else
-    {
-        if (bg == CS_TRANSPARENT)
-            bg = CS_BLACK;
-
-        if (bg < 16 && fg < 16)
-            rc = m_colorTable[bg][fg];
-    }
-    return rc;
-}
 
 void ConsoleCurses::writeChar(char ch, uint8_t col, size_t k)
 {
