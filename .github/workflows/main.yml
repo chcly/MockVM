@@ -8,7 +8,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Configure
-      run: cmake . -DToyVM_TEST=ON -DBUILD_DBG=ON
+      run: cmake . -DToyVM_TEST=ON
     - name: Build
       run: make
     - name: Run Tests
