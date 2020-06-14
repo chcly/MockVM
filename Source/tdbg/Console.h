@@ -36,12 +36,12 @@ protected:
     uint8_t     m_colorTable[16][16];
     bool        m_supportsColor;
 
-   
+protected:
+
     uint8_t getColorImpl(uint8_t fg, uint8_t bg);
+    void    initializeColorTable(void);
 
     virtual void    writeChar(char ch, uint8_t col, size_t k) = 0;
-
-    void initializeColorTable(void);
 
 public:
     Console();
@@ -59,9 +59,10 @@ public:
     int16_t getOutputLineCount(void);
     void    clearOutput(void);
     void    appendOutput(const str_t &str);
-    void    setColor(uint8_t fg, uint8_t bg = CS_TRANSPARENT);
 
-    int          pause(void);
+    void    setColor(uint8_t fg, uint8_t bg = CS_TRANSPARENT);
+    int     pause(void);
+
     virtual int  nextCommand(void)               = 0;
     virtual void clear(void)                     = 0;
     virtual void flush(void)                     = 0;

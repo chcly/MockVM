@@ -38,11 +38,20 @@ using namespace std;
 const size_t MaxRegisterSize = sizeof(Register) * (MAX_REG - 1);
 
 Program::Program(const str_t& modpath) :
+    m_header({}),
     m_flags(0),
     m_return(0),
     m_curinst(0),
     m_startinst(0),
-    m_modpath(modpath)
+    m_strtab(),
+    m_strtablist(),
+    m_callStack(),
+    m_modpath(modpath),
+    m_dynlib(),
+    m_symbols(),
+    m_dataTable(),
+    m_stack(),
+    m_exit(false)
 {
     memset(m_regi, 0, sizeof(Registers));
     m_stack.reserve(256);
@@ -364,11 +373,10 @@ int Program::launch(void)
         return PS_OK;
 
     size_t tinst = m_ins.size();
-
     const ExecInstruction* basePtr = m_ins.data();
     m_callStack.push(m_curinst);
 
-    while (m_curinst < tinst)
+    while (m_curinst < tinst && !m_exit)
     {
         const ExecInstruction& inst = basePtr[m_curinst++];
         if (inst.op > OP_BEG && inst.op < OP_MAX)
@@ -387,7 +395,8 @@ int Program::launch(void)
 void Program::forceExit(int returnCode)
 {
     m_return  = returnCode;
-    m_curinst = m_ins.size();
+    m_curinst = -1;
+    m_exit    = true;
 }
 
 Register* Program::clone(void)
@@ -403,10 +412,7 @@ void Program::release(Register* reg)
     delete[] reg;
 }
 
-void Program::derefRegister(
-    const uint64_t& x0,
-    const uint32_t& flags,
-    uint8_t*        ptr)
+void Program::derefRegister(const uint64_t& x0, const uint32_t& flags, uint8_t* ptr)
 {
     if (ptr)
     {
@@ -432,10 +438,7 @@ void Program::derefRegister(
     }
 }
 
-void Program::copyIntoRegister(
-    const uint64_t& x0,
-    const uint64_t& flags,
-    const uint64_t& val)
+void Program::copyIntoRegister(const uint64_t& x0, const uint64_t& flags, const uint64_t& val)
 {
     if (flags & IF_BTEB)
         m_regi[x0].b[0] = (uint8_t)val;
@@ -455,9 +458,9 @@ void Program::handle_OP_RET(const ExecInstruction& inst)
         m_callStack.pop();
     }
 
-    if (m_callStack.empty())
-        m_curinst = m_ins.size();
     m_return = (int32_t)m_regi[0].w[0];
+    if (m_callStack.empty())
+        forceExit(m_return);
 }
 
 void Program::handle_OP_MOV(const ExecInstruction& inst)
@@ -873,7 +876,6 @@ void Program::handle_OP_STR(const ExecInstruction& inst)
         else
         {
             // o1 -> o2
-
             uint32_t stk = m_stack.size();
             uint32_t idx = (inst.index / 8);
             uint32_t rem = (inst.index % 8);

@@ -30,6 +30,11 @@
 #include <unistd.h>
 #include "MemoryStream.h"
 
+#define KEY_SHIFT_DOWN_1 126 // f8 + Shift   OSX
+#define KEY_SHIFT_DOWN_2 336 // down + Shift xterm
+#define KEY_SHIFT_DOWN_3 284 // f8 + Shift   xterm
+
+
 ConsoleCurses::ConsoleCurses() :
     m_buffer(nullptr),
     m_colorBuffer(nullptr),
@@ -93,18 +98,38 @@ void ConsoleCurses::readRedirectedOutput(const str_t &_path)
 
 int ConsoleCurses::nextCommand()
 {
-    int ch = getch();
-    if (ch == 'q')
-        return CCS_QUIT;
-    if (ch == 'r')
-        return CCS_RESTART;
-    if (ch == KEY_DOWN)
-        return CCS_STEP;
-    if (ch == 'b')
-        return CCS_ADD_BREAKPOINT;
-    if (ch == 'c')
-        return CCS_CONTINUE;
-    return CCS_NO_INPUT;
+    int ch = getch(), rc = CCS_NO_INPUT;
+    switch (ch)
+    {
+    case 'q':
+        rc = CCS_QUIT;
+        break;
+    case 'r':
+        rc = CCS_RESTART;
+        break;
+    case KEY_F(7):
+    case 'b':
+        rc = CCS_ADD_BREAKPOINT;
+        break;
+    case KEY_F(5):
+    case 'c':
+        rc = CCS_CONTINUE;
+        break;
+    case KEY_F(8):
+    case KEY_DOWN:
+        rc = CCS_STEP;
+        break;
+
+    // fall back (not guaranteed)
+    // F4, F8+Shift, Down+Shift
+    case KEY_F(4):
+    case KEY_SHIFT_DOWN_1:
+    case KEY_SHIFT_DOWN_2:
+    case KEY_SHIFT_DOWN_3:
+        rc = CCS_STEP_OUT;
+        break;
+    }
+    return rc;
 }
 
 void ConsoleCurses::setCursorPosition(int x, int y)
@@ -236,6 +261,7 @@ int ConsoleCurses::create()
             }
         }
     }
+
 
     int16_t r, c;
     getmaxyx(stdscr, r, c);

@@ -32,7 +32,6 @@ const DebugInstruction nop = {0, "nop", {0, 0, 0, {0, 0, 0}, 0, 0}};
 
 Debugger::Debugger(const str_t& mod, const str_t& file) :
     Program(mod),
-    m_exit(false),
     m_file(file),
     m_console(nullptr),
     m_last(),
@@ -50,7 +49,6 @@ Debugger::~Debugger()
 
 void Debugger::initialize()
 {
-    memset(m_last, 0, sizeof(Registers));
     m_console = GetPlatformConsole();
 
     if (!m_console)
@@ -58,6 +56,8 @@ void Debugger::initialize()
         printf("Console initialization failed\n");
         return;
     }
+
+    memset(m_last, 0, sizeof(Registers));
 }
 
 int Debugger::debug(void)
@@ -99,6 +99,10 @@ top:
             stepOneInstruction();
             render();
             break;
+        case CCS_STEP_OUT:
+            stepOut();
+            render();
+            break;
         case CCS_RESIZE:
             calculateDisplayRects();
         case CCS_REDRAW:
@@ -112,6 +116,7 @@ top:
     if (cmd != CCS_FORCE_EXIT)
     {
         displayExit();
+
         if (m_console->pause() == CCS_RESTART)
         {
             goto top;
@@ -119,6 +124,7 @@ top:
     }
     return m_return;
 }
+
 
 void Debugger::constructDebugInfo()
 {
@@ -135,6 +141,9 @@ void Debugger::constructDebugInfo()
         dbg.value = getStrValue(exec);
         m_debugInfo.push_back(dbg);
     }
+
+    // free the unused instructions
+    m_ins.clear();
 }
 
 void Debugger::calculateDisplayRects(void)
@@ -183,8 +192,8 @@ void Debugger::render(void)
 
 void Debugger::displayHeader(void)
 {
-    str_t              string;
-    std::ostringstream stream;
+    str_t         string;
+    ostringstream stream;
 
     m_console->setColor(CS_GREEN);
 
@@ -280,6 +289,32 @@ void Debugger::stepToNextBreakPoint(void)
             m_exit = true;
     }
 }
+
+
+void Debugger::stepOut(void)
+{
+    size_t callStackSize = m_callStack.size();
+    stepOneInstruction();
+
+    bool breakPointHit = false;
+    while (!m_exit && !breakPointHit)
+    {
+        DebugInstruction* dbg = getCurrent();
+        if (dbg)
+        {
+            if (dbg->flags & DF_BREAK)
+                breakPointHit = true;
+            else
+                stepOneInstruction();
+        }
+        else
+            m_exit = true;
+
+        if (m_callStack.size() < callStackSize)
+            breakPointHit = true;
+    }
+}
+
 
 void Debugger::addBreakPoint(void)
 {
@@ -457,15 +492,21 @@ void Debugger::displayExit(void)
     ss << "Press (q) to exit or (r) to restart.\n\n";
     m_console->appendOutput(ss.str());
     m_console->getOutputLineCount();
-
     render();
 
     m_console->flush();
-
+    
     // reset all state variables
+    clearState();
+}
+
+void Debugger::clearState(void)
+{
     m_console->clearOutput();
 
+    m_callStack.clear();
     m_stack.clear();
+
     memset(m_regi, 0, sizeof(Registers));
     memset(m_last, 0, sizeof(Registers));
 
@@ -476,34 +517,7 @@ void Debugger::displayExit(void)
     m_flags   = 0;
     m_curinst = m_startinst;
     m_exit    = false;
-}
 
-int Debugger::mouseClicked(const ConsolePoint& pt, int bt)
-{
-    if (pt.x >= m_instRect.x && pt.x <= m_instRect.x + 4)
-    {
-        int16_t ypos = pt.y - 1;
-
-        int16_t offs = (int16_t)m_curinst;
-        int16_t maxy = m_instRect.bottom();
-
-        offs -= maxy - (maxy >> 2);
-        if (offs < 0)
-            offs = 0;
-
-        size_t i = (size_t)ypos + offs;
-        if (i < m_debugInfo.size())
-        {
-            DebugInstruction& dbg = m_debugInfo.at(i);
-
-            if (dbg.flags & DF_BREAK)
-                dbg.flags &= ~DF_BREAK;
-            else
-                dbg.flags |= DF_BREAK;
-            return CCS_REDRAW;
-        }
-    }
-    return CCS_NO_INPUT;
 }
 
 void Debugger::disassemble(const DebugInstruction& inst, size_t i, int16_t y)
@@ -647,7 +661,7 @@ void Debugger::getOpString(str_t& dest, const uint8_t op)
         dest = "inc";
         break;
     case OP_DEC:
-        dest = "inc";
+        dest = "dec";
         break;
     case OP_CMP:
         dest = "cmp";

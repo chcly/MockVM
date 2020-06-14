@@ -184,7 +184,11 @@ int ConsoleWindows::processKeyEvent(const KEY_EVENT_RECORD &rec)
             {
             case VK_DOWN:
             case VK_F10:
-                rc = CCS_STEP;
+            case VK_F11:
+                if (rec.dwControlKeyState & SHIFT_PRESSED)
+                    rc = CCS_STEP_OUT;
+                else
+                    rc = CCS_STEP;
                 break;
             case VK_B:
             case VK_F9:
@@ -204,7 +208,6 @@ int ConsoleWindows::processKeyEvent(const KEY_EVENT_RECORD &rec)
             default:
                 break;
             }
-        
         }
     }
     return rc;

@@ -52,6 +52,7 @@ protected:
     SymbolMap        m_symbols;
     MemoryStream     m_dataTable;
     ArrayStack       m_stack;
+    bool             m_exit;
 
     const static InstructionTable OPCodeTable;
     const static size_t           OPCodeTableSize;

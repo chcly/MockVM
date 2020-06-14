@@ -30,7 +30,6 @@ class Debugger : public Program
 private:
     str_t             m_file;
     Console*          m_console;
-    bool              m_exit;
     ConsoleRect       m_instRect;
     ConsoleRect       m_regiRect;
     ConsoleRect       m_stackRect;
@@ -55,18 +54,19 @@ private:
     void render(void);
     void stepOneInstruction(void);
     void stepToNextBreakPoint(void);
+    void stepOut(void);
     void addBreakPoint(void);
+    void constructDebugInfo(void);
+    void disassemble(const DebugInstruction& inst, size_t i, int16_t y);
+    void initialize(void);
+    void clearState(void);
 
-    void    constructDebugInfo(void);
-    void    disassemble(const DebugInstruction& inst, size_t i, int16_t y);
+    void calculateDisplayRects(void);
+
+
     void    getOpString(str_t& dest, const uint8_t op);
     str_t   getStrValue(const ExecInstruction& inst);
     int16_t getMaxInstructionSize(void);
-
-    void initialize(void);
-    void calculateDisplayRects(void);
-
-    int mouseClicked(const ConsolePoint& pt, int bt);
 
     DebugInstruction* getCurrent(void);
 

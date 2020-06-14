@@ -53,6 +53,7 @@ enum ConsoleCtrlStatus
     CCS_QUIT,
     CCS_FORCE_EXIT,
     CCS_STEP,
+    CCS_STEP_OUT,
     CCS_ADD_BREAKPOINT,
     CCS_CONTINUE,
     CCS_RESTART,

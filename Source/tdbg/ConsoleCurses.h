@@ -31,13 +31,12 @@ private:
     uint8_t *m_buffer;
     uint8_t *m_colorBuffer;
     FILE *   m_stdout;
-    
+
     uint8_t getSwappedColor(uint8_t inp);
     void    writeChar(char ch, uint8_t col, size_t k);
-
-    void readRedirectedOutput(const str_t &_path);
-
+    void    readRedirectedOutput(const str_t &_path);
 public:
+
     ConsoleCurses();
     virtual ~ConsoleCurses();
 
