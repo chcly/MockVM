@@ -21,9 +21,11 @@ include_directories(../libtvm)
 
 set(SRC
     Console.h
+    InstructionWriter.h
     Types.h
-    Console.cpp
     Debugger.h
+    Console.cpp
+    InstructionWriter.cpp
     Debugger.cpp
     Main.cpp
 )

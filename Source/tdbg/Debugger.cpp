@@ -24,6 +24,7 @@
 #include <iostream>
 #include <sstream>
 #include "Console.h"
+#include "InstructionWriter.h"
 #include "SymbolUtils.h"
 
 using namespace std;
@@ -124,7 +125,6 @@ top:
     }
     return m_return;
 }
-
 
 void Debugger::constructDebugInfo()
 {
@@ -290,7 +290,6 @@ void Debugger::stepToNextBreakPoint(void)
     }
 }
 
-
 void Debugger::stepOut(void)
 {
     size_t callStackSize = m_callStack.size();
@@ -314,7 +313,6 @@ void Debugger::stepOut(void)
             breakPointHit = true;
     }
 }
-
 
 void Debugger::addBreakPoint(void)
 {
@@ -438,7 +436,6 @@ void Debugger::displayData(void)
     m_console->setColor(CS_LIGHT_GREY);
 
     size_t sz = m_dataTable.capacity(), i;
-
     if (m_baseAddr != 0 && m_baseAddr != -1)
     {
         int16_t x, y;
@@ -495,7 +492,7 @@ void Debugger::displayExit(void)
     render();
 
     m_console->flush();
-    
+
     // reset all state variables
     clearState();
 }
@@ -517,7 +514,6 @@ void Debugger::clearState(void)
     m_flags   = 0;
     m_curinst = m_startinst;
     m_exit    = false;
-
 }
 
 void Debugger::disassemble(const DebugInstruction& inst, size_t i, int16_t y)
@@ -559,60 +555,136 @@ void Debugger::disassemble(const DebugInstruction& inst, size_t i, int16_t y)
 
 str_t Debugger::getStrValue(const ExecInstruction& inst)
 {
-    ostringstream ss;
-    ss << right << uppercase << hex;
+    InstructionWriter cw(inst);
+    cw.writeOp();
 
-    str_t op;
-    getOpString(op, inst.op);
-    ss << left << setw(6) << op;
-
-    if (inst.argc > 0)
+    switch (inst.op)
     {
+    case OP_RET:
+    case OP_PRI:
+        break;
+    case OP_MOV:
+        if (inst.flags & IF_INSP)
+            cw.writePC();
+        else
+            cw.writeRegister(0);
+        cw.writeNext();
+        if (inst.flags & IF_REG1)
+            cw.writeRegister(1);
+        else
+            cw.writeValue(1);
+        break;
+    case OP_GTO:
+    case OP_JMP:
+    case OP_JEQ:
+    case OP_JNE:
+    case OP_JLT:
+    case OP_JGT:
+    case OP_JLE:
+    case OP_JGE:
         if (inst.flags & IF_SYMU)
-            ss << "0x" << (size_t)inst.call;
-        else if (inst.flags & IF_STKP)
-            ss << "sp";
-        else if (inst.flags & IF_INSP)
-            ss << "pc";
-        else if (inst.flags & IF_REG0)
-            ss << 'x' << inst.argv[0];
+            cw.writeCall();
         else
-            ss << "0x" << inst.argv[0];
-    }
+            cw.writeValue(0);
+        break;
+    case OP_PRG:
+    case OP_INC:
+    case OP_DEC:
+        cw.writeRegister(0);
+        break;
+    case OP_CMP:
+        if (inst.flags & IF_REG0)
+            cw.writeRegister(0);
+        else
+            cw.writeValue(0);
+        cw.writeNext();
+        if (inst.flags & IF_REG1)
+            cw.writeRegister(1);
+        else
+            cw.writeValue(1);
+        break;
 
-    if (inst.argc > 1)
-    {
-        ss << ", " << right;
-        if (inst.flags & IF_RIDX)
+    case OP_ADD:
+    case OP_SUB:
+    case OP_MUL:
+    case OP_DIV:
+    case OP_SHR:
+    case OP_SHL:
+        if (inst.flags & IF_REG0)
+            cw.writeRegister(0);
+        else
+            cw.writeValue(0);
+        cw.writeNext();
+        if (inst.flags & IF_REG1)
+            cw.writeRegister(1);
+        else
+            cw.writeValue(1);
+
+        if (inst.argc > 2)
         {
-            ss << "[x" << inst.argv[1] << ", ";
-            if (inst.flags & IF_REG1 && !(inst.flags & IF_STKP))
-                ss << 'x' << inst.index;
+            if (inst.op == OP_ADD)
+            {
+                cw.writeNext();
+                if (inst.flags & IF_ADRD)
+                    cw.writeAddrD(m_dataTable.addr(inst.argv[2]));
+                else
+                    cw.writeValue(2);
+            }
             else
-                ss << dec << inst.index << hex;
-            ss << ']';
+            {
+                cw.writeNext();
+                if (inst.flags & IF_REG2)
+                    cw.writeRegister(2);
+                else
+                    cw.writeValue(2);
+            }
         }
-        else if (inst.flags & IF_STKP)
-        {
-            ss << dec << inst.argv[1];
-            ss << hex;
-        }
-        else if (inst.flags & IF_REG1)
-            ss << 'x' << inst.argv[1];
-        else
-            ss << "0x" << setw(2) << setfill('0') << inst.argv[1];
-    }
+        break;
+    case OP_ADRP:
+        cw.writeRegister(0);
+        cw.writeNext();
+        cw.writeAddrD(m_dataTable.addr(inst.argv[1]));
+        break;
+    case OP_STP:
+    case OP_LDP:
+        cw.writeSP();
+        cw.writeNext();
+        cw.writeValue(1);
+        break;
+    case OP_LDR:
+    case OP_STR:
+        cw.writeRegister(0);
+        cw.writeNext();
 
-    if (inst.argc > 2)
-    {
-        ss << ", ";
-        if (inst.flags & IF_REG2)
-            ss << 'x' << inst.argv[2];
+        cw.openBrace();
+        if (inst.flags & IF_STKP)
+            cw.writeSP();
         else
-            ss << inst.argv[2];
-    }
+            cw.writeRegister(1);
 
-    return ss.str();
+        cw.writeNext();
+        cw.writeIndex();
+        cw.closeBrace();
+        break;
+
+    case OP_LDRS:
+    case OP_STRS:
+
+        cw.writeRegister(0);
+        cw.writeNext();
+
+        cw.openBrace();
+        if (inst.flags & IF_STKP)
+            cw.writeSP();
+        else
+            cw.writeRegister(1);
+
+        cw.writeNext();
+        cw.writeRegIndex();
+        cw.closeBrace();
+        break;
+    }
+    return cw.string();
 }
 
 int16_t Debugger::getMaxInstructionSize(void)
@@ -628,7 +700,6 @@ int16_t Debugger::getMaxInstructionSize(void)
                 m_maxInstWidth = (int16_t)dbg.value.size();
         }
 
-
         // 4 for the address
         // 4 for the cursor
         // 2 padding
@@ -642,98 +713,4 @@ DebugInstruction* Debugger::getCurrent(void)
     if (m_curinst < m_debugInfo.size())
         return &m_debugInfo[m_curinst];
     return nullptr;
-}
-
-void Debugger::getOpString(str_t& dest, const uint8_t op)
-{
-    switch (op)
-    {
-    case OP_RET:
-        dest = "ret";
-        break;
-    case OP_MOV:
-        dest = "mov";
-        break;
-    case OP_GTO:
-        dest = "bl";
-        break;
-    case OP_INC:
-        dest = "inc";
-        break;
-    case OP_DEC:
-        dest = "dec";
-        break;
-    case OP_CMP:
-        dest = "cmp";
-        break;
-    case OP_JMP:
-        dest = "b";
-        break;
-    case OP_JEQ:
-        dest = "beq";
-        break;
-    case OP_JNE:
-        dest = "bne";
-        break;
-    case OP_JLT:
-        dest = "blt";
-        break;
-    case OP_JGT:
-        dest = "bgt";
-        break;
-    case OP_JLE:
-        dest = "ble";
-        break;
-    case OP_JGE:
-        dest = "bge";
-        break;
-    case OP_ADD:
-        dest = "add";
-        break;
-    case OP_SUB:
-        dest = "sub";
-        break;
-    case OP_MUL:
-        dest = "mul";
-        break;
-    case OP_DIV:
-        dest = "div";
-        break;
-    case OP_SHR:
-        dest = "shr";
-        break;
-    case OP_SHL:
-        dest = "shl";
-        break;
-    case OP_ADRP:
-        dest = "adrp";
-        break;
-    case OP_STR:
-        dest = "str";
-        break;
-    case OP_LDR:
-        dest = "ldr";
-        break;
-    case OP_LDRS:
-        dest = "ldrs";
-        break;
-    case OP_STRS:
-        dest = "strs";
-        break;
-    case OP_STP:
-        dest = "stp";
-        break;
-    case OP_LDP:
-        dest = "ldp";
-        break;
-    case OP_PRG:
-        dest = "prg";
-        break;
-    case OP_PRI:
-        dest = "prgi";
-        break;
-    default:
-        dest = "nop";
-        break;
-    }
 }

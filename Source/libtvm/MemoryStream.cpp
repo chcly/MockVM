@@ -73,6 +73,13 @@ void MemoryStream::cloneInto(MemoryStream& dest)
     }
 }
 
+size_t MemoryStream::addr(size_t idx)
+{
+    if (idx < m_capacity)
+        return (size_t)&m_data[idx];
+    return -1;
+}
+
 size_t MemoryStream::write(const void* src, size_t nr, bool pad)
 {
     size_t al = 0;

@@ -19,58 +19,38 @@
   3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------------
 */
-#ifndef _MemoryStream_h_
-#define _MemoryStream_h_
+#ifndef _InstructionWriter_h_
+#define _InstructionWriter_h_
 
-#include "Declarations.h"
+#include "Types.h"
+#include <sstream>
 
-class MemoryStream
+class InstructionWriter
 {
-public:
-    MemoryStream();
-    ~MemoryStream();
-
-    void   clear(void);
-    size_t writeString(const char* src, size_t len);
-    size_t write8(uint8_t val);
-    size_t write16(uint16_t val);
-    size_t write32(uint32_t val);
-    size_t write64(uint64_t val);
-    size_t fill(size_t nr, uint8_t code);
-
-    void reserve(size_t cap);
-    void cloneInto(MemoryStream& dest);
-
-    size_t addr(size_t idx);
-
-    inline size_t size(void) const
-    {
-        return m_size;
-    }
-
-    inline size_t capacity(void) const
-    {
-        return m_capacity;
-    }
-
-    inline uint8_t* ptr()
-    {
-        return m_data;
-    }
-
-    inline const uint8_t* ptr() const
-    {
-        return m_data;
-    }
-
 private:
-    size_t findAllocLen(size_t nr);
-    size_t write(const void* ptr, size_t nr, bool pad);
+    std::ostringstream    m_os;
+    const ExecInstruction m_inst;
 
-    size_t m_size;
-    size_t m_capacity;
 
-    uint8_t* m_data;
+public:
+    InstructionWriter(const ExecInstruction &inst);
+
+    void  writeOp(void);
+    void  writeSpace(void);
+    void  writePC(void);
+    void  writeSP(void);
+    void  writeRegister(int index);
+    void  writeValue(int index);
+    void  writeIndex(void);
+    void  writeRegIndex(void);
+    void  writeCall(void);
+    void  writeAddrD(size_t v);
+    void  writeNext(void);
+    void  openBrace(void);
+    void  closeBrace(void);
+    str_t string(void);
+
 };
 
-#endif  //_MemoryStream_h_
+
+#endif  //_InstructionWriter_h_
