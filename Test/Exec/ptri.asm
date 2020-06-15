@@ -72,7 +72,7 @@ nChooseK:
     mov     x0, 1
     ret
 factdiv:
-    div x0, x9, x8
+    div     x0, x9, x8
     ret
 ; ----------------------------------------------------------------------------
 ; int pascals_triangle(total:x0) 
@@ -107,10 +107,10 @@ ifen:
     mov     x0, 10
     bl      putchar
     ldr     x0, [sp, 0x00]  ; i
-    inc x0
-    b   ifst
+    inc     x0
+    b       ifst
 ptridone:
-    ldp  sp, 32
+    ldp     sp, 32
     ret
 ; ----------------------------------------------------------------------------
 ; int main() 
