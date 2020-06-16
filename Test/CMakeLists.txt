@@ -162,6 +162,7 @@ set(TestFiles_2
     Exec/Fib1.asm
     Exec/Base.asm
     Exec/ptri.asm
+    Exec/Sqrt.asm
     Exec/Sub2.asm
 )
 
