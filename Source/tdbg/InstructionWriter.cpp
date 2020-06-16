@@ -29,10 +29,9 @@ InstructionWriter::InstructionWriter(const ExecInstruction &inst) :
     m_os << uppercase << hex;
 }
 
-void InstructionWriter::writeOp()
+void InstructionWriter::writeOp(void)
 {
     m_os << left << setw(6);
-
     switch (m_inst.op)
     {
     case OP_RET:
@@ -125,46 +124,57 @@ void InstructionWriter::writeOp()
     }
 }
 
-void InstructionWriter::writeSpace()
+void InstructionWriter::writeSpace(void)
 {
     m_os << ' ';
 }
 
-void InstructionWriter::writePC()
+void InstructionWriter::writePC(void)
 {
     m_os << "pc";
 }
 
-void InstructionWriter::writeSP()
+void InstructionWriter::writeSP(void)
 {
     m_os << "sp";
 }
 
 void InstructionWriter::writeRegister(int index)
 {
-    m_os << 'x' << m_inst.argv[index];
+    if (index < m_inst.argc)
+        m_os << 'x' << m_inst.argv[index];
 }
 
-void InstructionWriter::writeValue(int index)
+void InstructionWriter::writeValue(int index, int width)
 {
-    m_os << "0x" << m_inst.argv[index];
+    if (index < m_inst.argc)
+    {
+        if (width != -1)
+        {
+            m_os << setfill('0') << right;
+            m_os << "0x" << setw(4) << m_inst.argv[index];
+            m_os << setfill(' ') << left;
+        }
+        else
+            m_os << "0x" << m_inst.argv[index];
+    }
 }
 
-void InstructionWriter::writeIndex()
+void InstructionWriter::writeIndex(void)
 {
     m_os << dec;
     m_os << m_inst.index;
     m_os << hex;
 }
 
-void InstructionWriter::writeRegIndex()
+void InstructionWriter::writeRegIndex(void)
 {
     m_os << dec;
     m_os << 'x' << m_inst.index;
     m_os << hex;
 }
 
-void InstructionWriter::writeCall()
+void InstructionWriter::writeCall(void)
 {
     m_os << "0x" << (size_t)m_inst.call;
 }
@@ -174,22 +184,22 @@ void InstructionWriter::writeAddrD(size_t v)
     m_os << "0x" << v;
 }
 
-void InstructionWriter::writeNext()
+void InstructionWriter::writeNext(void)
 {
     m_os << ", ";
 }
 
-void InstructionWriter::openBrace()
+void InstructionWriter::openBrace(void)
 {
     m_os << '[';
 }
 
-void InstructionWriter::closeBrace()
+void InstructionWriter::closeBrace(void)
 {
     m_os << ']';
 }
 
-str_t InstructionWriter::string()
+str_t InstructionWriter::string(void)
 {
     return m_os.str();
 }

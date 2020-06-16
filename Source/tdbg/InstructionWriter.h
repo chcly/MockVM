@@ -40,7 +40,7 @@ public:
     void  writePC(void);
     void  writeSP(void);
     void  writeRegister(int index);
-    void  writeValue(int index);
+    void  writeValue(int index, int width=-1);
     void  writeIndex(void);
     void  writeRegIndex(void);
     void  writeCall(void);

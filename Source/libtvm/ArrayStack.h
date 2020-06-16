@@ -49,6 +49,7 @@ public:
         if (m_data)
         {
             delete[] m_data;
+
             m_size     = 0;
             m_data     = nullptr;
             m_capacity = 0;
@@ -62,23 +63,23 @@ public:
             Data* dt = new Data[((size_t)nr) + 1];
 
             if (m_size > 0 && m_data != nullptr)
-            {
-                uint32_t i;
-                for (i = 0; i < m_size; i++)
-                    dt[i] = m_data[i];
-            }
-
-            dt[nr]     = -1;
-            m_capacity = nr;
+                memcpy(dt, m_data, m_size);
+ 
+            dt[nr] = -1;
             delete[] m_data;
-            m_data = dt;
+
+            m_data     = dt;
+            m_capacity = nr;
         }
     }
 
     void push(const uint64_t& v)
     {
         if (m_size + 1 > m_capacity)
+        {
             reserve(m_capacity == 0 ? 16 : m_capacity * 2);
+        }
+
         m_data[m_size] = v;
         ++m_size;
     }
@@ -94,6 +95,7 @@ public:
         int32_t iv = (int32_t)(m_size - 1) - (int32_t)idx;
         if (iv >= 0)
             return m_data[iv];
+
         return m_data[m_capacity];
     }
 
@@ -102,6 +104,7 @@ public:
         int32_t iv = (int32_t)(m_size - 1) - (int32_t)idx;
         if (iv >= 0)
             return m_data[iv];
+
         return m_data[m_capacity];
     }
 

@@ -138,11 +138,10 @@ void Debugger::constructDebugInfo()
         DebugInstruction dbg;
         dbg.flags = 0;
         dbg.inst  = exec;
-        dbg.value = getStrValue(exec);
+        dbg.value = getInstructionString(exec);
         m_debugInfo.push_back(dbg);
     }
 
-    // free the unused instructions
     m_ins.clear();
 }
 
@@ -328,21 +327,22 @@ void Debugger::addBreakPoint(void)
 
 void Debugger::displayRegisters(void)
 {
-    ostringstream ss, ss1;
+    ostringstream regi, value;
 
     int16_t y;
     int16_t ypos = m_regiRect.y + 1;
 
     m_console->setColor(CS_WHITE);
 
-    ss << setfill('0') << uppercase << hex;
+    regi << setfill('0') << uppercase << hex;
     for (y = 0; y < MAX_REG; ++y, ++ypos)
     {
-        ss << "0x" << m_regi[y].x;
-        ss1 << 'x' << y << ' ';
-        ss1 << right << setw(19) << ss.str();
-        ss1 << ' ' << setw(19);
-        ss1 << m_regi[y].x;
+        regi << "0x" << m_regi[y].x;
+        value << 'x' << y << ' ';
+
+        value << right << setw(19) << regi.str();
+        value << ' ' << setw(19);
+        value << m_regi[y].x;
 
         if (m_regi[y].x != m_last[y].x)
             m_console->setColor(CS_RED);
@@ -350,23 +350,23 @@ void Debugger::displayRegisters(void)
             m_console->setColor(CS_LIGHT_GREY);
 
         m_last[y].x = m_regi[y].x;
-        m_console->displayString(ss1.str(), m_regiRect.x, ypos);
+        m_console->displayString(value.str(), m_regiRect.x, ypos);
 
-        ss.str("");
-        ss1.str("");
+        regi.str("");
+        value.str("");
     }
 
-    ss << "flags: [";
+    regi << "flags: [";
     if (m_flags & PF_Z)
-        ss << ' ' << 'Z';
+        regi << ' ' << 'Z';
     if (m_flags & PF_G)
-        ss << ' ' << 'G';
+        regi << ' ' << 'G';
     if (m_flags & PF_L)
-        ss << ' ' << 'L';
-    ss << ' ' << ']';
+        regi << ' ' << 'L';
+    regi << ' ' << ']';
 
     m_console->setColor(CS_DARKCYAN);
-    m_console->displayString(ss.str(), m_regiRect.x, ypos);
+    m_console->displayString(regi.str(), m_regiRect.x, ypos);
 }
 
 void Debugger::displayStack(void)
@@ -553,7 +553,7 @@ void Debugger::disassemble(const DebugInstruction& inst, size_t i, int16_t y)
     m_console->displayString(cursor.str(), m_instRect.x + 4, y);
 }
 
-str_t Debugger::getStrValue(const ExecInstruction& inst)
+str_t Debugger::getInstructionString(const ExecInstruction& inst)
 {
     InstructionWriter cw(inst);
     cw.writeOp();
@@ -585,7 +585,7 @@ str_t Debugger::getStrValue(const ExecInstruction& inst)
         if (inst.flags & IF_SYMU)
             cw.writeCall();
         else
-            cw.writeValue(0);
+            cw.writeValue(0, 4);
         break;
     case OP_PRG:
     case OP_INC:
@@ -603,7 +603,6 @@ str_t Debugger::getStrValue(const ExecInstruction& inst)
         else
             cw.writeValue(1);
         break;
-
     case OP_ADD:
     case OP_SUB:
     case OP_MUL:

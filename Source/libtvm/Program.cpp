@@ -372,7 +372,7 @@ int Program::launch(void)
     if (m_ins.empty())
         return PS_OK;
 
-    size_t tinst = m_ins.size();
+    size_t                 tinst   = m_ins.size();
     const ExecInstruction* basePtr = m_ins.data();
     m_callStack.push(m_curinst);
 

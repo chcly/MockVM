@@ -53,6 +53,7 @@ void Console::initializeColorTable(void)
         for (j = 0; j < 16; ++j)
         {
             c = i + j * 16;
+
             m_colorTable[j][i] = c;
         }
     }
@@ -74,10 +75,14 @@ uint8_t Console::getColorImpl(uint8_t fg, uint8_t bg)
     return rc;
 }
 
-
 void Console::displayString(const str_t &string, int16_t x, int16_t y)
 {
     int16_t i, s, k;
+
+    if (x < 0)
+        return;
+    if (y < 0)
+        return;
 
     if ((y < m_displayRect.y) || (y >= m_displayRect.h))
         return;
@@ -91,11 +96,7 @@ void Console::displayString(const str_t &string, int16_t x, int16_t y)
     for (i = 0; i < s; ++i)
     {
         k = x + i;
-        if ((k < 0) || (y < m_displayRect.y))
-            continue;
         if (k >= m_displayRect.w)
-            continue;
-        if (y >= m_displayRect.h)
             continue;
 
         k += y * m_displayRect.w;

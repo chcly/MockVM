@@ -64,7 +64,7 @@ private:
     void calculateDisplayRects(void);
 
 
-    str_t   getStrValue(const ExecInstruction& inst);
+    str_t   getInstructionString(const ExecInstruction& inst);
     int16_t getMaxInstructionSize(void);
 
     DebugInstruction* getCurrent(void);
