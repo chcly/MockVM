@@ -30,8 +30,6 @@ class InstructionWriter
 private:
     std::ostringstream    m_os;
     const ExecInstruction m_inst;
-
-
 public:
     InstructionWriter(const ExecInstruction &inst);
 
@@ -49,7 +47,6 @@ public:
     void  openBrace(void);
     void  closeBrace(void);
     str_t string(void);
-
 };
 
 

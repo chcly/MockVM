@@ -73,6 +73,11 @@ public:
         }
     }
 
+    void resize(uint32_t nr)
+    {
+        m_size = 0;
+    }
+
     void push(const uint64_t& v)
     {
         if (m_size + 1 > m_capacity)

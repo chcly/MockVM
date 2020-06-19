@@ -74,7 +74,6 @@ int Debugger::debug(void)
     int cmd = CCS_NO_INPUT;
 
 top:
-
     m_callStack.push(m_curinst);
     render();
 
@@ -134,8 +133,7 @@ void Debugger::constructDebugInfo()
     while (it != end)
     {
         const ExecInstruction& exec = (*it++);
-
-        DebugInstruction dbg;
+        DebugInstruction       dbg;
         dbg.flags = 0;
         dbg.inst  = exec;
         dbg.value = getInstructionString(exec);
@@ -147,7 +145,9 @@ void Debugger::constructDebugInfo()
 
 void Debugger::calculateDisplayRects(void)
 {
-    const ConsoleRect& rect = m_console->getRect();
+    ConsoleRect rect = m_console->getRect();
+    if (rect.h > 40)
+        rect.h = 40;
 
     m_instRect.x = 0;
     m_instRect.y = 0;
@@ -395,7 +395,9 @@ void Debugger::displayStack(void)
 void Debugger::displayData(void)
 {
     uint8_t* data = m_dataTable.ptr();
-    if (!data || (m_dataTable.capacity() <= 0) || (m_curinst >= m_debugInfo.size()))
+    if (!data ||
+        (m_dataTable.capacity() <= 0) ||
+        (m_curinst >= m_debugInfo.size()))
         return;
 
     if (m_baseAddr == 0)
@@ -501,14 +503,15 @@ void Debugger::clearState(void)
 {
     m_console->clearOutput();
 
-    m_callStack.clear();
-    m_stack.clear();
+    m_callStack.resize(0);
+    m_stack.resize(0);
 
     memset(m_regi, 0, sizeof(Registers));
     memset(m_last, 0, sizeof(Registers));
 
     m_baseAddr = 0;
     m_lastAddr = -1;
+
     m_dataTableCpy.cloneInto(m_dataTable);
 
     m_flags   = 0;
