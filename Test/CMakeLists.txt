@@ -24,6 +24,7 @@ set(fcmp  ${ToyVM_BIN_DIR}/fcmp)
 
 macro(add_compile_tests OUT Group)
     foreach (it IN ITEMS ${ARGN})
+
         get_filename_component(ASMFILE ${it}      ABSOLUTE)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
@@ -53,7 +54,6 @@ macro(add_compile_tests OUT Group)
             COMMAND ${tvm} ${GEN_FILE} > ${GEN_FILE_ANS}
             DEPENDS tcom tvm fcmp std
             COMMENT "${ASMNAME}"
-            VERBATIM
         )
 
         add_custom_command(
@@ -61,7 +61,6 @@ macro(add_compile_tests OUT Group)
             MAIN_DEPENDENCY ${GEN_FILE_ANS}
             DEPENDS tcom tvm fcmp std ${GEN_FILE}
             COMMAND ${fcmp} ${GEN_FILE_ANS} ${GEN_FILE_EXP} > ${CMP_FILE}
-            VERBATIM
             COMMENT "${GENNAME}.ans"
         )
     endforeach(it)
@@ -70,6 +69,7 @@ endmacro(add_compile_tests)
 
 macro(add_temp_test OUT)
     foreach (it IN ITEMS ${ARGN})
+
         get_filename_component(ASMFILE ${it}      ABSOLUTE)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
@@ -97,6 +97,7 @@ endmacro(add_temp_test)
 
 macro(add_test_dump_err OUT Group)
     foreach (it IN ITEMS ${ARGN})
+
         get_filename_component(ASMFILE ${it}      ABSOLUTE)
         get_filename_component(GENNAME ${ASMFILE} NAME_WE)
         get_filename_component(ASMNAME ${it}      NAME)
@@ -152,7 +153,6 @@ set(TestFiles_1
 )
 
 set(TestFiles_2
-    Exec/Add1.asm
     Exec/Add2.asm
     Exec/Add3.asm
     Exec/Add4.asm
@@ -164,6 +164,7 @@ set(TestFiles_2
     Exec/ptri.asm
     Exec/Sqrt.asm
     Exec/Sub2.asm
+    Exec/Add1.asm
 )
 
 set(TestFiles_3
@@ -171,12 +172,6 @@ set(TestFiles_3
     Errors/Err2.asm
     Errors/Err3.asm
 )
-
-set(TestFiles_0
-    Test.asm
-)
-
-#add_temp_test(Outfiles_0 ${TestFiles_0})
 
 add_compile_tests(OutFiles_1 Basic  ${TestFiles_1})
 add_compile_tests(OutFiles_2 Exec   ${TestFiles_2})
@@ -189,7 +184,6 @@ set(SRC_ALL
     Parser.cpp
     MemoryStream.cpp
     BlockReader.cpp
-    ${Outfiles_0}
     ${OutFiles_1}
     ${OutFiles_2}
     ${OutFiles_3}
