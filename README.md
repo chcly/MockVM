@@ -84,8 +84,7 @@ tdbg <options> <program_path>
 
 ### Documentation
 
-Documentation on the instructions can be found [here](Codes.md).
-
+Documentation on the instructions may also be found [here](Codes.md).
 
 
 ## Building
