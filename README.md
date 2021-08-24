@@ -59,7 +59,10 @@ It can be obtained using:
 ```txt
 sudo apt-get install libncurses-dev
 ```
-It has been tested with ```(6.2-0ubuntu2).```
+and has been tested with ```(6.2-0ubuntu2).```
+
+
+You can find a screen capture of it running [here](Capture.gif).
 
 
 ### tdbg Usage
@@ -78,11 +81,12 @@ tdbg <options> <program_path>
 
 ```
 
-![Cap](Capture.gif)
 
 ### Documentation
 
-Documentation can be found [here.](Codes.md)
+Documentation on the instructions can be found [here](Codes.md).
+
+
 
 ## Building
 
