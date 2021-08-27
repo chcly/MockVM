@@ -91,6 +91,6 @@ Optional defines used in this project.
 | Option             | Description                                    | Default |
 |:-------------------|:-----------------------------------------------|:-------:|
 | ToyVM_INSTALL_PATH | Specify the directory to install the programs. |         |
-| BUILD_TEST         | Build the test programs                        |   OFF   |
+| BUILD_TEST         | Build the test programs.                       |   OFF   |
 | BUILD_DBG          | Enable the debugger.                           |   OFF   |
 
