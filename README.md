@@ -2,7 +2,6 @@
 
 ToyVM is a mock assembly compiler and virtual machine/interpreter. It has been tested on Windows, Linux, OSX, and it supports linking c/c++ libraries through a simple plugin interface.
 
-
 It is composed of three main programs.
 
 * tcom
@@ -11,10 +10,10 @@ It is composed of three main programs.
 
 ## tcom
 
-Is the assembly compiler that transforms the input file into a mock binary.
+Is the compiler that transforms the input file into a mock binary.
 
 
-### tcom Usage
+### Usage
 
 ```txt
 tcom <options> <input file>
@@ -26,16 +25,11 @@ tcom <options> <input file>
       -d disable full path when reporting errors.
       -m print the module path and exit.
 ```
-
-* -l Links a shared library into the file.
-* -m Displays the location of the shared library folder.
-* -d Is used in the tests to prevent full path names from being reported, which would cause them to fail.
-
 ## tvm
 
-tvm is the program that interprets the mock binary code and executes the instructions. 
+tvm is the program that interprets the binary and executes the instructions. 
 
-### tvm Usage
+### Usage
 
 ```txt
 tvm <options> <program_path>
@@ -48,24 +42,20 @@ tvm <options> <program_path>
 
 ## tdbg
 
-tdbg is a visual command line debugger. It allows stepping, breakpoints and print-outs of the current register state as well as the current state of the data section.   
+tdbg is the command line debugger. 
+
+It allows stepping, breakpoints, register print-outs, and a view of the data section.   
 
 
 ### Enabling 
 
-It is disabled by default because the Linux and Mac versions use ncurses for the display which may or may not be installed. ```-DBUILD_DBG=ON``` will enable it.
+It is disabled by default because the Linux and Mac versions use ncurses for the display. `-DBUILD_DBG=ON` will enable it.
 
-It can be obtained using:
-```txt
-sudo apt-get install libncurses-dev
-```
-and has been tested with ```(6.2-0ubuntu2).```
-
+The ncurses dependency can be obtained using: `sudo apt-get install libncurses-dev`, and it has been tested with version `(6.2-0ubuntu2)`.
 
 You can find a screen capture of it running [here](Capture.gif).
 
-
-### tdbg Usage
+### Usage
 
 ```txt
 tdbg <options> <program_path>
@@ -86,24 +76,21 @@ tdbg <options> <program_path>
 
 Documentation on the instructions may also be found [here](Codes.md).
 
-
 ## Building
 
-Building with CMAKE and make.
+It uses CMake to generate its make files. 
 
-```txt
-mkdir Build
-cd Build
-cmake ..
-make
-```
+It has been tested with CMake's VisualStudio and Unix Makefile generators.   
 
-Testing and Installing.
 
-```txt
-mkdir Build
-cd Build
-cmake -DToyVM_INSTALL_PATH=<some install directory> -DBUILD_TEST=ON ..
-make
-make install
-```
+## Definitions 
+
+Optional defines used in this project.
+
+
+| Option             | Description                                    | Default |
+|:-------------------|:-----------------------------------------------|:-------:|
+| ToyVM_INSTALL_PATH | Specify the directory to install the programs. |         |
+| BUILD_TEST         | Build the test programs                        |   OFF   |
+| BUILD_DBG          | Enable the debugger.                           |   OFF   |
+
