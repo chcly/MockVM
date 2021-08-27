@@ -1,6 +1,6 @@
 # ToyVM
 
-ToyVM is a mock assembly compiler and a simple virtual machine/interpreter to execute the code. It runs on Windows, Linux, OSX, and it supports linking c/c++ libraries through a simple plugin interface.
+ToyVM is a mock assembly compiler and virtual machine/interpreter. It has been tested on Windows, Linux, OSX, and it supports linking c/c++ libraries through a simple plugin interface.
 
 
 It is composed of three main programs.
